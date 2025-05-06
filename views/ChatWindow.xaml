@@ -8,7 +8,7 @@
     Title="FaraBotModeratorChat"
     Height="600"
     Width="450"
-    Icon="/resources/App.ico"
+    Icon="pack://application:,,,/resources/app.ico"
     ResizeMode="CanMinimize">
     <GroupBox Height="600" Header="FaraBotTwitchChat" Width="450" HorizontalAlignment="Center" VerticalAlignment="Top">
         <Canvas Width="420">

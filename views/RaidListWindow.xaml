@@ -8,7 +8,7 @@
     Title="FaraBotModeratorRaidList"
     Height="600"
     Width="600"
-    Icon="/resources/App.ico"
+    Icon="pack://application:,,,/resources/app.ico"
     ResizeMode="CanMinimize">
     <GroupBox Height="600" Width="600" Header="FaraBotTwitchRaidList" HorizontalAlignment="Center"
               VerticalAlignment="Top">

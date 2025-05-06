@@ -16,7 +16,7 @@
     Left="0"
     Top="0"
     Closed="MainWindow_Closed"
-    Icon="/resources/App.ico"
+    Icon="pack://application:,,,/resources/app.ico"
     ResizeMode="CanMinimize">
     <TabControl x:Name="MenuTabControl">
         <TabItem x:Name="MainSettingsTabItem" Header="Main Settings">
