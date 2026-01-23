@@ -2,9 +2,9 @@
 using System.IO;
 using System.Text;
 using System.Threading;
-using FaraBotModerator.Enum;
+using FaraBotModerator.Enums;
 
-namespace FaraBotModerator.controllers;
+namespace FaraBotModerator.Controllers;
 
 /// <summary>
 /// </summary>

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Text.Json.Serialization;
 
-namespace FaraBotModerator.models;
+namespace FaraBotModerator.Models;
 
 /// <summary>
 /// </summary>

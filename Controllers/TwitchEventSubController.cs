@@ -4,7 +4,7 @@ using TwitchLib.EventSub.Websockets;
 using TwitchLib.EventSub.Websockets.Core.EventArgs;
 using TwitchLib.EventSub.Websockets.Core.EventArgs.Channel;
 
-namespace FaraBotModerator.controllers;
+namespace FaraBotModerator.Controllers;
 
 /// <summary>
 ///     Twitch EventSub経由の操作をするController

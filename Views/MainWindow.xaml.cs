@@ -12,12 +12,12 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using FaraBotModerator.controllers;
-using FaraBotModerator.models;
+using FaraBotModerator.Controllers;
+using FaraBotModerator.Models;
 using FaraBotModerator.Properties;
 using Microsoft.Web.WebView2.Core;
 
-namespace FaraBotModerator.views;
+namespace FaraBotModerator.Views;
 
 /// <summary>
 ///     Interaction logic for MainWindow.xaml
@@ -43,6 +43,10 @@ public partial class MainWindow
     /// <summary>
     /// </summary>
     private TwitchEventSubController? _twitchEventSubController;
+
+    /// <summary>
+    /// </summary>
+    private TwitchTestEventController? _twitchTestEventController;
 
     /// <summary>
     /// </summary>
@@ -313,10 +317,20 @@ public partial class MainWindow
             while (_twitchClientController is null) await Task.Delay(1);
 
             await Task.Delay(1);
-            TwitchConnectionStateLabel.Content = _twitchClientController is {IsConnected: true} &&
-                                                 _twitchEventSubController is {IsConnected: true}
+            var isConnected = _twitchClientController is { IsConnected: true } &&
+                              _twitchEventSubController is { IsConnected: true };
+
+            TwitchConnectionStateLabel.Content = isConnected
                 ? @"State: Connect"
                 : @"State: Disconnect";
+
+            // Test Sendボタンの状態を制御
+            FollowTestButton.IsEnabled = isConnected;
+            RaidTestButton.IsEnabled = isConnected;
+            SubscriptionTestButton.IsEnabled = isConnected;
+            BitsTestButton.IsEnabled = isConnected;
+            GiftTestButton.IsEnabled = isConnected;
+            ChannelPointTestButton.IsEnabled = isConnected;
         }
     }
 
@@ -531,6 +545,7 @@ public partial class MainWindow
     {
         Dispatcher.Invoke((Action) (() =>
         {
+            // Main Settings
             TwitchClientUserNameTextBox.IsEnabled = false;
             TwitchClientAccessTokenPasswordBox.IsEnabled = false;
             TwitchClientDisplayNameTextBox.IsEnabled = false;
@@ -538,14 +553,59 @@ public partial class MainWindow
 
             TwitchApiClientIdPasswordBox.IsEnabled = false;
             TwitchApiClientSecretPasswordBox.IsEnabled = false;
-            TwitchApiExpireDateTimeTextBlock.IsEnabled = false;
 
             BouyomiChanConnectCheckBox.IsEnabled = false;
-            TwitchPageButton.IsEnabled = false;
             TwitchConnectionButton.IsEnabled = false;
-            DeepLSiteGoButton.IsEnabled = false;
             if (isAuthorize) TwitchDisconnectButton.IsEnabled = false;
             else TwitchApiAuthorizeButton.IsEnabled = false;
+
+            // Reaction Event Settings
+            FollowEventCheckBox.IsEnabled = false;
+            FollowEventTextBox.IsEnabled = false;
+            RaidEventCheckBox.IsEnabled = false;
+            RaidEventTextBox.IsEnabled = false;
+            SubscriptionEventCheckBox.IsEnabled = false;
+            SubscriptionEventTextBox.IsEnabled = false;
+            BitsEventCheckBox.IsEnabled = false;
+            BitsEventTextBox.IsEnabled = false;
+            GiftEventCheckBox.IsEnabled = false;
+            GiftEventTextBox.IsEnabled = false;
+            ChannelPointEventCheckBox.IsEnabled = false;
+            ChannelPointEventTextBox.IsEnabled = false;
+
+            // Auto Bot Settings - Translate
+            DeepLApiKeyPasswordBox.IsEnabled = false;
+
+            // Auto Bot Settings - Timer
+            CycleTimer1CheckBox.IsEnabled = false;
+            CycleTimer1Slider.IsEnabled = false;
+            CycleTimer1TextBox.IsEnabled = false;
+            CycleTimer2CheckBox.IsEnabled = false;
+            CycleTimer2Slider.IsEnabled = false;
+            CycleTimer2TextBox.IsEnabled = false;
+            CycleTimer3CheckBox.IsEnabled = false;
+            CycleTimer3Slider.IsEnabled = false;
+            CycleTimer3TextBox.IsEnabled = false;
+            CycleTimer4CheckBox.IsEnabled = false;
+            CycleTimer4Slider.IsEnabled = false;
+            CycleTimer4TextBox.IsEnabled = false;
+
+            FixedTimer1CheckBox.IsEnabled = false;
+            FixedTimer1DatePicker.IsEnabled = false;
+            FixedTimer1TimePicker.IsEnabled = false;
+            FixedTimer1TextBox.IsEnabled = false;
+            FixedTimer2CheckBox.IsEnabled = false;
+            FixedTimer2DatePicker.IsEnabled = false;
+            FixedTimer2TimePicker.IsEnabled = false;
+            FixedTimer2TextBox.IsEnabled = false;
+            FixedTimer3CheckBox.IsEnabled = false;
+            FixedTimer3DatePicker.IsEnabled = false;
+            FixedTimer3TimePicker.IsEnabled = false;
+            FixedTimer3TextBox.IsEnabled = false;
+            FixedTimer4CheckBox.IsEnabled = false;
+            FixedTimer4DatePicker.IsEnabled = false;
+            FixedTimer4TimePicker.IsEnabled = false;
+            FixedTimer4TextBox.IsEnabled = false;
         }));
     }
 
@@ -556,6 +616,7 @@ public partial class MainWindow
     {
         Dispatcher.Invoke((Action) (() =>
         {
+            // Main Settings
             TwitchClientUserNameTextBox.IsEnabled = true;
             TwitchClientAccessTokenPasswordBox.IsEnabled = true;
             TwitchClientDisplayNameTextBox.IsEnabled = true;
@@ -563,7 +624,6 @@ public partial class MainWindow
 
             TwitchApiClientIdPasswordBox.IsEnabled = true;
             TwitchApiClientSecretPasswordBox.IsEnabled = true;
-            TwitchApiExpireDateTimeTextBlock.IsEnabled = true;
             TwitchApiAuthorizeButton.IsEnabled = true;
 
             BouyomiChanConnectCheckBox.IsEnabled = true;
@@ -571,6 +631,54 @@ public partial class MainWindow
             TwitchConnectionButton.IsEnabled = true;
             TwitchDisconnectButton.IsEnabled = true;
             DeepLSiteGoButton.IsEnabled = true;
+
+            // Reaction Event Settings
+            FollowEventCheckBox.IsEnabled = true;
+            FollowEventTextBox.IsEnabled = true;
+            RaidEventCheckBox.IsEnabled = true;
+            RaidEventTextBox.IsEnabled = true;
+            SubscriptionEventCheckBox.IsEnabled = true;
+            SubscriptionEventTextBox.IsEnabled = true;
+            BitsEventCheckBox.IsEnabled = true;
+            BitsEventTextBox.IsEnabled = true;
+            GiftEventCheckBox.IsEnabled = true;
+            GiftEventTextBox.IsEnabled = true;
+            ChannelPointEventCheckBox.IsEnabled = true;
+            ChannelPointEventTextBox.IsEnabled = true;
+
+            // Auto Bot Settings - Translate
+            DeepLApiKeyPasswordBox.IsEnabled = true;
+
+            // Auto Bot Settings - Timer
+            CycleTimer1CheckBox.IsEnabled = true;
+            CycleTimer1Slider.IsEnabled = true;
+            CycleTimer1TextBox.IsEnabled = true;
+            CycleTimer2CheckBox.IsEnabled = true;
+            CycleTimer2Slider.IsEnabled = true;
+            CycleTimer2TextBox.IsEnabled = true;
+            CycleTimer3CheckBox.IsEnabled = true;
+            CycleTimer3Slider.IsEnabled = true;
+            CycleTimer3TextBox.IsEnabled = true;
+            CycleTimer4CheckBox.IsEnabled = true;
+            CycleTimer4Slider.IsEnabled = true;
+            CycleTimer4TextBox.IsEnabled = true;
+
+            FixedTimer1CheckBox.IsEnabled = true;
+            FixedTimer1DatePicker.IsEnabled = true;
+            FixedTimer1TimePicker.IsEnabled = true;
+            FixedTimer1TextBox.IsEnabled = true;
+            FixedTimer2CheckBox.IsEnabled = true;
+            FixedTimer2DatePicker.IsEnabled = true;
+            FixedTimer2TimePicker.IsEnabled = true;
+            FixedTimer2TextBox.IsEnabled = true;
+            FixedTimer3CheckBox.IsEnabled = true;
+            FixedTimer3DatePicker.IsEnabled = true;
+            FixedTimer3TimePicker.IsEnabled = true;
+            FixedTimer3TextBox.IsEnabled = true;
+            FixedTimer4CheckBox.IsEnabled = true;
+            FixedTimer4DatePicker.IsEnabled = true;
+            FixedTimer4TimePicker.IsEnabled = true;
+            FixedTimer4TextBox.IsEnabled = true;
         }));
     }
 
@@ -737,6 +845,17 @@ public partial class MainWindow
         LogController.OutputLog($"Token validation result: {isTokenValid}");
 
         _twitchClientController ??= new TwitchClientController(secretKeys, _twitchApiController);
+
+        // 棒読みちゃん接続チェック
+        if (BouyomiChanConnectCheckBox.IsChecked == true)
+        {
+            if (!_twitchClientController.BouyomiChanController.IsBouyomiChanRunning())
+            {
+                MessageBox.Show("棒読みちゃんが起動していません。起動してから接続してください。", "警告", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+        }
+
         _twitchClientController.Connect();
 
         // EventSub
@@ -946,31 +1065,59 @@ public partial class MainWindow
 
     private void FollowTestButton_Click(object sender, RoutedEventArgs e)
     {
-        _twitchClientController?.TestFollowEvent();
+        InitializeTestEventController();
+        _twitchTestEventController?.TestFollowEvent();
     }
 
     private void RaidTestButton_Click(object sender, RoutedEventArgs e)
     {
-        _twitchClientController?.TestRaidEvent();
+        InitializeTestEventController();
+        _twitchTestEventController?.TestRaidEvent();
     }
 
     private void SubscriptionTestButton_Click(object sender, RoutedEventArgs e)
     {
-        _twitchClientController?.TestSubscriptionEvent();
+        InitializeTestEventController();
+        _twitchTestEventController?.TestSubscriptionEvent();
     }
 
     private void BitsTestButton_Click(object sender, RoutedEventArgs e)
     {
-        _twitchClientController?.TestBitsEvent();
+        InitializeTestEventController();
+        _twitchTestEventController?.TestBitsEvent();
     }
 
     private void GiftTestButton_Click(object sender, RoutedEventArgs e)
     {
-        _twitchClientController?.TestGiftEvent();
+        InitializeTestEventController();
+        _twitchTestEventController?.TestGiftEvent();
     }
 
     private void ChannelPointTestButton_Click(object sender, RoutedEventArgs e)
     {
-        _twitchClientController?.TestChannelPointEvent();
+        InitializeTestEventController();
+        _twitchTestEventController?.TestChannelPointEvent();
+    }
+
+    private void InitializeTestEventController()
+    {
+        if (_twitchTestEventController != null) return;
+        
+        var secretKeys = SecretKeyController.LoadKeys();
+        _twitchApiController ??= new TwitchApiController(secretKeys);
+        _twitchClientController ??= new TwitchClientController(secretKeys, _twitchApiController);
+        
+        // TwitchClientController内部で生成されているBouyomiChanControllerを取得する必要があるが、
+        // TwitchClientControllerが非公開にしているため、本来はDIなどで管理するのが望ましい。
+        // ここではTwitchClientControllerから取得できるようにするか、新しく生成するか。
+        // TwitchClientController.csを見ると _bouyomiChanController は private。
+        // 今回は暫定的にTwitchClientControllerにGetterを追加するか、
+        // あるいは MainWindowで管理するようにリファクタリングする。
+        // ひとまずTwitchClientControllerにGetterを追加する。
+        
+        _twitchTestEventController = new TwitchTestEventController(
+            _twitchClientController, 
+            _twitchClientController.BouyomiChanController, 
+            secretKeys);
     }
 }

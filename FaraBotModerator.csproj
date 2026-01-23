@@ -74,7 +74,7 @@
 
     <ItemGroup>
       <None Remove="resources\app.ico" />
-      <Resource Include="resources\app.ico">
+      <Resource Include="Resources\app.ico">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </Resource>
     </ItemGroup>

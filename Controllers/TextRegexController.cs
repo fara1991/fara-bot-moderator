@@ -6,9 +6,9 @@ using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Text.Unicode;
-using FaraBotModerator.models;
+using FaraBotModerator.Models;
 
-namespace FaraBotModerator.controllers;
+namespace FaraBotModerator.Controllers;
 
 internal static class TextRegexController
 {

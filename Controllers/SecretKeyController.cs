@@ -3,9 +3,9 @@ using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Unicode;
-using FaraBotModerator.models;
+using FaraBotModerator.Models;
 
-namespace FaraBotModerator.controllers;
+namespace FaraBotModerator.Controllers;
 
 /// <summary>
 /// </summary>

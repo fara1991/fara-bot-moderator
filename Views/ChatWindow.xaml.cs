@@ -1,8 +1,8 @@
 ﻿using System.Windows;
 using System.Windows.Input;
-using FaraBotModerator.controllers;
+using FaraBotModerator.Controllers;
 
-namespace FaraBotModerator.views;
+namespace FaraBotModerator.Views;
 
 /// <summary>
 ///     ChatWindow.xaml の相互作用ロジック

@@ -2,14 +2,14 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using FaraBotModerator.models;
+using FaraBotModerator.Models;
 using FaraBotModerator.Properties;
 using TwitchLib.Api;
 using TwitchLib.Api.Core.Enums;
 using TwitchLib.Api.Helix.Models.Users.GetUsers;
 using Stream = TwitchLib.Api.Helix.Models.Streams.GetStreams.Stream;
 
-namespace FaraBotModerator.controllers;
+namespace FaraBotModerator.Controllers;
 
 /// <summary>
 /// </summary>

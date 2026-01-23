@@ -5,12 +5,12 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media;
 using System.Windows.Threading;
-using FaraBotModerator.controllers;
-using FaraBotModerator.models;
+using FaraBotModerator.Controllers;
+using FaraBotModerator.Models;
 using Button = System.Windows.Controls.Button;
 using Clipboard = System.Windows.Forms.Clipboard;
 
-namespace FaraBotModerator.views;
+namespace FaraBotModerator.Views;
 
 /// <summary>
 /// 

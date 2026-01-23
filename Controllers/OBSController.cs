@@ -1,7 +1,7 @@
 ﻿using System.Threading.Tasks;
 using OBSWebsocketDotNet;
 
-namespace FaraBotModerator.controllers;
+namespace FaraBotModerator.Controllers;
 
 // Twitchである程度制御できるからもう不要かもしれない
 internal class OBSController
