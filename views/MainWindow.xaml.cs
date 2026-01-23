@@ -56,6 +56,19 @@ public partial class MainWindow
         _ = RunWithExceptionHandlingAsync(StartWebServerAsync, "WebServer");
         _ = RunWithExceptionHandlingAsync(StartMonitoringAsync, "Monitoring");
         _ = RunWithExceptionHandlingAsync(StartTwitchLibEventSubAsync, "TwitchPubSub");
+
+        Loaded += (_, _) =>
+        {
+            var secretKeys = SecretKeyController.LoadKeys();
+            _twitchApiController ??= new TwitchApiController(secretKeys);
+            _twitchClientController ??= new TwitchClientController(secretKeys, _twitchApiController);
+
+            _chatWindow ??= new ChatWindow(_twitchClientController);
+            _chatWindow.Show();
+
+            _raidListWindow ??= new RaidListWindow(_twitchApiController);
+            _raidListWindow.Show();
+        };
     }
 
     /// <summary>
@@ -717,13 +730,13 @@ public partial class MainWindow
     {
         var secretKeys = SecretKeyController.LoadKeys();
 
-        _twitchApiController = new TwitchApiController(secretKeys);
+        _twitchApiController ??= new TwitchApiController(secretKeys);
         // var channelId = _twitchApiController.GetTwitchChannelId();
 
         var isTokenValid = _twitchApiController.ValidateToken();
         LogController.OutputLog($"Token validation result: {isTokenValid}");
 
-        _twitchClientController = new TwitchClientController(secretKeys, _twitchApiController);
+        _twitchClientController ??= new TwitchClientController(secretKeys, _twitchApiController);
         _twitchClientController.Connect();
 
         // EventSub
@@ -752,10 +765,6 @@ public partial class MainWindow
         _twitchEventSubController = null;
 
         UnlockWindowControl();
-        _chatWindow?.Close();
-        _raidListWindow?.Close();
-        _chatWindow = null;
-        _raidListWindow = null;
     }
 
     /// <summary>
@@ -779,8 +788,14 @@ public partial class MainWindow
             SaveSecretValue();
 
             var state = TwitchConnectionStateLabel.Content.ToString();
-            if (state is not null && state.Equals("State: Connect")) TwitchDisconnect();
-            TwitchConnect();
+            if (state is not null && state.Equals("State: Connect"))
+            {
+                TwitchDisconnect();
+            }
+            else
+            {
+                TwitchConnect();
+            }
         }
         catch (Exception ex)
         {
@@ -818,6 +833,48 @@ public partial class MainWindow
         {
             LogController.OutputLog(ex.Message);
         }
+    }
+
+    private void OpenChatWindowButton_Click(object sender, RoutedEventArgs e)
+    {
+        var secretKeys = SecretKeyController.LoadKeys();
+        _twitchApiController ??= new TwitchApiController(secretKeys);
+        _twitchClientController ??= new TwitchClientController(secretKeys, _twitchApiController);
+
+        if (_chatWindow == null || !IsWindowOpen<ChatWindow>())
+        {
+            _chatWindow = new ChatWindow(_twitchClientController);
+            _chatWindow.Show();
+        }
+        else
+        {
+            _chatWindow.Activate();
+            if (_chatWindow.WindowState == WindowState.Minimized)
+                _chatWindow.WindowState = WindowState.Normal;
+        }
+    }
+
+    private void OpenRaidListWindowButton_Click(object sender, RoutedEventArgs e)
+    {
+        var secretKeys = SecretKeyController.LoadKeys();
+        _twitchApiController ??= new TwitchApiController(secretKeys);
+
+        if (_raidListWindow == null || !IsWindowOpen<RaidListWindow>())
+        {
+            _raidListWindow = new RaidListWindow(_twitchApiController);
+            _raidListWindow.Show();
+        }
+        else
+        {
+            _raidListWindow.Activate();
+            if (_raidListWindow.WindowState == WindowState.Minimized)
+                _raidListWindow.WindowState = WindowState.Normal;
+        }
+    }
+
+    private bool IsWindowOpen<T>() where T : Window
+    {
+        return Application.Current.Windows.OfType<T>().Any();
     }
 
     /// <summary>
@@ -858,6 +915,8 @@ public partial class MainWindow
     private void MainWindow_Closed(object sender, EventArgs e)
     {
         SaveSecretValue();
+        _chatWindow?.Close();
+        _raidListWindow?.Close();
     }
 
     /// <summary>
@@ -883,5 +942,35 @@ public partial class MainWindow
     private void CycleTimerSlider_ManipulationDelta(object sender, ManipulationDeltaEventArgs e)
     {
         ((Slider) sender).ToolTip = ((Slider) sender).Value.ToString(CultureInfo.CurrentCulture);
+    }
+
+    private void FollowTestButton_Click(object sender, RoutedEventArgs e)
+    {
+        _twitchClientController?.TestFollowEvent();
+    }
+
+    private void RaidTestButton_Click(object sender, RoutedEventArgs e)
+    {
+        _twitchClientController?.TestRaidEvent();
+    }
+
+    private void SubscriptionTestButton_Click(object sender, RoutedEventArgs e)
+    {
+        _twitchClientController?.TestSubscriptionEvent();
+    }
+
+    private void BitsTestButton_Click(object sender, RoutedEventArgs e)
+    {
+        _twitchClientController?.TestBitsEvent();
+    }
+
+    private void GiftTestButton_Click(object sender, RoutedEventArgs e)
+    {
+        _twitchClientController?.TestGiftEvent();
+    }
+
+    private void ChannelPointTestButton_Click(object sender, RoutedEventArgs e)
+    {
+        _twitchClientController?.TestChannelPointEvent();
     }
 }

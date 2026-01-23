@@ -9,6 +9,11 @@ public class StreamingUserModel
 {
     /// <summary>
     /// </summary>
+    [JsonPropertyName("icon")]
+    public string Icon { get; set; } = "";
+
+    /// <summary>
+    /// </summary>
     [JsonPropertyName("loginId")]
     public string LoginId { get; set; } = "";
 

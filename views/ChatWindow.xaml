@@ -10,7 +10,10 @@
     Width="450"
     Icon="pack://application:,,,/resources/app.ico"
     ResizeMode="CanMinimize">
-    <GroupBox Height="600" Header="FaraBotTwitchChat" Width="450" HorizontalAlignment="Center" VerticalAlignment="Top">
+    <GroupBox Height="600" Width="450" HorizontalAlignment="Center" VerticalAlignment="Top">
+        <GroupBox.Header>
+            <TextBlock Text="FaraBotTwitchChat" Margin="16,0,0,0" Foreground="White" />
+        </GroupBox.Header>
         <Canvas Width="420">
             <DataGrid x:Name="TwitchChatDataGrid"
                       Height="450"

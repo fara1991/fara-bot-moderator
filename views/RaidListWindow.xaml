@@ -7,20 +7,25 @@
     mc:Ignorable="d"
     Title="FaraBotModeratorRaidList"
     Height="600"
-    Width="600"
+    Width="660"
     Icon="pack://application:,,,/resources/app.ico"
     ResizeMode="CanMinimize">
-    <GroupBox Height="600" Width="600" Header="FaraBotTwitchRaidList" HorizontalAlignment="Center"
+    <GroupBox Height="600" Width="660" HorizontalAlignment="Center"
               VerticalAlignment="Top">
-        <Canvas Height="550" Width="580">
+        <GroupBox.Header>
+            <TextBlock Text="FaraBotTwitchRaidList" Margin="16,0,0,0" Foreground="White" />
+        </GroupBox.Header>
+        <Canvas Height="550" Width="640">
             <DataGrid x:Name="TwitchRaidDataGrid"
                       Height="460"
-                      Width="580"
+                      Width="640"
                       HeadersVisibility="Column"
                       HorizontalAlignment="Left"
                       VerticalAlignment="Center"
+                      AutoGenerateColumns="False"
+                      CanUserAddRows="False"
                       CanUserResizeRows="True"
-                      CanUserResizeColumns="True"
+                      CanUserResizeColumns="False"
                       CanUserSortColumns="True"
                       AlternatingRowBackground="MediumPurple"
                       AlternationCount="2"
@@ -36,6 +41,13 @@
                     </Style>
                 </DataGrid.ColumnHeaderStyle>
                 <DataGrid.Columns>
+                    <DataGridTemplateColumn Header="Icon" IsReadOnly="True" Width="80">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Image Source="{Binding Icon}" Width="48" Height="48" VerticalAlignment="Center" />
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
                     <!-- 表示はしないがレイドコマンド用に保持する -->
                     <DataGridTextColumn Header="LoginId" IsReadOnly="True" Visibility="Hidden"
                                         Binding="{Binding LoginId}">
@@ -45,15 +57,54 @@
                             </Style>
                         </DataGridTextColumn.ElementStyle>
                     </DataGridTextColumn>
-                    <DataGridTemplateColumn Header="Target" IsReadOnly="True" Width="80">
+                    <DataGridTextColumn Header="Name" IsReadOnly="True" Width="120" Binding="{Binding Name}"
+                                        EditingElementStyle="{StaticResource MaterialDesignDataGridTextColumnEditingStyle}">
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="{x:Type TextBlock}">
+                                <Setter Property="TextWrapping" Value="NoWrap" />
+                                <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+                                <Setter Property="VerticalAlignment" Value="Center" />
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Header="Game" IsReadOnly="True" Width="160" Binding="{Binding GameName}"
+                                        EditingElementStyle="{StaticResource MaterialDesignDataGridTextColumnEditingStyle}">
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="{x:Type TextBlock}">
+                                <Setter Property="TextWrapping" Value="NoWrap" />
+                                <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+                                <Setter Property="VerticalAlignment" Value="Center" />
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Header="StartedAt" IsReadOnly="True" Width="120"
+                                        Binding="{Binding StartedAt, StringFormat=\{0:MM/dd HH:mm:ss\}}"
+                                        EditingElementStyle="{StaticResource MaterialDesignDataGridTextColumnPopupEditingStyle}">
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="{x:Type TextBlock}">
+                                <Setter Property="VerticalAlignment" Value="Center" />
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Header="Viewer" IsReadOnly="True" Width="70" Binding="{Binding Viewer}"
+                                        EditingElementStyle="{StaticResource MaterialDesignDataGridTextColumnPopupEditingStyle}">
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="{x:Type TextBlock}">
+                                <Setter Property="VerticalAlignment" Value="Center" />
+                                <Setter Property="HorizontalAlignment" Value="Right" />
+                                <Setter Property="Margin" Value="0,0,10,0" />
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
+                    <DataGridTemplateColumn Header="Raid" IsReadOnly="True" Width="80">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <Grid>
-                                    <Button Click="DataGridRowRaidButton_OnClick" Content="Raid" Width="60"
+                                    <Button Click="DataGridRowRaidButton_OnClick" Content="Go" Width="60"
                                             Height="32"
-                                            Name="Raid" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                            x:Name="RaidButton" HorizontalAlignment="Center" VerticalAlignment="Center" />
                                     <Popup x:Name="CopyPopup"
-                                           PlacementTarget="{Binding ElementName=CopyButton}"
+                                           PlacementTarget="{Binding ElementName=RaidButton}"
                                            Placement="Bottom"
                                            PopupAnimation="Fade"
                                            AllowsTransparency="True">
@@ -68,51 +119,14 @@
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
-                    <DataGridTextColumn Header="Name" IsReadOnly="True" Width="100" Binding="{Binding Name}"
-                                        EditingElementStyle="{StaticResource MaterialDesignDataGridTextColumnEditingStyle}">
-                        <DataGridTextColumn.ElementStyle>
-                            <Style TargetType="{x:Type TextBlock}">
-                                <Setter Property="TextWrapping" Value="Wrap" />
-                                <Setter Property="VerticalAlignment" Value="Center" />
-                            </Style>
-                        </DataGridTextColumn.ElementStyle>
-                    </DataGridTextColumn>
-                    <DataGridTextColumn Header="Game" IsReadOnly="True" Width="150" Binding="{Binding GameName}"
-                                        EditingElementStyle="{StaticResource MaterialDesignDataGridTextColumnEditingStyle}">
-                        <DataGridTextColumn.ElementStyle>
-                            <Style TargetType="{x:Type TextBlock}">
-                                <Setter Property="TextWrapping" Value="Wrap" />
-                                <Setter Property="VerticalAlignment" Value="Center" />
-                            </Style>
-                        </DataGridTextColumn.ElementStyle>
-                    </DataGridTextColumn>
-                    <DataGridTextColumn Header="StartedAt" IsReadOnly="True" Width="*"
-                                        Binding="{Binding StartedAt}"
-                                        EditingElementStyle="{StaticResource MaterialDesignDataGridTextColumnPopupEditingStyle}">
-                        <DataGridTextColumn.ElementStyle>
-                            <Style TargetType="{x:Type TextBlock}">
-                                <Setter Property="TextWrapping" Value="Wrap" />
-                                <Setter Property="VerticalAlignment" Value="Center" />
-                            </Style>
-                        </DataGridTextColumn.ElementStyle>
-                    </DataGridTextColumn>
-                    <DataGridTextColumn Header="Viewer" IsReadOnly="True" Width="80" Binding="{Binding Viewer}"
-                                        EditingElementStyle="{StaticResource MaterialDesignDataGridTextColumnPopupEditingStyle}">
-                        <DataGridTextColumn.ElementStyle>
-                            <Style TargetType="{x:Type TextBlock}">
-                                <Setter Property="TextWrapping" Value="Wrap" />
-                                <Setter Property="VerticalAlignment" Value="Center" />
-                            </Style>
-                        </DataGridTextColumn.ElementStyle>
-                    </DataGridTextColumn>
                 </DataGrid.Columns>
             </DataGrid>
             <Button Content="StreamingFollower" VerticalAlignment="Top"
-                    Canvas.Left="100"
+                    Canvas.Left="125"
                     Canvas.Top="470" HorizontalAlignment="Left" Width="180" Height="35"
                     Click="TwitchStreamingFollowerButton_OnClick" />
             <Button Content="StreamingSameGame" VerticalAlignment="Top"
-                    Canvas.Left="300"
+                    Canvas.Left="345"
                     Canvas.Top="470" HorizontalAlignment="Left" Width="180" Height="35"
                     Click="TwitchStreamingSameGameButton_OnClick" />
         </Canvas>

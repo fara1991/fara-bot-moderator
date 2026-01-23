@@ -30,23 +30,10 @@ public partial class RaidListWindow : Window
 
     private void SetRaidDataGridView(List<StreamingUserModel> streamingUsers)
     {
-        var beforeScrollBottom = true;
-        var beforeScrollViewer =
-            VisualTreeHelper.GetChild(VisualTreeHelper.GetChild(TwitchRaidDataGrid, 0), 0);
-        if (beforeScrollViewer is ScrollViewer viewer)
-        {
-            var offset = viewer.VerticalOffset;
-            var extent = viewer.ScrollableHeight;
-            var viewport = viewer.ViewportHeight;
+        TwitchRaidDataGrid.ItemsSource = streamingUsers;
 
-            beforeScrollBottom = offset + viewport >= extent;
-        }
-
-        foreach (var streamingUser in streamingUsers)
-        {
-            TwitchRaidDataGrid.Items.Add(streamingUser);
-            if (beforeScrollBottom) TwitchRaidDataGrid.ScrollIntoView(streamingUser);
-        }
+        // オプション: データの追加後にスクロールを調整したい場合などはここで行う
+        // ただし ItemsSource を使う場合は以前のような個別の ScrollIntoView は工夫が必要
     }
 
     private void DataGridRowRaidButton_OnClick(object sender, RoutedEventArgs e)
@@ -59,27 +46,21 @@ public partial class RaidListWindow : Window
             var command = $"/raid {userModel.LoginId}";
             Clipboard.SetText(command);
 
-            // ボタンの親要素からPopupを探す
-            var parent = VisualTreeHelper.GetParent(button);
+            // ボタンと同じレベルにあるPopupを探す
+            var grid = VisualTreeHelper.GetParent(button) as Grid;
             Popup popup = null;
 
-            while (parent != null && popup == null)
+            if (grid != null)
             {
-                if (parent is Grid grid)
+                for (int i = 0; i < VisualTreeHelper.GetChildrenCount(grid); i++)
                 {
-                    // Grid内の子要素を探索
-                    for (int i = 0; i < VisualTreeHelper.GetChildrenCount(grid); i++)
+                    var child = VisualTreeHelper.GetChild(grid, i);
+                    if (child is Popup foundPopup)
                     {
-                        var child = VisualTreeHelper.GetChild(grid, i);
-                        if (child is Popup foundPopup)
-                        {
-                            popup = foundPopup;
-                            break;
-                        }
+                        popup = foundPopup;
+                        break;
                     }
                 }
-
-                parent = VisualTreeHelper.GetParent(parent);
             }
 
             if (popup != null)
@@ -102,14 +83,12 @@ public partial class RaidListWindow : Window
 
     private void TwitchStreamingFollowerButton_OnClick(object sender, RoutedEventArgs e)
     {
-        TwitchRaidDataGrid.Items.Clear();
         var streamingUsers = _twitchApiController.GetStreamingFollowerUsers();
         SetRaidDataGridView(streamingUsers);
     }
 
     private void TwitchStreamingSameGameButton_OnClick(object sender, RoutedEventArgs e)
     {
-        TwitchRaidDataGrid.Items.Clear();
         var streamingUsers = _twitchApiController.GetStreamingSameGameUsers();
         SetRaidDataGridView(streamingUsers);
     }

@@ -36,30 +36,52 @@ public class TwitchApiController
                 AccessToken = Settings.Default.AccessToken
             }
         };
-        _myUserInfo = GetTwitchChannel(_secretKeyModel.Twitch.Client.UserName);
+        _myUserInfo = GetTwitchChannelByLogin(_secretKeyModel.Twitch.Client.UserName);
         _myStreamInfo = GetTwitchStreaming(_secretKeyModel.Twitch.Client.UserName);
     }
 
     /// <summary>
     /// </summary>
-    /// <param name="userName"></param>
+    /// <param name="userId"></param>
     /// <returns></returns>
-    public string GetTwitchIconUrl(string userName)
+    public string GetTwitchIconUrlById(string userId)
     {
-        var user = GetTwitchChannel(userName);
-        return user.ProfileImageUrl;
+        var user = GetTwitchChannelById(userId);
+        return user?.ProfileImageUrl ?? "";
     }
 
     /// <summary>
     /// </summary>
     /// <param name="userName"></param>
     /// <returns></returns>
-    private User GetTwitchChannel(string userName)
+    public string GetTwitchIconUrlByLogin(string userName)
+    {
+        var user = GetTwitchChannelByLogin(userName);
+        return user?.ProfileImageUrl ?? "";
+    }
+
+    /// <summary>
+    /// </summary>
+    /// <param name="userId"></param>
+    /// <returns></returns>
+    private User GetTwitchChannelById(string userId)
+    {
+        var userIds = new List<string> {userId};
+        var userLoginNames = new List<string>();
+        var findUserList = Task.Run(() => _twitchApi.Helix.Users.GetUsersAsync(userIds, userLoginNames)).Result;
+        return findUserList.Users.Length > 0 ? findUserList.Users[0] : null;
+    }
+
+    /// <summary>
+    /// </summary>
+    /// <param name="userName"></param>
+    /// <returns></returns>
+    private User GetTwitchChannelByLogin(string userName)
     {
         var userIds = new List<string>();
         var userLoginNames = new List<string> {userName};
         var findUserList = Task.Run(() => _twitchApi.Helix.Users.GetUsersAsync(userIds, userLoginNames)).Result;
-        return findUserList.Users[0];
+        return findUserList.Users.Length > 0 ? findUserList.Users[0] : null;
     }
 
     /// <summary>
@@ -114,8 +136,9 @@ public class TwitchApiController
                 type: "live")).Result;
         var streamingUsers = sameGameUsers.Streams.Select(user => new StreamingUserModel
         {
+            Icon = GetTwitchIconUrlById(user.UserId),
             Name = user.UserName,
-            LoginId = user.UserId,
+            LoginId = user.UserLogin,
             GameId = user.GameId,
             GameName = user.GameName,
             StartedAt = user.StartedAt,
@@ -133,8 +156,9 @@ public class TwitchApiController
         var followingUsers = Task.Run(() => _twitchApi.Helix.Streams.GetFollowedStreamsAsync(_myUserInfo.Id)).Result;
         var streamingUsers = followingUsers.Data.Select(user => new StreamingUserModel
         {
+            Icon = GetTwitchIconUrlById(user.UserId),
             Name = user.UserName,
-            LoginId = user.UserId,
+            LoginId = user.UserLogin,
             GameId = user.GameId,
             GameName = user.GameName,
             StartedAt = user.StartedAt,
