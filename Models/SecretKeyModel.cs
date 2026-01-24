@@ -63,11 +63,6 @@ public class TwitchClientKeyModel
 
     /// <summary>
     /// </summary>
-    [JsonPropertyName("accessToken")]
-    public string AccessToken { get; set; } = "";
-
-    /// <summary>
-    /// </summary>
     [JsonPropertyName("displayName")]
     public string DisplayName { get; set; } = "";
 }

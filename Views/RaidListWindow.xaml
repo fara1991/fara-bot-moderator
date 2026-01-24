@@ -10,10 +10,22 @@
     Width="660"
     Icon="pack://application:,,,/resources/app.ico"
     ResizeMode="CanMinimize">
+    <Window.Resources>
+        <Style TargetType="GroupBox" BasedOn="{StaticResource {x:Type GroupBox}}">
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="HeaderTemplate">
+                <Setter.Value>
+                    <DataTemplate>
+                        <ContentPresenter Content="{Binding}" Margin="8,0,0,0" />
+                    </DataTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
     <GroupBox Height="600" Width="660" HorizontalAlignment="Center"
-              VerticalAlignment="Top">
+              VerticalAlignment="Top" TextBlock.Foreground="Black">
         <GroupBox.Header>
-            <TextBlock Text="FaraBotTwitchRaidList" Margin="16,0,0,0" Foreground="White" />
+            <TextBlock Text="FaraBotTwitchRaidList" Foreground="White" />
         </GroupBox.Header>
         <Canvas Height="550" Width="640">
             <DataGrid x:Name="TwitchRaidDataGrid"

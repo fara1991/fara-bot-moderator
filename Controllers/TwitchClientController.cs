@@ -53,7 +53,7 @@ public class TwitchClientController
         _twitchTranslationController = new TwitchTranslationController(_secretKeys.DeepL.ApiKey);
 
         var client = _secretKeys.Twitch.Client;
-        var credentials = new ConnectionCredentials(client.UserName, client.AccessToken);
+        var credentials = new ConnectionCredentials(client.UserName, Settings.Default.AccessToken);
         var clientOptions = new ClientOptions
         {
             MessagesAllowedInPeriod = 750,
@@ -461,17 +461,23 @@ public class TwitchClientController
                     ? "EN-US"
                     : "JA";
 
-                // Emote文字列は翻訳と読み上げで使わないので削除する
-                sourceMessage = _twitchTranslationController.RemoveEmotes(sourceMessage, _twitchClient);
-                if (sourceMessage == "")
+            // Emote文字列は翻訳と読み上げで使わないので削除する
+                var sourceMessageForTranslation = _twitchTranslationController.RemoveEmotes(sourceMessage, _twitchClient);
+                if (string.IsNullOrEmpty(sourceMessageForTranslation))
                 {
                     _bouyomiChanController.AddTalkTask(displayName, "", _secretKeys.BouyomiChan.Checked);
                     return;
                 }
 
-                var text = Task.Run(() => _twitchTranslationController.TranslateAsync(sourceMessage, targetLanguage))
+                var text = Task.Run(() => _twitchTranslationController.TranslateAsync(sourceMessageForTranslation, targetLanguage))
                     .Result;
-                var sourceLanguage = text.DetectedSourceLanguageCode;
+                var sourceLanguage = text.DetectedSourceLanguageCode.ToUpper();
+                // 誤検知対策: 日本語なのに他言語と判定された場合
+                if (sourceLanguage != "JA" && _twitchTranslationController.IsJapanese(sourceMessageForTranslation))
+                {
+                    sourceLanguage = "JA";
+                }
+                
                 var translateMessage = (isAnnouncement ? "☆☆☆Announcement☆☆☆ " : "") + text.Text;
                 SendMessage(userName,
                     $"[{Settings.Default.BotName} {sourceLanguage}->{targetLanguage}] {translateMessage} (by {displayName})", userId);
@@ -498,16 +504,5 @@ public class TwitchClientController
 
             LogController.OutputLog($"<Error> {ex.Message}");
         }
-    }
-
-    /// <summary>
-    /// </summary>
-    /// <returns></returns>
-    public Usage DeepLUsage()
-    {
-        // 定期的に文字数取得してグラフ表示
-        // https://blog.hiros-dot.net/?p=2123
-        var usage = Task.Run(() => _twitchTranslationController.GetUsageAsync()).Result;
-        return usage;
     }
 }

@@ -47,7 +47,7 @@ public class TwitchTranslationController : System.IDisposable
         return message.Split(" ").Length == 1 &&
                Regex.IsMatch(
                    message,
-                   "^(http|https):\\/\\/[a-zA-Z0-9-]+(\\.[a-zA-?0-9-]+)*(\\/[^\\s]*)?$"
+                   "^(http|https):\\/\\/[a-zA-Z0-9-]+(\\.[a-zA-Z0-9-]+)*(\\/[^\\s]*)?$"
                );
     }
 

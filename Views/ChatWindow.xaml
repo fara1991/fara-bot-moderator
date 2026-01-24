@@ -10,9 +10,21 @@
     Width="450"
     Icon="pack://application:,,,/resources/app.ico"
     ResizeMode="CanMinimize">
-    <GroupBox Height="600" Width="450" HorizontalAlignment="Center" VerticalAlignment="Top">
+    <Window.Resources>
+        <Style TargetType="GroupBox" BasedOn="{StaticResource {x:Type GroupBox}}">
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="HeaderTemplate">
+                <Setter.Value>
+                    <DataTemplate>
+                        <ContentPresenter Content="{Binding}" Margin="8,0,0,0" />
+                    </DataTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+    <GroupBox Height="600" Width="450" HorizontalAlignment="Center" VerticalAlignment="Top" TextBlock.Foreground="Black">
         <GroupBox.Header>
-            <TextBlock Text="FaraBotTwitchChat" Margin="16,0,0,0" Foreground="White" />
+            <TextBlock Text="FaraBotTwitchChat" Foreground="White" />
         </GroupBox.Header>
         <Canvas Width="420">
             <DataGrid x:Name="TwitchChatDataGrid"

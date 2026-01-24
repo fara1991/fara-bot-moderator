@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Net.Http;
@@ -12,6 +13,8 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using FaraBotModerator.Controllers;
 using FaraBotModerator.Models;
 using FaraBotModerator.Properties;
@@ -22,8 +25,15 @@ namespace FaraBotModerator.Views;
 /// <summary>
 ///     Interaction logic for MainWindow.xaml
 /// </summary>
-public partial class MainWindow
+public partial class MainWindow : INotifyPropertyChanged
 {
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
+
     /// <summary>
     /// </summary>
     private ChatWindow? _chatWindow;
@@ -55,6 +65,9 @@ public partial class MainWindow
         InitializeComponent();
         InitializeEncodeRegister();
         InitializeSecretValue();
+
+        DataContext = this;
+        
         // Task
         _ = RunWithExceptionHandlingAsync(StartTimerAsync, "Timer");
         _ = RunWithExceptionHandlingAsync(StartWebServerAsync, "WebServer");
@@ -87,7 +100,6 @@ public partial class MainWindow
     {
         var secretKeys = SecretKeyController.LoadKeys();
         TwitchClientUserNameTextBox.Text = secretKeys.Twitch.Client.UserName;
-        TwitchClientAccessTokenPasswordBox.Password = secretKeys.Twitch.Client.AccessToken;
         TwitchClientDisplayNameTextBox.Text = secretKeys.Twitch.Client.DisplayName;
 
         TwitchApiClientIdPasswordBox.Password = secretKeys.Twitch.Api.ClientId;
@@ -288,11 +300,10 @@ public partial class MainWindow
     /// <returns></returns>
     private async Task StartMonitoringAsync()
     {
-        InitializeDeepLChart();
-
         while (true)
         {
             await Task.Delay(1);
+
             // Token期限
             if (DateTime.Now > Settings.Default.expiresDateTime)
             {
@@ -334,31 +345,6 @@ public partial class MainWindow
         }
     }
 
-    private void InitializeDeepLChart()
-    {
-        /*
-        LiveChartGraph.ChartAreas.Clear();
-        LiveChartGraph.Series.Clear();
-        var chartArea = new ChartArea();
-        var chartAreaAxes = new Axis();
-        chartAreaAxes.Interval = 1;
-        chartAreaAxes.IntervalAutoMode = IntervalAutoMode.FixedCount;
-        chartAreaAxes.IntervalOffset = 1;
-        chartAreaAxes.IntervalType = DateTimeIntervalType.Months;
-        chartAreaAxes.IntervalOffsetType = DateTimeIntervalType.Months;
-        var series = new Series();
-        series.ChartType = SeriesChartType.Spline;
-        series.Name = "Characters";
-        series.XValueType = ChartValueType.Date;
-        // chartArea.Axes.(chartAreaAxes);
-        LiveChartGraph.ChartAreas.Add(chartArea);
-        LiveChartGraph.Series.Add(series);
-        // LiveChartGraph.Series.Add();
-        */
-    }
-
-    /// <summary>
-    /// </summary>
     private void AddGridViewChatData()
     {
         if (_chatWindow is null) return;
@@ -547,9 +533,7 @@ public partial class MainWindow
         {
             // Main Settings
             TwitchClientUserNameTextBox.IsEnabled = false;
-            TwitchClientAccessTokenPasswordBox.IsEnabled = false;
             TwitchClientDisplayNameTextBox.IsEnabled = false;
-            TwitchClientAccessTokenButton.IsEnabled = false;
 
             TwitchApiClientIdPasswordBox.IsEnabled = false;
             TwitchApiClientSecretPasswordBox.IsEnabled = false;
@@ -618,9 +602,7 @@ public partial class MainWindow
         {
             // Main Settings
             TwitchClientUserNameTextBox.IsEnabled = true;
-            TwitchClientAccessTokenPasswordBox.IsEnabled = true;
             TwitchClientDisplayNameTextBox.IsEnabled = true;
-            TwitchClientAccessTokenButton.IsEnabled = true;
 
             TwitchApiClientIdPasswordBox.IsEnabled = true;
             TwitchApiClientSecretPasswordBox.IsEnabled = true;
@@ -723,7 +705,6 @@ public partial class MainWindow
                 Client = new TwitchClientKeyModel
                 {
                     UserName = TwitchClientUserNameTextBox.Text, // TwitchのURLの末尾の名前
-                    AccessToken = TwitchClientAccessTokenPasswordBox.Password,
                     DisplayName = TwitchClientDisplayNameTextBox.Text
                 },
                 Api = new TwitchApiKeyModel
@@ -938,21 +919,6 @@ public partial class MainWindow
         }
     }
 
-    /// <summary>
-    /// </summary>
-    /// <param name="sender"></param>
-    /// <param name="e"></param>
-    private void TwitchClientAccessTokenButton_Click(object sender, RoutedEventArgs e)
-    {
-        try
-        {
-            FaraBotModeratorWebView.Source = new Uri("https://twitchapps.com/tmi/");
-        }
-        catch (Exception ex)
-        {
-            LogController.OutputLog(ex.Message);
-        }
-    }
 
     private void OpenChatWindowButton_Click(object sender, RoutedEventArgs e)
     {
@@ -1018,15 +984,6 @@ public partial class MainWindow
     }
 
     /// <summary>
-    ///     LiveChartのUpdateボタン押したときの処理
-    /// </summary>
-    /// <param name="sender"></param>
-    /// <param name="e"></param>
-    private void LiveChartUpdateButton_Click(object sender, RoutedEventArgs e)
-    {
-    }
-
-    /// <summary>
     ///     終了時の処理
     /// </summary>
     /// <param name="sender"></param>
@@ -1061,6 +1018,14 @@ public partial class MainWindow
     private void CycleTimerSlider_ManipulationDelta(object sender, ManipulationDeltaEventArgs e)
     {
         ((Slider) sender).ToolTip = ((Slider) sender).Value.ToString(CultureInfo.CurrentCulture);
+    }
+
+    private void HelpButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button button && button.ToolTip is ToolTip toolTip)
+        {
+            toolTip.IsOpen = true;
+        }
     }
 
     private void FollowTestButton_Click(object sender, RoutedEventArgs e)

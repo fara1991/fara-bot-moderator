@@ -64,7 +64,6 @@ public static class SecretKeyController
                 Client = new TwitchClientKeyModel
                 {
                     UserName = "",
-                    AccessToken = "",
                     DisplayName = ""
                 },
                 Api = new TwitchApiKeyModel
