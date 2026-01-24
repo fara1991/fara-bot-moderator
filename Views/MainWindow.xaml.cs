@@ -302,7 +302,7 @@ public partial class MainWindow : INotifyPropertyChanged
     {
         while (true)
         {
-            await Task.Delay(1);
+            await Task.Delay(1000);
 
             // Token期限
             if (DateTime.Now > Settings.Default.expiresDateTime)
@@ -318,6 +318,20 @@ public partial class MainWindow : INotifyPropertyChanged
             TwitchApiExpireDateTimeTextBlock.Text = $"Token expiration: {Settings.Default.expiresDateTime}";
 
             if (_twitchClientController is not null) AddGridViewChatData();
+
+            // 棒読みちゃん接続チェック
+            if (BouyomiChanConnectCheckBox.IsChecked == true && 
+                TwitchConnectionStateLabel.Content.ToString() == "State: Connect")
+            {
+                if (_twitchClientController != null && !_twitchClientController.BouyomiChanController.IsBouyomiChanRunning())
+                {
+                    Dispatcher.Invoke(() =>
+                    {
+                        MessageBox.Show("棒読みちゃんが終了しました。Disconnectする前に棒読みちゃんを閉じないでください。\n安全のためTwitchから切断します。", "警告", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        TwitchDisconnect();
+                    });
+                }
+            }
         }
     }
 

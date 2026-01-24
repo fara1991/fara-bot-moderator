@@ -66,11 +66,9 @@ public class BouyomiChanController
         {
             using var client = new HttpClient();
             client.Timeout = System.TimeSpan.FromSeconds(2);
-            // Talkエンドポイントに空のリクエストを送るか、単に接続できるか確認
-            // ここでは単に接続を試みるために、空のテキストでCreateTalkを呼ぶのに近い処理を行う
+            // 棒読みちゃんのHTTP連携が有効であれば、GET /Talk に対して (恐らく405 Method Not Allowed等が返るが) 接続はできるはず
+            // 接続自体が拒否される場合は起動していないとみなす
             var response = client.GetAsync("http://localhost:5008/Talk").Result;
-            // GETはサポートされていないかもしれないが、接続拒否されなければ生存しているとみなせる
-            // もしくは、PostAsyncで空文字を送る
             return true;
         }
         catch
