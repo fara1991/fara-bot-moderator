@@ -81,15 +81,15 @@ public partial class RaidListWindow : Window
         }
     }
 
-    private void TwitchStreamingFollowerButton_OnClick(object sender, RoutedEventArgs e)
+    private async void TwitchStreamingFollowerButton_OnClick(object sender, RoutedEventArgs e)
     {
-        var streamingUsers = _twitchApiController.GetStreamingFollowerUsers();
+        var streamingUsers = await _twitchApiController.GetStreamingFollowerUsersAsync();
         SetRaidDataGridView(streamingUsers);
     }
 
-    private void TwitchStreamingSameGameButton_OnClick(object sender, RoutedEventArgs e)
+    private async void TwitchStreamingSameGameButton_OnClick(object sender, RoutedEventArgs e)
     {
-        var streamingUsers = _twitchApiController.GetStreamingSameGameUsers();
+        var streamingUsers = await _twitchApiController.GetStreamingSameGameUsersAsync();
         SetRaidDataGridView(streamingUsers);
     }
 }

@@ -27,8 +27,15 @@ namespace FaraBotModerator.Views;
 /// </summary>
 public partial class MainWindow : INotifyPropertyChanged
 {
+    /// <summary>
+    /// 
+    /// </summary>
     public event PropertyChangedEventHandler? PropertyChanged;
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="propertyName"></param>
     protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
     {
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
@@ -99,69 +106,62 @@ public partial class MainWindow : INotifyPropertyChanged
     private void InitializeSecretValue()
     {
         var secretKeys = SecretKeyController.LoadKeys();
+        
+        // Twitch
         TwitchClientUserNameTextBox.Text = secretKeys.Twitch.Client.UserName;
         TwitchClientDisplayNameTextBox.Text = secretKeys.Twitch.Client.DisplayName;
-
         TwitchApiClientIdPasswordBox.Password = secretKeys.Twitch.Api.ClientId;
         TwitchApiClientSecretPasswordBox.Password = secretKeys.Twitch.Api.Secret;
-
+        
+        // DeepL
         DeepLApiKeyPasswordBox.Password = secretKeys.DeepL.ApiKey;
-
+        
+        // BouyomiChan
         BouyomiChanConnectCheckBox.IsChecked = secretKeys.BouyomiChan.Checked;
 
-        FollowEventCheckBox.IsChecked = secretKeys.Event.Follow.Checked;
-        FollowEventTextBox.Text = secretKeys.Event.Follow.Message;
+        // Events
+        SetEventValue(FollowEventCheckBox, FollowEventTextBox, secretKeys.Event.Follow);
+        SetEventValue(RaidEventCheckBox, RaidEventTextBox, secretKeys.Event.Raid);
+        SetEventValue(SubscriptionEventCheckBox, SubscriptionEventTextBox, secretKeys.Event.Subscription);
+        SetEventValue(BitsEventCheckBox, BitsEventTextBox, secretKeys.Event.Bits);
+        SetEventValue(GiftEventCheckBox, GiftEventTextBox, secretKeys.Event.Gift);
+        SetEventValue(ChannelPointEventCheckBox, ChannelPointEventTextBox, secretKeys.Event.ChannelPoint);
 
-        RaidEventCheckBox.IsChecked = secretKeys.Event.Raid.Checked;
-        RaidEventTextBox.Text = secretKeys.Event.Raid.Message;
+        // Cycle Timers
+        SetCycleTimerValue(CycleTimer1CheckBox, CycleTimer1Slider, CycleTimer1TextBox, secretKeys.CycleMessage.Timer1);
+        SetCycleTimerValue(CycleTimer2CheckBox, CycleTimer2Slider, CycleTimer2TextBox, secretKeys.CycleMessage.Timer2);
+        SetCycleTimerValue(CycleTimer3CheckBox, CycleTimer3Slider, CycleTimer3TextBox, secretKeys.CycleMessage.Timer3);
+        SetCycleTimerValue(CycleTimer4CheckBox, CycleTimer4Slider, CycleTimer4TextBox, secretKeys.CycleMessage.Timer4);
 
-        SubscriptionEventCheckBox.IsChecked = secretKeys.Event.Subscription.Checked;
-        SubscriptionEventTextBox.Text = secretKeys.Event.Subscription.Message;
+        // Fixed Timers
+        SetFixedTimerValue(FixedTimer1CheckBox, FixedTimer1DatePicker, FixedTimer1TimePicker, FixedTimer1TextBox, secretKeys.FixedMessage.Timer1);
+        SetFixedTimerValue(FixedTimer2CheckBox, FixedTimer2DatePicker, FixedTimer2TimePicker, FixedTimer2TextBox, secretKeys.FixedMessage.Timer2);
+        SetFixedTimerValue(FixedTimer3CheckBox, FixedTimer3DatePicker, FixedTimer3TimePicker, FixedTimer3TextBox, secretKeys.FixedMessage.Timer3);
+        SetFixedTimerValue(FixedTimer4CheckBox, FixedTimer4DatePicker, FixedTimer4TimePicker, FixedTimer4TextBox, secretKeys.FixedMessage.Timer4);
+    }
 
-        BitsEventCheckBox.IsChecked = secretKeys.Event.Bits.Checked;
-        BitsEventTextBox.Text = secretKeys.Event.Bits.Message;
+    private void SetEventValue(CheckBox checkBox, TextBox textBox, IEventModel model)
+    {
+        checkBox.IsChecked = model.Checked;
+        textBox.Text = model.Message;
+    }
 
-        GiftEventCheckBox.IsChecked = secretKeys.Event.Gift.Checked;
-        GiftEventTextBox.Text = secretKeys.Event.Gift.Message;
+    private void SetCycleTimerValue(CheckBox checkBox, Slider slider, TextBox textBox, CycleTimerModel model)
+    {
+        checkBox.IsChecked = model.Checked;
+        slider.Value = model.Interval;
+        textBox.Text = model.Message;
+    }
 
-        ChannelPointEventCheckBox.IsChecked = secretKeys.Event.ChannelPoint.Checked;
-        ChannelPointEventTextBox.Text = secretKeys.Event.ChannelPoint.Message;
-
-        CycleTimer1CheckBox.IsChecked = secretKeys.CycleMessage.Timer1.Checked;
-        CycleTimer1Slider.Value = secretKeys.CycleMessage.Timer1.Interval;
-        CycleTimer1TextBox.Text = secretKeys.CycleMessage.Timer1.Message;
-
-        CycleTimer2CheckBox.IsChecked = secretKeys.CycleMessage.Timer2.Checked;
-        CycleTimer2Slider.Value = secretKeys.CycleMessage.Timer2.Interval;
-        CycleTimer2TextBox.Text = secretKeys.CycleMessage.Timer2.Message;
-
-        CycleTimer3CheckBox.IsChecked = secretKeys.CycleMessage.Timer3.Checked;
-        CycleTimer3Slider.Value = secretKeys.CycleMessage.Timer3.Interval;
-        CycleTimer3TextBox.Text = secretKeys.CycleMessage.Timer3.Message;
-
-        CycleTimer4CheckBox.IsChecked = secretKeys.CycleMessage.Timer4.Checked;
-        CycleTimer4Slider.Value = secretKeys.CycleMessage.Timer4.Interval;
-        CycleTimer4TextBox.Text = secretKeys.CycleMessage.Timer4.Message;
-
-        FixedTimer1CheckBox.IsChecked = secretKeys.FixedMessage.Timer1.Checked;
-        FixedTimer1DatePicker.SelectedDate = DateTime.Parse(secretKeys.FixedMessage.Timer1.DatetimeString);
-        FixedTimer1TimePicker.SelectedTime = DateTime.Parse(secretKeys.FixedMessage.Timer1.DatetimeString);
-        FixedTimer1TextBox.Text = secretKeys.FixedMessage.Timer1.Message;
-
-        FixedTimer2CheckBox.IsChecked = secretKeys.FixedMessage.Timer2.Checked;
-        FixedTimer2DatePicker.SelectedDate = DateTime.Parse(secretKeys.FixedMessage.Timer2.DatetimeString);
-        FixedTimer2TimePicker.SelectedTime = DateTime.Parse(secretKeys.FixedMessage.Timer2.DatetimeString);
-        FixedTimer2TextBox.Text = secretKeys.FixedMessage.Timer2.Message;
-
-        FixedTimer3CheckBox.IsChecked = secretKeys.FixedMessage.Timer3.Checked;
-        FixedTimer3DatePicker.SelectedDate = DateTime.Parse(secretKeys.FixedMessage.Timer3.DatetimeString);
-        FixedTimer3TimePicker.SelectedTime = DateTime.Parse(secretKeys.FixedMessage.Timer3.DatetimeString);
-        FixedTimer3TextBox.Text = secretKeys.FixedMessage.Timer3.Message;
-
-        FixedTimer4CheckBox.IsChecked = secretKeys.FixedMessage.Timer4.Checked;
-        FixedTimer4DatePicker.SelectedDate = DateTime.Parse(secretKeys.FixedMessage.Timer4.DatetimeString);
-        FixedTimer4TimePicker.SelectedTime = DateTime.Parse(secretKeys.FixedMessage.Timer4.DatetimeString);
-        FixedTimer4TextBox.Text = secretKeys.FixedMessage.Timer4.Message;
+    private void SetFixedTimerValue(CheckBox checkBox, DatePicker datePicker, MaterialDesignThemes.Wpf.TimePicker timePicker, TextBox textBox, FixedTimerModel model)
+    {
+        checkBox.IsChecked = model.Checked;
+        if (DateTime.TryParse(model.DatetimeString, out var dt))
+        {
+            datePicker.SelectedDate = dt;
+            timePicker.SelectedTime = dt;
+        }
+        textBox.Text = model.Message;
     }
 
     private async Task RunWithExceptionHandlingAsync(Func<Task> taskFunc, string taskName)
@@ -323,7 +323,7 @@ public partial class MainWindow : INotifyPropertyChanged
             if (BouyomiChanConnectCheckBox.IsChecked == true && 
                 TwitchConnectionStateLabel.Content.ToString() == "State: Connect")
             {
-                if (_twitchClientController != null && !_twitchClientController.BouyomiChanController.IsBouyomiChanRunning())
+                if (_twitchClientController != null && !await _twitchClientController.BouyomiChanController.IsBouyomiChanRunningAsync())
                 {
                     Dispatcher.Invoke(() =>
                     {
@@ -343,7 +343,8 @@ public partial class MainWindow : INotifyPropertyChanged
 
             await Task.Delay(500);
             var isConnected = _twitchClientController is { IsConnected: true } &&
-                              _twitchEventSubController is { IsConnected: true };
+                              _twitchEventSubController is { IsConnected: true } &&
+                              DateTime.Now <= Settings.Default.expiresDateTime;
 
             TwitchConnectionStateLabel.Content = isConnected
                 ? @"State: Connect"
@@ -543,68 +544,7 @@ public partial class MainWindow : INotifyPropertyChanged
     /// </summary>
     private void LockWindowControl(bool isAuthorize = false)
     {
-        Dispatcher.Invoke((Action) (() =>
-        {
-            // Main Settings
-            TwitchClientUserNameTextBox.IsEnabled = false;
-            TwitchClientDisplayNameTextBox.IsEnabled = false;
-
-            TwitchApiClientIdPasswordBox.IsEnabled = false;
-            TwitchApiClientSecretPasswordBox.IsEnabled = false;
-
-            BouyomiChanConnectCheckBox.IsEnabled = false;
-            TwitchConnectionButton.IsEnabled = false;
-            if (isAuthorize) TwitchDisconnectButton.IsEnabled = false;
-            else TwitchApiAuthorizeButton.IsEnabled = false;
-
-            // Reaction Event Settings
-            FollowEventCheckBox.IsEnabled = false;
-            FollowEventTextBox.IsEnabled = false;
-            RaidEventCheckBox.IsEnabled = false;
-            RaidEventTextBox.IsEnabled = false;
-            SubscriptionEventCheckBox.IsEnabled = false;
-            SubscriptionEventTextBox.IsEnabled = false;
-            BitsEventCheckBox.IsEnabled = false;
-            BitsEventTextBox.IsEnabled = false;
-            GiftEventCheckBox.IsEnabled = false;
-            GiftEventTextBox.IsEnabled = false;
-            ChannelPointEventCheckBox.IsEnabled = false;
-            ChannelPointEventTextBox.IsEnabled = false;
-
-            // Auto Bot Settings - Translate
-            DeepLApiKeyPasswordBox.IsEnabled = false;
-
-            // Auto Bot Settings - Timer
-            CycleTimer1CheckBox.IsEnabled = false;
-            CycleTimer1Slider.IsEnabled = false;
-            CycleTimer1TextBox.IsEnabled = false;
-            CycleTimer2CheckBox.IsEnabled = false;
-            CycleTimer2Slider.IsEnabled = false;
-            CycleTimer2TextBox.IsEnabled = false;
-            CycleTimer3CheckBox.IsEnabled = false;
-            CycleTimer3Slider.IsEnabled = false;
-            CycleTimer3TextBox.IsEnabled = false;
-            CycleTimer4CheckBox.IsEnabled = false;
-            CycleTimer4Slider.IsEnabled = false;
-            CycleTimer4TextBox.IsEnabled = false;
-
-            FixedTimer1CheckBox.IsEnabled = false;
-            FixedTimer1DatePicker.IsEnabled = false;
-            FixedTimer1TimePicker.IsEnabled = false;
-            FixedTimer1TextBox.IsEnabled = false;
-            FixedTimer2CheckBox.IsEnabled = false;
-            FixedTimer2DatePicker.IsEnabled = false;
-            FixedTimer2TimePicker.IsEnabled = false;
-            FixedTimer2TextBox.IsEnabled = false;
-            FixedTimer3CheckBox.IsEnabled = false;
-            FixedTimer3DatePicker.IsEnabled = false;
-            FixedTimer3TimePicker.IsEnabled = false;
-            FixedTimer3TextBox.IsEnabled = false;
-            FixedTimer4CheckBox.IsEnabled = false;
-            FixedTimer4DatePicker.IsEnabled = false;
-            FixedTimer4TimePicker.IsEnabled = false;
-            FixedTimer4TextBox.IsEnabled = false;
-        }));
+        SetWindowControlEnabled(false, isAuthorize);
     }
 
     /// <summary>
@@ -612,70 +552,79 @@ public partial class MainWindow : INotifyPropertyChanged
     /// </summary>
     private void UnlockWindowControl()
     {
-        Dispatcher.Invoke((Action) (() =>
+        SetWindowControlEnabled(true);
+    }
+
+    private void SetWindowControlEnabled(bool isEnabled, bool isAuthorize = false)
+    {
+        Dispatcher.Invoke(() =>
         {
             // Main Settings
-            TwitchClientUserNameTextBox.IsEnabled = true;
-            TwitchClientDisplayNameTextBox.IsEnabled = true;
+            TwitchClientUserNameTextBox.IsEnabled = isEnabled;
+            TwitchClientDisplayNameTextBox.IsEnabled = isEnabled;
+            TwitchApiClientIdPasswordBox.IsEnabled = isEnabled;
+            TwitchApiClientSecretPasswordBox.IsEnabled = isEnabled;
+            
+            if (isEnabled) TwitchApiAuthorizeButton.IsEnabled = true;
+            else if (!isAuthorize) TwitchApiAuthorizeButton.IsEnabled = false;
 
-            TwitchApiClientIdPasswordBox.IsEnabled = true;
-            TwitchApiClientSecretPasswordBox.IsEnabled = true;
-            TwitchApiAuthorizeButton.IsEnabled = true;
-
-            BouyomiChanConnectCheckBox.IsEnabled = true;
-            TwitchPageButton.IsEnabled = true;
-            TwitchConnectionButton.IsEnabled = true;
-            TwitchDisconnectButton.IsEnabled = true;
-            DeepLSiteGoButton.IsEnabled = true;
+            BouyomiChanConnectCheckBox.IsEnabled = isEnabled;
+            TwitchConnectionButton.IsEnabled = isEnabled;
+            
+            if (isEnabled) 
+            {
+                TwitchDisconnectButton.IsEnabled = true;
+                TwitchPageButton.IsEnabled = true;
+                DeepLSiteGoButton.IsEnabled = true;
+            }
+            else if (isAuthorize)
+            {
+                TwitchDisconnectButton.IsEnabled = false;
+            }
 
             // Reaction Event Settings
-            FollowEventCheckBox.IsEnabled = true;
-            FollowEventTextBox.IsEnabled = true;
-            RaidEventCheckBox.IsEnabled = true;
-            RaidEventTextBox.IsEnabled = true;
-            SubscriptionEventCheckBox.IsEnabled = true;
-            SubscriptionEventTextBox.IsEnabled = true;
-            BitsEventCheckBox.IsEnabled = true;
-            BitsEventTextBox.IsEnabled = true;
-            GiftEventCheckBox.IsEnabled = true;
-            GiftEventTextBox.IsEnabled = true;
-            ChannelPointEventCheckBox.IsEnabled = true;
-            ChannelPointEventTextBox.IsEnabled = true;
+            FollowEventCheckBox.IsEnabled = isEnabled;
+            FollowEventTextBox.IsEnabled = isEnabled;
+            RaidEventCheckBox.IsEnabled = isEnabled;
+            RaidEventTextBox.IsEnabled = isEnabled;
+            SubscriptionEventCheckBox.IsEnabled = isEnabled;
+            SubscriptionEventTextBox.IsEnabled = isEnabled;
+            BitsEventCheckBox.IsEnabled = isEnabled;
+            BitsEventTextBox.IsEnabled = isEnabled;
+            GiftEventCheckBox.IsEnabled = isEnabled;
+            GiftEventTextBox.IsEnabled = isEnabled;
+            ChannelPointEventCheckBox.IsEnabled = isEnabled;
+            ChannelPointEventTextBox.IsEnabled = isEnabled;
 
             // Auto Bot Settings - Translate
-            DeepLApiKeyPasswordBox.IsEnabled = true;
+            DeepLApiKeyPasswordBox.IsEnabled = isEnabled;
 
             // Auto Bot Settings - Timer
-            CycleTimer1CheckBox.IsEnabled = true;
-            CycleTimer1Slider.IsEnabled = true;
-            CycleTimer1TextBox.IsEnabled = true;
-            CycleTimer2CheckBox.IsEnabled = true;
-            CycleTimer2Slider.IsEnabled = true;
-            CycleTimer2TextBox.IsEnabled = true;
-            CycleTimer3CheckBox.IsEnabled = true;
-            CycleTimer3Slider.IsEnabled = true;
-            CycleTimer3TextBox.IsEnabled = true;
-            CycleTimer4CheckBox.IsEnabled = true;
-            CycleTimer4Slider.IsEnabled = true;
-            CycleTimer4TextBox.IsEnabled = true;
+            SetCycleTimerEnabled(isEnabled, CycleTimer1CheckBox, CycleTimer1Slider, CycleTimer1TextBox);
+            SetCycleTimerEnabled(isEnabled, CycleTimer2CheckBox, CycleTimer2Slider, CycleTimer2TextBox);
+            SetCycleTimerEnabled(isEnabled, CycleTimer3CheckBox, CycleTimer3Slider, CycleTimer3TextBox);
+            SetCycleTimerEnabled(isEnabled, CycleTimer4CheckBox, CycleTimer4Slider, CycleTimer4TextBox);
 
-            FixedTimer1CheckBox.IsEnabled = true;
-            FixedTimer1DatePicker.IsEnabled = true;
-            FixedTimer1TimePicker.IsEnabled = true;
-            FixedTimer1TextBox.IsEnabled = true;
-            FixedTimer2CheckBox.IsEnabled = true;
-            FixedTimer2DatePicker.IsEnabled = true;
-            FixedTimer2TimePicker.IsEnabled = true;
-            FixedTimer2TextBox.IsEnabled = true;
-            FixedTimer3CheckBox.IsEnabled = true;
-            FixedTimer3DatePicker.IsEnabled = true;
-            FixedTimer3TimePicker.IsEnabled = true;
-            FixedTimer3TextBox.IsEnabled = true;
-            FixedTimer4CheckBox.IsEnabled = true;
-            FixedTimer4DatePicker.IsEnabled = true;
-            FixedTimer4TimePicker.IsEnabled = true;
-            FixedTimer4TextBox.IsEnabled = true;
-        }));
+            SetFixedTimerEnabled(isEnabled, FixedTimer1CheckBox, FixedTimer1DatePicker, FixedTimer1TimePicker, FixedTimer1TextBox);
+            SetFixedTimerEnabled(isEnabled, FixedTimer2CheckBox, FixedTimer2DatePicker, FixedTimer2TimePicker, FixedTimer2TextBox);
+            SetFixedTimerEnabled(isEnabled, FixedTimer3CheckBox, FixedTimer3DatePicker, FixedTimer3TimePicker, FixedTimer3TextBox);
+            SetFixedTimerEnabled(isEnabled, FixedTimer4CheckBox, FixedTimer4DatePicker, FixedTimer4TimePicker, FixedTimer4TextBox);
+        });
+    }
+
+    private void SetCycleTimerEnabled(bool isEnabled, CheckBox checkBox, Slider slider, TextBox textBox)
+    {
+        checkBox.IsEnabled = isEnabled;
+        slider.IsEnabled = isEnabled;
+        textBox.IsEnabled = isEnabled;
+    }
+
+    private void SetFixedTimerEnabled(bool isEnabled, CheckBox checkBox, DatePicker datePicker, MaterialDesignThemes.Wpf.TimePicker timePicker, TextBox textBox)
+    {
+        checkBox.IsEnabled = isEnabled;
+        datePicker.IsEnabled = isEnabled;
+        timePicker.IsEnabled = isEnabled;
+        textBox.IsEnabled = isEnabled;
     }
 
     /// <summary>
@@ -829,9 +778,16 @@ public partial class MainWindow : INotifyPropertyChanged
 
     /// <summary>
     /// </summary>
-    private void TwitchConnect()
+    private async void TwitchConnect()
     {
         var secretKeys = SecretKeyController.LoadKeys();
+
+        // トークンの有効期限チェック
+        if (DateTime.Now > Settings.Default.expiresDateTime)
+        {
+            MessageBox.Show("アクセストークンの有効期限が切れています。Authorizeボタンから再認可を行ってください。", "警告", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
 
         _twitchApiController ??= new TwitchApiController(secretKeys);
         // var channelId = _twitchApiController.GetTwitchChannelId();
@@ -839,12 +795,18 @@ public partial class MainWindow : INotifyPropertyChanged
         var isTokenValid = _twitchApiController.ValidateToken();
         LogController.OutputLog($"Token validation result: {isTokenValid}");
 
+        if (!isTokenValid)
+        {
+            MessageBox.Show("アクセストークンが無効または期限切れです。Authorizeボタンから再認可を行ってください。", "警告", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
         _twitchClientController ??= new TwitchClientController(secretKeys, _twitchApiController);
 
         // 棒読みちゃん接続チェック
         if (BouyomiChanConnectCheckBox.IsChecked == true)
         {
-            if (!_twitchClientController.BouyomiChanController.IsBouyomiChanRunning())
+            if (!await _twitchClientController.BouyomiChanController.IsBouyomiChanRunningAsync())
             {
                 MessageBox.Show("棒読みちゃんが起動していません。起動してから接続してください。", "警告", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
@@ -855,7 +817,7 @@ public partial class MainWindow : INotifyPropertyChanged
 
         // EventSub
         _twitchEventSubController = new TwitchEventSubController(_twitchClientController, _twitchApiController);
-        _twitchEventSubController.Connect();
+        await _twitchEventSubController.ConnectAsync();
 
         // Window追加
         _chatWindow ??= new ChatWindow(_twitchClientController);
@@ -869,9 +831,9 @@ public partial class MainWindow : INotifyPropertyChanged
 
     /// <summary>
     /// </summary>
-    private void TwitchDisconnect()
+    private async void TwitchDisconnect()
     {
-        _twitchEventSubController?.Disconnect();
+        if (_twitchEventSubController != null) await _twitchEventSubController.DisconnectAsync();
         _twitchClientController?.Disconnect();
 
         _twitchClientController = null;

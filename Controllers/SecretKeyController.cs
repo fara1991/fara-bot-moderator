@@ -8,14 +8,16 @@ using FaraBotModerator.Models;
 namespace FaraBotModerator.Controllers;
 
 /// <summary>
+/// 設定情報（APIキーやメッセージ設定など）の保存と読み込みを管理するクラス
 /// </summary>
 public static class SecretKeyController
 {
     private const string SecretFile = "secrets.json";
 
     /// <summary>
+    /// 設定ファイルから設定情報を読み込みます。ファイルが存在しない場合は新規作成します。
     /// </summary>
-    /// <returns></returns>
+    /// <returns>読み込まれた設定情報モデル</returns>
     public static SecretKeyModel LoadKeys()
     {
         SecretKeyModel? secretKeys;
@@ -38,8 +40,9 @@ public static class SecretKeyController
     }
 
     /// <summary>
+    /// 設定情報をファイルに保存します。
     /// </summary>
-    /// <param name="secretKeys"></param>
+    /// <param name="secretKeys">保存する設定情報モデル</param>
     public static void SaveKeys(SecretKeyModel secretKeys)
     {
         using var writer = new StreamWriter(SecretFile, false, Encoding.UTF8);
@@ -54,6 +57,7 @@ public static class SecretKeyController
     }
 
     /// <summary>
+    /// 初期設定ファイルを作成します。
     /// </summary>
     private static void CreateKeys()
     {

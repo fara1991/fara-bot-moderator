@@ -239,11 +239,11 @@
                             </Button>
                         </StackPanel>
                     </GroupBox.Header>
-                    <Canvas>
-                        <wpf:WebView2 x:Name="FaraBotModeratorWebView" Height="441" Width="542"
+                    <Grid Background="White">
+                        <wpf:WebView2 x:Name="FaraBotModeratorWebView" 
                                       NavigationCompleted="FaraBotModeratorWebView_NavigationCompleted"
-                                      HorizontalAlignment="Center" VerticalAlignment="Top" />
-                    </Canvas>
+                                      HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
+                    </Grid>
                 </GroupBox>
             </Canvas>
         </TabItem>

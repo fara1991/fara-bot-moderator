@@ -7,7 +7,7 @@ using TwitchLib.EventSub.Websockets.Core.EventArgs.Channel;
 namespace FaraBotModerator.Controllers;
 
 /// <summary>
-///     Twitch EventSub経由の操作をするController
+/// Twitch EventSub（WebSocket）経由のイベント受信を管理するコントローラー
 /// </summary>
 public class TwitchEventSubController
 {
@@ -16,14 +16,15 @@ public class TwitchEventSubController
     private readonly TwitchApiController _twitchApiController;
 
     /// <summary>
-    /// 
+    /// EventSub クライアントが接続されているかどうかを取得します。
     /// </summary>
     public bool IsConnected { get; private set; }
 
     /// <summary>
+    /// TwitchEventSubController のコンストラクタ
     /// </summary>
-    /// <param name="twitchClientController"></param>
-    /// <param name="twitchApiController"></param>
+    /// <param name="twitchClientController">Twitchクライアントコントローラー</param>
+    /// <param name="twitchApiController">Twitch APIコントローラー</param>
     public TwitchEventSubController(TwitchClientController twitchClientController,
         TwitchApiController twitchApiController)
     {
@@ -45,19 +46,25 @@ public class TwitchEventSubController
     /// <summary>
     /// EventSubクライアントを接続する
     /// </summary>
-    public void Connect()
+    public async Task ConnectAsync()
     {
-        Task.Run(() => _eventSubClient?.ConnectAsync());
-        LogController.OutputLog("EventSub client connected");
+        if (_eventSubClient != null)
+        {
+            await _eventSubClient.ConnectAsync();
+            LogController.OutputLog("EventSub client connected");
+        }
     }
 
     /// <summary>
     /// EventSubクライアントを切断する
     /// </summary>
-    public void Disconnect()
+    public async Task DisconnectAsync()
     {
-        Task.Run(() => _eventSubClient?.DisconnectAsync());
-        LogController.OutputLog("EventSub client disconnected");
+        if (_eventSubClient != null)
+        {
+            await _eventSubClient.DisconnectAsync();
+            LogController.OutputLog("EventSub client disconnected");
+        }
     }
 
     /// <summary>

@@ -10,14 +10,19 @@ using FaraBotModerator.Models;
 
 namespace FaraBotModerator.Controllers;
 
+/// <summary>
+/// 正規表現を用いたテキスト変換（主にBeatSaber関連）を管理するクラス
+/// </summary>
 internal static class TextRegexController
 {
     private const string BeatSaberDirectory = "ChatSetting/BeatSaber";
     private const string BeatSaberFile = BeatSaberDirectory + "/bsr.json";
 
     /// <summary>
+    /// BeatSaberのリクエスト形式などのテキストを、設定された正規表現に基づいて読み上げ用テキストに変換します。
     /// </summary>
-    /// <returns></returns>
+    /// <param name="bsrText">変換前のテキスト</param>
+    /// <returns>変換後のテキスト</returns>
     public static string LoadBsrChat(string bsrText)
     {
         // BeatSaber
@@ -65,8 +70,9 @@ internal static class TextRegexController
     }
 
     /// <summary>
+    /// BeatSaber用設定ファイルを保存します。
     /// </summary>
-    /// <param name="textRegex"></param>
+    /// <param name="textRegex">保存する正規表現モデル</param>
     private static void SaveBsrChatFile(TextRegexModel textRegex)
     {
         using var writer = new StreamWriter(BeatSaberFile, false, Encoding.UTF8);
@@ -85,6 +91,7 @@ internal static class TextRegexController
     }
 
     /// <summary>
+    /// デフォルトのBeatSaber用設定ファイルを作成します。
     /// </summary>
     private static void CreateBsrChatFile()
     {

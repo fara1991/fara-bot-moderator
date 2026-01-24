@@ -7,13 +7,15 @@ using FaraBotModerator.Enums;
 namespace FaraBotModerator.Controllers;
 
 /// <summary>
+/// ログ出力機能を担当する静的クラス
 /// </summary>
 public static class LogController
 {
     /// <summary>
+    /// 指定されたテキストをログファイルに出力します。
     /// </summary>
-    /// <param name="text"></param>
-    /// <param name="eventEnum"></param>
+    /// <param name="text">出力するテキスト</param>
+    /// <param name="eventEnum">Twitchイベントの種類（指定すると種類別のログファイルにも出力されます）</param>
     public static void OutputLog(string text, TwitchEventEnum eventEnum = TwitchEventEnum.None)
     {
         var d = DateTime.Now;

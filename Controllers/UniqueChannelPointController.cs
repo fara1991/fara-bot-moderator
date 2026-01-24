@@ -9,10 +9,12 @@ using FaraBotModerator.Models;
 namespace FaraBotModerator.Controllers;
 
 /// <summary>
+/// チャンネルポイントの交換内容に応じた固有の処理（例：Saber Tailorの設定ファイル生成）を行うコントローラー
 /// </summary>
 public class UniqueChannelPointController
 {
     /// <summary>
+    /// UniqueChannelPointController のコンストラクタ
     /// </summary>
     public UniqueChannelPointController()
     {
@@ -20,10 +22,11 @@ public class UniqueChannelPointController
     }
 
     /// <summary>
+    /// チャンネルポイントのタイトルに応じて適切な処理を実行します。
     /// </summary>
-    /// <param name="userName"></param>
-    /// <param name="channelPointTitle"></param>
-    /// <returns></returns>
+    /// <param name="userName">交換したユーザー名</param>
+    /// <param name="channelPointTitle">チャンネルポイントのタイトル</param>
+    /// <returns>処理結果のメッセージ（ボットがチャットに送信するためのもの）</returns>
     public string Exec(string userName, string channelPointTitle)
     {
         if (channelPointTitle == "Random Tailor") return ExecRandomTailor(userName);
@@ -32,9 +35,11 @@ public class UniqueChannelPointController
     }
 
     /// <summary>
+    /// 「Random Tailor」チャンネルポイント交換時の処理。
+    /// BeatSaberのSaber Tailorプラグイン用設定ファイルをランダムな値で生成します。
     /// </summary>
-    /// <param name="userName"></param>
-    /// <returns></returns>
+    /// <param name="userName">ユーザー名</param>
+    /// <returns>チャットに通知する詳細メッセージ</returns>
     private static string ExecRandomTailor(string userName)
     {
         // PosX, PosY, PosZ, RotX, RotY, RotZ

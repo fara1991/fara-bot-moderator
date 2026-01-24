@@ -19,7 +19,7 @@ using OnLogArgs = TwitchLib.Client.Events.OnLogArgs;
 namespace FaraBotModerator.Controllers;
 
 /// <summary>
-///     Twitch Client経由の操作をするController
+/// Twitch チャットクライアント経由の操作（メッセージ送信、イベント受信など）を管理するコントローラー
 /// </summary>
 public class TwitchClientController
 {
@@ -34,18 +34,20 @@ public class TwitchClientController
     private readonly string _twitchUserDisplayName;
 
     /// <summary>
-    /// 
+    /// Twitch チャットクライアントが接続されているかどうかを取得します。
     /// </summary>
     public bool IsConnected { get; private set; }
 
     /// <summary>
+    /// 棒読みちゃんコントローラーを取得します。
     /// </summary>
     public BouyomiChanController BouyomiChanController => _bouyomiChanController;
 
     /// <summary>
+    /// TwitchClientController のコンストラクタ
     /// </summary>
-    /// <param name="secretKeys"></param>
-    /// <param name="twitchApiController"></param>
+    /// <param name="secretKeys">設定情報モデル</param>
+    /// <param name="twitchApiController">Twitch APIコントローラー</param>
     public TwitchClientController(SecretKeyModel secretKeys, TwitchApiController twitchApiController)
     {
         _secretKeys = secretKeys;
@@ -83,6 +85,7 @@ public class TwitchClientController
     }
 
     /// <summary>
+    /// Twitch チャットクライアントを接続します。
     /// </summary>
     public void Connect()
     {
@@ -90,17 +93,21 @@ public class TwitchClientController
     }
 
     /// <summary>
+    /// Twitch チャットクライアントを切断します。
     /// </summary>
     public void Disconnect()
     {
+        SendMessage(_twitchUserName, $"Logout {Settings.Default.BotName}.");
+        LogController.OutputLog($"Logout {Settings.Default.BotName}.");
+
         _twitchTranslationController.Dispose();
         _twitchClient.Disconnect();
     }
 
     /// <summary>
-    /// FaraBotModeratorのWindowからチャットをTwitchへ送信
+    /// アプリケーションからTwitchへチャットメッセージを送信し、翻訳処理も行います。
     /// </summary>
-    /// <param name="message"></param>
+    /// <param name="message">送信するメッセージ</param>
     public async void SendApplicationMessage(string message)
     {
         if (message.Equals("")) return;
@@ -109,8 +116,9 @@ public class TwitchClientController
     }
 
     /// <summary>
+    /// ボット名付きのモデレーターメッセージを送信します。
     /// </summary>
-    /// <param name="message"></param>
+    /// <param name="message">送信するメッセージ</param>
     public void SendModeratorMessage(string message)
     {
         if (message.Equals("")) return;
@@ -118,20 +126,21 @@ public class TwitchClientController
     }
 
     /// <summary>
-    /// テストメッセージを送信 (内部用)
+    /// テストメッセージを送信します（内部用）。
     /// </summary>
-    /// <param name="userName"></param>
-    /// <param name="message"></param>
+    /// <param name="userName">送信者名</param>
+    /// <param name="message">送信メッセージ</param>
     public void SendTestMessage(string userName, string message)
     {
         SendMessage(userName, message);
     }
 
     /// <summary>
+    /// Twitchへメッセージを送信し、UI表示用にキューへ追加します。
     /// </summary>
-    /// <param name="userName"></param>
-    /// <param name="message"></param>
-    /// <param name="userId"></param>
+    /// <param name="userName">送信者名</param>
+    /// <param name="message">送信メッセージ</param>
+    /// <param name="userId">送信者ユーザーID（任意）</param>
     private void SendMessage(string userName, string message, string userId = "")
     {
         _twitchClient.SendMessage(_twitchUserName, message);
@@ -139,42 +148,40 @@ public class TwitchClientController
     }
 
     /// <summary>
+    /// キューからチャットデータを1件取り出します。
     /// </summary>
-    /// <returns></returns>
+    /// <returns>チャットデータ。キューが空の場合はnull</returns>
     public ChatModel? PickChatData()
     {
         return _chatDataQueue.Count > 0 ? _chatDataQueue.Dequeue() : null;
     }
 
     /// <summary>
-    ///     指定URLの画像をStream型で取得
+    /// チャットデータをUI表示用キューに追加します。アイコンURLの取得も行います。
     /// </summary>
-    /// <param name="userName"></param>
-    /// <param name="message"></param>
-    /// <param name="userId"></param>
-    /// <returns></returns>
-    private void AddChatListData(string userName, string message, string userId = "")
+    /// <param name="userName">ユーザー名</param>
+    /// <param name="message">メッセージ内容</param>
+    /// <param name="userId">ユーザーID</param>
+    private async void AddChatListData(string userName, string message, string userId = "")
     {
         var chatUserIconUrl = userId != ""
-            ? _twitchApiController.GetTwitchIconUrlById(userId)
-            : _twitchApiController.GetTwitchIconUrlByLogin(userName);
+            ? await _twitchApiController.GetTwitchIconUrlByIdAsync(userId)
+            : await _twitchApiController.GetTwitchIconUrlByLoginAsync(userName);
         var chatModel = new ChatModel {Name = userName, Chat = message, Icon = chatUserIconUrl};
         _chatDataQueue.Enqueue(chatModel);
     }
 
     /// <summary>
+    /// TwitchClientのログ出力イベントハンドラ
     /// </summary>
-    /// <param name="sender"></param>
-    /// <param name="e"></param>
     private void TwitchClientOnLog(object? sender, OnLogArgs e)
     {
         LogController.OutputLog($@"{e.BotUsername} - {e.Data}");
     }
 
     /// <summary>
+    /// Twitch接続完了時のイベントハンドラ
     /// </summary>
-    /// <param name="sender"></param>
-    /// <param name="e"></param>
     private void TwitchClientOnConnected(object? sender, OnConnectedArgs e)
     {
         IsConnected = true;
@@ -182,9 +189,8 @@ public class TwitchClientController
     }
 
     /// <summary>
+    /// Twitch切断時のイベントハンドラ
     /// </summary>
-    /// <param name="sender"></param>
-    /// <param name="e"></param>
     private void TwitchClientOnDisconnected(object? sender, OnDisconnectedEventArgs e)
     {
         IsConnected = false;
@@ -192,10 +198,8 @@ public class TwitchClientController
     }
 
     /// <summary>
-    ///     /announcement を実行したときの処理
+    /// /announcement を実行したときの処理
     /// </summary>
-    /// <param name="sender"></param>
-    /// <param name="e"></param>
     private async void TwitchClientOnAnnouncement(object? sender, OnAnnouncementArgs e)
     {
         try
@@ -213,10 +217,8 @@ public class TwitchClientController
     }
 
     /// <summary>
-    ///     Botを起動します。
+    /// チャンネル参加時のイベントハンドラ
     /// </summary>
-    /// <param name="sender"></param>
-    /// <param name="e"></param>
     private void TwitchClientOnJoinedChannel(object? sender, OnJoinedChannelArgs e)
     {
         SendMessage(e.Channel, $"Login {Settings.Default.BotName}.");
@@ -226,13 +228,16 @@ public class TwitchClientController
             Settings.Default.BotName + (_secretKeys.BouyomiChan.Checked ? " " : " Not ") + "Connecting BouyomiChan.");
     }
 
+    /// <summary>
+    /// ユーザーがチャンネルに参加した時のイベントハンドラ
+    /// </summary>
     private void TwitchClientOnUserJoined(object? sender, OnUserJoinedArgs e)
     {
         LogController.OutputLog($"<Join> {e.Username}", TwitchEventEnum.Join);
     }
 
     /// <summary>
-    /// EventSubからのフォローイベントを処理
+    /// EventSubからのフォローイベントを処理し、メッセージ送信と読み上げを行います。
     /// </summary>
     /// <param name="e">フォローイベント引数</param>
     public async void TwitchEventSubOnFollow(ChannelFollowArgs e)
@@ -251,7 +256,7 @@ public class TwitchClientController
 
 
     /// <summary>
-    /// EventSubからのBitsイベントを処理
+    /// EventSubからのBitsイベントを処理し、メッセージ送信と読み上げを行います。
     /// </summary>
     /// <param name="e">Bitsイベント引数</param>
     public void SendBitsEventSubMessage(ChannelCheerArgs e)
@@ -271,7 +276,7 @@ public class TwitchClientController
     }
 
     /// <summary>
-    /// EventSubからのチャンネルポイント交換イベントを処理
+    /// EventSubからのチャンネルポイント交換イベントを処理します。
     /// </summary>
     /// <param name="e">チャンネルポイント交換イベント引数</param>
     public void SendChannelPointEventSubMessage(ChannelPointsCustomRewardRedemptionArgs e)
@@ -295,11 +300,9 @@ public class TwitchClientController
     }
 
     /// <summary>
-    ///     別チャンネルからRaidが来たときに実行されます。
+    /// 別チャンネルからRaidが来たときの処理を行います。
     /// </summary>
-    /// <param name="sender"></param>
-    /// <param name="e"></param>
-    public void TwitchClientOnRaidNotification(object? sender, OnRaidNotificationArgs e)
+    public async void TwitchClientOnRaidNotification(object? sender, OnRaidNotificationArgs e)
     {
         var raiderName = e.RaidNotification.MsgParamLogin;
         var raiderChannelUrl = $"https://twitch.tv/{raiderName}";
@@ -309,14 +312,12 @@ public class TwitchClientController
         _bouyomiChanController.AddEventTalkTask($"{raiderName}さんにRaidされました", _secretKeys.BouyomiChan.Checked);
         LogController.OutputLog($"<Raid> Name: {raiderName}, URL: {raiderChannelUrl}", TwitchEventEnum.Raid);
 
-        _twitchApiController.SendShoutout(raiderName);
+        await _twitchApiController.SendShoutoutAsync(raiderName);
     }
 
     /// <summary>
-    ///     新規サブスク時に実行されます。
+    /// 新規サブスクライブ時の処理を行います。
     /// </summary>
-    /// <param name="sender"></param>
-    /// <param name="e"></param>
     public void TwitchClientOnNewSubscriber(object? sender, OnNewSubscriberArgs e)
     {
         var subscriberName = e.Subscriber.DisplayName;
@@ -329,10 +330,8 @@ public class TwitchClientController
     }
 
     /// <summary>
-    ///     Primeサブスク時に実行されます。
+    /// Primeサブスクライブ時の処理を行います。
     /// </summary>
-    /// <param name="sender"></param>
-    /// <param name="e"></param>
     private void TwitchClientOnPrimePaidSubscriber(object? sender, OnPrimePaidSubscriberArgs e)
     {
         var subscriberName = e.PrimePaidSubscriber.DisplayName;
@@ -346,10 +345,8 @@ public class TwitchClientController
     }
 
     /// <summary>
-    ///     継続サブスク時に実行されます。
+    /// 継続サブスクライブ（再サブスク）時の処理を行います。
     /// </summary>
-    /// <param name="sender"></param>
-    /// <param name="e"></param>
     private void TwitchClientOnReSubscriber(object? sender, OnReSubscriberArgs e)
     {
         try
@@ -379,10 +376,8 @@ public class TwitchClientController
     }
 
     /// <summary>
-    ///     サブスクを受け取った時に実行されます。
+    /// サブスクギフト受信時の処理を行います。
     /// </summary>
-    /// <param name="sender"></param>
-    /// <param name="e"></param>
     public void TwitchClientOnGiftedSubscription(object? sender, OnGiftedSubscriptionArgs e)
     {
         var giftedUserName = e.GiftedSubscription.DisplayName;
@@ -395,9 +390,8 @@ public class TwitchClientController
     }
 
     /// <summary>
+    /// メッセージ受信時の処理を行います。バッドワードのタイムアウトや翻訳処理を含みます。
     /// </summary>
-    /// <param name="sender"></param>
-    /// <param name="e"></param>
     private async void TwitchClientOnMessageReceived(object? sender, OnMessageReceivedArgs e)
     {
         // Twitchチャット上のコメントのみ受け取れる
@@ -419,12 +413,8 @@ public class TwitchClientController
     }
 
     /// <summary>
+    /// メッセージの翻訳と読み上げタスクの追加を行います。
     /// </summary>
-    /// <param name="userName"></param>
-    /// <param name="displayName"></param>
-    /// <param name="sourceMessage"></param>
-    /// <param name="isAnnouncement"></param>
-    /// <param name="userId"></param>
     private async Task SendMessageTranslationAsync(string userName, string displayName, string sourceMessage,
         bool isAnnouncement = false, string userId = "")
     {
@@ -442,12 +432,8 @@ public class TwitchClientController
     }
 
     /// <summary>
+    /// 実際の翻訳処理（DeepL）と、翻訳結果の送信および読み上げ処理を行います。
     /// </summary>
-    /// <param name="sourceMessage"></param>
-    /// <param name="userName"></param>
-    /// <param name="displayName"></param>
-    /// <param name="isAnnouncement"></param>
-    /// <param name="userId"></param>
     private async Task MessageTranslationProcessAsync(string sourceMessage, string userName, string displayName,
         bool isAnnouncement = false, string userId = "")
     {

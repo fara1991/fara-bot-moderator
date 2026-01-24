@@ -12,6 +12,7 @@ using Stream = TwitchLib.Api.Helix.Models.Streams.GetStreams.Stream;
 namespace FaraBotModerator.Controllers;
 
 /// <summary>
+/// Twitch API 経由の操作（ユーザー情報取得、シャウトアウト、配信情報取得など）を管理するコントローラー
 /// </summary>
 public class TwitchApiController
 {
@@ -21,9 +22,9 @@ public class TwitchApiController
     private readonly Stream _myStreamInfo;
 
     /// <summary>
-    ///     Twitch API経由の操作をするController
+    /// Twitch API経由の操作をするControllerのコンストラクタ
     /// </summary>
-    /// <param name="secretKeyModel"></param>
+    /// <param name="secretKeyModel">設定情報モデル</param>
     public TwitchApiController(SecretKeyModel secretKeyModel)
     {
         _secretKeyModel = secretKeyModel;
@@ -36,137 +37,209 @@ public class TwitchApiController
                 AccessToken = Settings.Default.AccessToken
             }
         };
-        _myUserInfo = GetTwitchChannelByLogin(_secretKeyModel.Twitch.Client.UserName);
-        _myStreamInfo = GetTwitchStreaming(_secretKeyModel.Twitch.Client.UserName);
+        try
+        {
+            // コンストラクタでの同期待機はやむを得ないが、既存のコードに合わせてTask.Run().Resultを使用
+            _myUserInfo = Task.Run(() => GetTwitchChannelByLoginAsync(_secretKeyModel.Twitch.Client.UserName)).Result;
+            _myStreamInfo = Task.Run(() => GetTwitchStreamingAsync(_secretKeyModel.Twitch.Client.UserName)).Result;
+        }
+        catch (Exception ex)
+        {
+            LogController.OutputLog($@"<Error> TwitchApiController initialization failed: {ex.Message}");
+            if (ex.InnerException != null)
+            {
+                LogController.OutputLog($@"<Error> Inner Exception: {ex.InnerException.Message}");
+            }
+            // 呼び出し側で致命的なエラーにならないよう、nullを許容するかデフォルト値を設定
+            _myUserInfo ??= new User();
+            _myStreamInfo ??= new Stream();
+        }
     }
 
     /// <summary>
+    /// ユーザーIDからTwitchアイコンのURLを取得します。
     /// </summary>
-    /// <param name="userId"></param>
-    /// <returns></returns>
-    public string GetTwitchIconUrlById(string userId)
+    /// <param name="userId">TwitchユーザーID</param>
+    /// <returns>アイコンのURL</returns>
+    public async Task<string> GetTwitchIconUrlByIdAsync(string userId)
     {
-        var user = GetTwitchChannelById(userId);
+        var user = await GetTwitchChannelByIdAsync(userId);
         return user?.ProfileImageUrl ?? "";
     }
 
     /// <summary>
+    /// ログイン名からTwitchアイコンのURLを取得します。
     /// </summary>
-    /// <param name="userName"></param>
-    /// <returns></returns>
-    public string GetTwitchIconUrlByLogin(string userName)
+    /// <param name="userName">Twitchログイン名</param>
+    /// <returns>アイコンのURL</returns>
+    public async Task<string> GetTwitchIconUrlByLoginAsync(string userName)
     {
-        var user = GetTwitchChannelByLogin(userName);
+        var user = await GetTwitchChannelByLoginAsync(userName);
         return user?.ProfileImageUrl ?? "";
     }
 
     /// <summary>
+    /// ユーザーIDからTwitchユーザー情報を取得します。
     /// </summary>
-    /// <param name="userId"></param>
-    /// <returns></returns>
-    private User GetTwitchChannelById(string userId)
+    /// <param name="userId">TwitchユーザーID</param>
+    /// <returns>ユーザー情報モデル</returns>
+    private async Task<User> GetTwitchChannelByIdAsync(string userId)
     {
-        var userIds = new List<string> {userId};
-        var userLoginNames = new List<string>();
-        var findUserList = Task.Run(() => _twitchApi.Helix.Users.GetUsersAsync(userIds, userLoginNames)).Result;
-        return findUserList.Users.Length > 0 ? findUserList.Users[0] : null;
+        try
+        {
+            var userIds = new List<string> {userId};
+            var userLoginNames = new List<string>();
+            var findUserList = await _twitchApi.Helix.Users.GetUsersAsync(userIds, userLoginNames);
+            return findUserList.Users.Length > 0 ? findUserList.Users[0] : null;
+        }
+        catch (Exception ex)
+        {
+            LogController.OutputLog($@"<Error> GetTwitchChannelByIdAsync failed: {ex.Message}");
+            return null;
+        }
     }
 
     /// <summary>
+    /// ログイン名からTwitchユーザー情報を取得します。
     /// </summary>
-    /// <param name="userName"></param>
-    /// <returns></returns>
-    private User GetTwitchChannelByLogin(string userName)
+    /// <param name="userName">Twitchログイン名</param>
+    /// <returns>ユーザー情報モデル</returns>
+    private async Task<User> GetTwitchChannelByLoginAsync(string userName)
     {
-        var userIds = new List<string>();
-        var userLoginNames = new List<string> {userName};
-        var findUserList = Task.Run(() => _twitchApi.Helix.Users.GetUsersAsync(userIds, userLoginNames)).Result;
-        return findUserList.Users.Length > 0 ? findUserList.Users[0] : null;
+        try
+        {
+            var userIds = new List<string>();
+            var userLoginNames = new List<string> {userName};
+            var findUserList = await _twitchApi.Helix.Users.GetUsersAsync(userIds, userLoginNames);
+            return findUserList.Users.Length > 0 ? findUserList.Users[0] : null;
+        }
+        catch (Exception ex)
+        {
+            LogController.OutputLog($@"<Error> GetTwitchChannelByLoginAsync failed: {ex.Message}");
+            return null;
+        }
     }
 
     /// <summary>
+    /// 指定されたユーザーに対してシャウトアウトを送信します。
     /// </summary>
-    /// <param name="myUserNam"></param>
-    /// <param name="raiderUserName"></param>
-    /// <returns></returns>
-    public void SendShoutout(string raiderUserName)
+    /// <param name="raiderUserName">シャウトアウト対象のユーザー名</param>
+    public async Task SendShoutoutAsync(string raiderUserName)
     {
-        var raidUserIds = new List<string>();
-        var raidUserNames = new List<string> {raiderUserName};
-        var raidUser = Task.Run(() => _twitchApi.Helix.Users.GetUsersAsync(raidUserIds, raidUserNames)).Result;
-        
-        Task.Run(() => _twitchApi.Helix.Chat.SendShoutoutAsync(_myUserInfo.Id, raidUser.Users[0].Id, _myUserInfo.Id, Settings.Default.AccessToken));
+        try
+        {
+            var raidUserIds = new List<string>();
+            var raidUserNames = new List<string> {raiderUserName};
+            var raidUser = await _twitchApi.Helix.Users.GetUsersAsync(raidUserIds, raidUserNames);
+            
+            if (raidUser.Users.Length > 0)
+            {
+                await _twitchApi.Helix.Chat.SendShoutoutAsync(_myUserInfo.Id, raidUser.Users[0].Id, _myUserInfo.Id, Settings.Default.AccessToken);
+            }
+        }
+        catch (Exception ex)
+        {
+            LogController.OutputLog($@"<Error> SendShoutoutAsync failed: {ex.Message}");
+        }
     }
 
     /// <summary>
     /// 指定ユーザーの配信中情報を取得します。
     /// </summary>
-    /// <param name="userName"></param>
-    /// <returns></returns>
-    private Stream GetTwitchStreaming(string userName)
+    /// <param name="userName">Twitchユーザー名</param>
+    /// <returns>ストリーム情報モデル</returns>
+    private async Task<Stream> GetTwitchStreamingAsync(string userName)
     {
-        var userIds = new List<string>();
-        var userLoginNames = new List<string> {userName};
-        var streamingInformations = Task.Run(() =>
-                _twitchApi.Helix.Streams.GetStreamsAsync(userIds: userIds, userLogins: userLoginNames, type: "live"))
-            .Result;
-        return streamingInformations.Streams.Length > 0 ? streamingInformations.Streams[0] : new Stream();
+        try
+        {
+            var userIds = new List<string>();
+            var userLoginNames = new List<string> {userName};
+            var streamingInformations = await _twitchApi.Helix.Streams.GetStreamsAsync(userIds: userIds, userLogins: userLoginNames, type: "live");
+            return streamingInformations.Streams.Length > 0 ? streamingInformations.Streams[0] : new Stream();
+        }
+        catch (Exception ex)
+        {
+            LogController.OutputLog($@"<Error> GetTwitchStreamingAsync failed: {ex.Message}");
+            return new Stream();
+        }
     }
 
     /// <summary>
-    /// 
+    /// 現在の配信と同じゲームをプレイしているユーザーの一覧を取得します。
     /// </summary>
-    /// <returns></returns>
-    public List<StreamingUserModel> GetStreamingSameGameUsers()
+    /// <returns>配信中ユーザー情報のリスト</returns>
+    public async Task<List<StreamingUserModel>> GetStreamingSameGameUsersAsync()
     {
-        var userIds = new List<string>();
-        var userLoginNames = new List<string> {_secretKeyModel.Twitch.Client.UserName};
-        var gameIds = new List<string>();
-        if (_myStreamInfo.GameId != null)
+        try
         {
-            gameIds.Add(_myStreamInfo.GameId);
-        }
-        else
-        {
-            userLoginNames.Clear();
-        }
+            var userIds = new List<string>();
+            var userLoginNames = new List<string> {_secretKeyModel.Twitch.Client.UserName};
+            var gameIds = new List<string>();
+            if (_myStreamInfo.GameId != null)
+            {
+                gameIds.Add(_myStreamInfo.GameId);
+            }
+            else
+            {
+                userLoginNames.Clear();
+            }
 
-        var sameGameUsers = Task.Run(() =>
-            _twitchApi.Helix.Streams.GetStreamsAsync(userIds: userIds, userLogins: userLoginNames, gameIds: gameIds,
-                type: "live")).Result;
-        var streamingUsers = sameGameUsers.Streams.Select(user => new StreamingUserModel
+            var sameGameUsers = await _twitchApi.Helix.Streams.GetStreamsAsync(userIds: userIds, userLogins: userLoginNames, gameIds: gameIds,
+                    type: "live");
+            
+            var tasks = sameGameUsers.Streams.Select(async user => new StreamingUserModel
+            {
+                Icon = await GetTwitchIconUrlByIdAsync(user.UserId),
+                Name = user.UserName,
+                LoginId = user.UserLogin,
+                GameId = user.GameId,
+                GameName = user.GameName,
+                StartedAt = user.StartedAt,
+                Viewer = user.ViewerCount
+            });
+            
+            return (await Task.WhenAll(tasks)).ToList();
+        }
+        catch (Exception ex)
         {
-            Icon = GetTwitchIconUrlById(user.UserId),
-            Name = user.UserName,
-            LoginId = user.UserLogin,
-            GameId = user.GameId,
-            GameName = user.GameName,
-            StartedAt = user.StartedAt,
-            Viewer = user.ViewerCount
-        }).ToList();
-        return streamingUsers;
+            LogController.OutputLog($@"<Error> GetStreamingSameGameUsersAsync failed: {ex.Message}");
+            return new List<StreamingUserModel>();
+        }
     }
 
     /// <summary>
-    /// 
+    /// フォローしているユーザーの中で配信中のユーザー一覧を取得します。
     /// </summary>
-    /// <returns></returns>
-    public List<StreamingUserModel> GetStreamingFollowerUsers()
+    /// <returns>配信中ユーザー情報のリスト</returns>
+    public async Task<List<StreamingUserModel>> GetStreamingFollowerUsersAsync()
     {
-        var followingUsers = Task.Run(() => _twitchApi.Helix.Streams.GetFollowedStreamsAsync(_myUserInfo.Id)).Result;
-        var streamingUsers = followingUsers.Data.Select(user => new StreamingUserModel
+        try
         {
-            Icon = GetTwitchIconUrlById(user.UserId),
-            Name = user.UserName,
-            LoginId = user.UserLogin,
-            GameId = user.GameId,
-            GameName = user.GameName,
-            StartedAt = user.StartedAt,
-            Viewer = user.ViewerCount
-        }).ToList();
-        return streamingUsers;
+            var followingUsers = await _twitchApi.Helix.Streams.GetFollowedStreamsAsync(_myUserInfo.Id);
+            
+            var tasks = followingUsers.Data.Select(async user => new StreamingUserModel
+            {
+                Icon = await GetTwitchIconUrlByIdAsync(user.UserId),
+                Name = user.UserName,
+                LoginId = user.UserLogin,
+                GameId = user.GameId,
+                GameName = user.GameName,
+                StartedAt = user.StartedAt,
+                Viewer = user.ViewerCount
+            });
+            
+            return (await Task.WhenAll(tasks)).ToList();
+        }
+        catch (Exception ex)
+        {
+            LogController.OutputLog($@"<Error> GetStreamingFollowerUsersAsync failed: {ex.Message}");
+            return new List<StreamingUserModel>();
+        }
     }
 
+    /// <summary>
+    /// EventSub サブスクリプションを作成します。
+    /// </summary>
     private async Task CreateEventSubSubscriptionAsync(string subscriptionType, string version,
         Dictionary<string, string> conditions, string sessionId)
     {
@@ -177,17 +250,18 @@ public class TwitchApiController
         }
         catch (Exception e)
         {
-            LogController.OutputLog(e.ToString());
-            throw;
+            LogController.OutputLog($@"<Error> CreateEventSubSubscriptionAsync failed ({subscriptionType}): {e.Message}");
+            // throw; // 呼び出し元で処理が継続できるよう、ここでは例外を投げない
         }
     }
 
     /// <summary>
-    /// 
+    /// フォローイベントの EventSub 通知を有効にします。
     /// </summary>
-    /// <param name="sessionId"></param>
+    /// <param name="sessionId">WebSocketセッションID</param>
     public async Task CreateEventSubFollowAsync(string sessionId)
     {
+        if (string.IsNullOrEmpty(_myUserInfo?.Id)) return;
         var conditions = new Dictionary<string, string>
         {
             {"broadcaster_user_id", _myUserInfo.Id},
@@ -197,11 +271,12 @@ public class TwitchApiController
     }
 
     /// <summary>
-    /// 
+    /// Cheerイベントの EventSub 通知を有効にします。
     /// </summary>
-    /// <param name="sessionId"></param>
+    /// <param name="sessionId">WebSocketセッションID</param>
     public async Task CreateEventSubCheerAsync(string sessionId)
     {
+        if (string.IsNullOrEmpty(_myUserInfo?.Id)) return;
         // bits:read
         var conditions = new Dictionary<string, string>
         {
@@ -211,11 +286,12 @@ public class TwitchApiController
     }
 
     /// <summary>
-    /// 
+    /// チャンネルポイント交換イベントの EventSub 通知を有効にします。
     /// </summary>
-    /// <param name="sessionId"></param>
+    /// <param name="sessionId">WebSocketセッションID</param>
     public async Task CreateEventSubChannelPointAsync(string sessionId)
     {
+        if (string.IsNullOrEmpty(_myUserInfo?.Id)) return;
         var conditions = new Dictionary<string, string>
         {
             {"broadcaster_user_id", _myUserInfo.Id}
@@ -225,14 +301,20 @@ public class TwitchApiController
     }
 
     /// <summary>
-    /// 
+    /// アクセストークンが有効かどうかを検証します。
     /// </summary>
-    /// <returns></returns>
+    /// <returns>有効であればtrue</returns>
     public bool ValidateToken()
     {
         try
         {
-            var validation = Task.Run(() => _twitchApi.Auth.ValidateAccessTokenAsync()).Result;
+            var accessToken = Settings.Default.AccessToken;
+            if (string.IsNullOrEmpty(accessToken))
+            {
+                LogController.OutputLog("AccessToken is empty.");
+                return false;
+            }
+            var validation = Task.Run(() => _twitchApi.Auth.ValidateAccessTokenAsync(accessToken)).Result;
             // _twitchApi.Settings.Scopes = validation.Scopes;
             LogController.OutputLog(
                 $"Token is valid. Client ID: {validation.ClientId}, User ID: {validation.UserId}, Expires in: {validation.ExpiresIn} seconds");
@@ -241,6 +323,10 @@ public class TwitchApiController
         catch (Exception ex)
         {
             LogController.OutputLog($"Token validation failed: {ex.Message}");
+            if (ex.InnerException != null)
+            {
+                LogController.OutputLog($"Inner Exception: {ex.InnerException.Message}");
+            }
             return false;
         }
     }
