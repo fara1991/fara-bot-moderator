@@ -18,6 +18,7 @@
         <EnforceCodeStyleInBuild>False</EnforceCodeStyleInBuild>
         <AppDesignerFolder>properties</AppDesignerFolder>
         <UseWindowsForms>true</UseWindowsForms>
+        <ApplicationIcon>Resources\app.ico</ApplicationIcon>
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -33,6 +34,7 @@
         <EmbeddedResource Remove="document\**"/>
         <None Remove="document\**"/>
         <Page Remove="document\**"/>
+        <Resource Include="Resources\app.ico" />
     </ItemGroup>
 
     <ItemGroup>
@@ -70,13 +72,9 @@
             <Generator>SettingsSingleFileGenerator</Generator>
             <LastGenOutput>Settings.Designer.cs</LastGenOutput>
         </None>
-    </ItemGroup>
-
-    <ItemGroup>
-      <None Remove="resources\app.ico" />
-      <Resource Include="Resources\app.ico">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </Resource>
+        <None Update="secrets.json">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
     </ItemGroup>
 
 </Project>

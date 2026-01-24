@@ -15,8 +15,8 @@ namespace FaraBotModerator.Controllers;
 /// </summary>
 internal static class TextRegexController
 {
-    private const string BeatSaberDirectory = "ChatSetting/BeatSaber";
-    private const string BeatSaberFile = BeatSaberDirectory + "/bsr.json";
+    private static readonly string BeatSaberDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ChatSetting", "BeatSaber");
+    private static readonly string BeatSaberFile = Path.Combine(BeatSaberDirectory, "bsr.json");
 
     /// <summary>
     /// BeatSaberのリクエスト形式などのテキストを、設定された正規表現に基づいて読み上げ用テキストに変換します。

@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
@@ -12,7 +13,7 @@ namespace FaraBotModerator.Controllers;
 /// </summary>
 public static class SecretKeyController
 {
-    private const string SecretFile = "secrets.json";
+    private static readonly string SecretFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "secrets.json");
 
     /// <summary>
     /// 設定ファイルから設定情報を読み込みます。ファイルが存在しない場合は新規作成します。
@@ -30,7 +31,7 @@ public static class SecretKeyController
         }
 
         if (secretKeys is not null) return secretKeys;
-        
+
         const string message = "Secret Keys don't initialize.";
         LogController.OutputLog(message);
         throw new FileFormatException(message);

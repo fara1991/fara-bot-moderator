@@ -106,6 +106,18 @@ public partial class MainWindow : INotifyPropertyChanged
             InitializeSecretValue(secretKeys);
             LogController.OutputLog("UI initialized with secret values.");
             
+            try
+            {
+                LogController.OutputLog("Initializing WebView2...");
+                await FaraBotModeratorWebView.EnsureCoreWebView2Async();
+                LogController.OutputLog("WebView2 initialized successfully.");
+            }
+            catch (Exception ex)
+            {
+                LogController.OutputLog($"WebView2 initialization failed: {ex.Message}");
+                // WebView2が初期化できなくてもアプリ全体が落ちないようにする
+            }
+
             _twitchApiController ??= new TwitchApiController(secretKeys);
             await _twitchApiController.InitializeAsync();
             _twitchClientController ??= new TwitchClientController(secretKeys, _twitchApiController);
@@ -821,9 +833,8 @@ public partial class MainWindow : INotifyPropertyChanged
                 return;
             }
 
-            _twitchApiController ??= new TwitchApiController(secretKeys);
+            _twitchApiController = new TwitchApiController(secretKeys);
             await _twitchApiController.InitializeAsync();
-            // var channelId = _twitchApiController.GetTwitchChannelId();
 
             var isTokenValid = _twitchApiController.ValidateToken();
             LogController.OutputLog($"Token validation result: {isTokenValid}");
@@ -834,7 +845,7 @@ public partial class MainWindow : INotifyPropertyChanged
                 return;
             }
 
-            _twitchClientController ??= new TwitchClientController(secretKeys, _twitchApiController);
+            _twitchClientController = new TwitchClientController(secretKeys, _twitchApiController);
 
             // 棒読みちゃん接続チェック
             if (BouyomiChanConnectCheckBox.IsChecked == true)

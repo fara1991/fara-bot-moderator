@@ -16,7 +16,7 @@
     Left="0"
     Top="0"
     Closed="MainWindow_Closed"
-    Icon="pack://application:,,,/resources/app.ico"
+    Icon="/Resources/app.ico"
     ResizeMode="CanMinimize">
     <ToolTipService.InitialShowDelay>1000</ToolTipService.InitialShowDelay>
     <ToolTipService.ShowDuration>10000</ToolTipService.ShowDuration>
