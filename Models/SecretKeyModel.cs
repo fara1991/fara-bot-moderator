@@ -11,37 +11,37 @@ public class SecretKeyModel
     /// Twitch関連の認証情報
     /// </summary>
     [JsonPropertyName("twitch")]
-    public TwitchSecretKeyModel Twitch { get; set; } = new();
+    public TwitchSecretKeyModel Twitch { get; init; } = new();
 
     /// <summary>
     /// DeepL APIキー情報
     /// </summary>
     [JsonPropertyName("deepL")]
-    public DeepLKeyModel DeepL { get; set; } = new();
+    public DeepLKeyModel DeepL { get; init; } = new();
 
     /// <summary>
     /// 棒読みちゃん連携設定
     /// </summary>
     [JsonPropertyName("bouyomiChan")]
-    public BouyomiChanModel BouyomiChan { get; set; } = new();
+    public BouyomiChanModel BouyomiChan { get; init; } = new();
 
     /// <summary>
     /// 各種リアクションイベントの設定
     /// </summary>
     [JsonPropertyName("event")]
-    public ReactionEventModel Event { get; set; } = new();
+    public ReactionEventModel Event { get; init; } = new();
 
     /// <summary>
     /// 定期実行メッセージの設定
     /// </summary>
     [JsonPropertyName("cycleMessage")]
-    public CycleMessageModel CycleMessage { get; set; } = new();
+    public CycleMessageModel CycleMessage { get; init; } = new();
 
     /// <summary>
     /// 日時指定メッセージの設定
     /// </summary>
     [JsonPropertyName("fixedMessage")]
-    public FixedMessageModel FixedMessage { get; set; } = new();
+    public FixedMessageModel FixedMessage { get; init; } = new();
 }
 
 /// <summary>
@@ -53,13 +53,13 @@ public class TwitchSecretKeyModel
     /// チャットクライアント用設定
     /// </summary>
     [JsonPropertyName("client")]
-    public TwitchClientKeyModel Client { get; set; } = new();
+    public TwitchClientKeyModel Client { get; init; } = new();
 
     /// <summary>
     /// API連携用設定
     /// </summary>
     [JsonPropertyName("api")]
-    public TwitchApiKeyModel Api { get; set; } = new();
+    public TwitchApiKeyModel Api { get; init; } = new();
 }
 
 /// <summary>
@@ -71,13 +71,13 @@ public class TwitchClientKeyModel
     /// ユーザー名（ID）
     /// </summary>
     [JsonPropertyName("userName")]
-    public string UserName { get; set; } = "";
+    public string UserName { get; init; } = "";
 
     /// <summary>
     /// 表示名
     /// </summary>
     [JsonPropertyName("displayName")]
-    public string DisplayName { get; set; } = "";
+    public string DisplayName { get; init; } = "";
 }
 
 /// <summary>
@@ -89,13 +89,13 @@ public class TwitchApiKeyModel
     /// クライアントID
     /// </summary>
     [JsonPropertyName("clientId")]
-    public string ClientId { get; set; } = "";
+    public string ClientId { get; init; } = "";
 
     /// <summary>
     /// クライアントシークレット
     /// </summary>
     [JsonPropertyName("secret")]
-    public string Secret { get; set; } = "";
+    public string Secret { get; init; } = "";
 }
 
 /// <summary>
@@ -107,7 +107,7 @@ public class DeepLKeyModel
     /// DeepL APIキー
     /// </summary>
     [JsonPropertyName("apiKey")]
-    public string ApiKey { get; set; } = "";
+    public string ApiKey { get; init; } = "";
 }
 
 /// <summary>
@@ -119,7 +119,7 @@ public class BouyomiChanModel
     /// 棒読みちゃん連携が有効かどうか
     /// </summary>
     [JsonPropertyName("isActive")]
-    public bool Checked { get; set; } = true;
+    public bool Checked { get; init; } = true;
 }
 
 /// <summary>
@@ -131,37 +131,37 @@ public class ReactionEventModel
     /// フォローイベント設定
     /// </summary>
     [JsonPropertyName("follow")]
-    public ReactionFollowEvent Follow { get; set; } = new();
+    public ReactionFollowEvent Follow { get; init; } = new();
 
     /// <summary>
     /// レイドイベント設定
     /// </summary>
     [JsonPropertyName("raid")]
-    public ReactionRaidEvent Raid { get; set; } = new();
+    public ReactionRaidEvent Raid { get; init; } = new();
 
     /// <summary>
     /// サブスクライブイベント設定
     /// </summary>
     [JsonPropertyName("subscription")]
-    public ReactionSubscriptionEvent Subscription { get; set; } = new();
+    public ReactionSubscriptionEvent Subscription { get; init; } = new();
 
     /// <summary>
     /// Bitsイベント設定
     /// </summary>
     [JsonPropertyName("bits")]
-    public ReactionBitsEvent Bits { get; set; } = new();
+    public ReactionBitsEvent Bits { get; init; } = new();
 
     /// <summary>
     /// サブスクギフトイベント設定
     /// </summary>
     [JsonPropertyName("gift")]
-    public ReactionGiftEvent Gift { get; set; } = new();
+    public ReactionGiftEvent Gift { get; init; } = new();
 
     /// <summary>
     /// チャンネルポイントイベント設定
     /// </summary>
     [JsonPropertyName("channelPoint")]
-    public ReactionChannelPointEvent ChannelPoint { get; set; } = new();
+    public ReactionChannelPointEvent ChannelPoint { get; init; } = new();
 }
 
 /// <summary>
@@ -172,11 +172,11 @@ public interface IEventModel
     /// <summary>
     /// 通知が有効かどうか
     /// </summary>
-    bool Checked { get; set; }
+    bool Checked { get; }
     /// <summary>
     /// 送信するメッセージ内容
     /// </summary>
-    string Message { get; set; }
+    string Message { get; }
 }
 
 /// <summary>
@@ -296,25 +296,25 @@ public class CycleMessageModel
     /// タイマー1
     /// </summary>
     [JsonPropertyName("timer1")]
-    public CycleTimerModel Timer1 { get; set; } = new();
+    public CycleTimerModel Timer1 { get; init; } = new();
 
     /// <summary>
     /// タイマー2
     /// </summary>
     [JsonPropertyName("timer2")]
-    public CycleTimerModel Timer2 { get; set; } = new();
+    public CycleTimerModel Timer2 { get; init; } = new();
 
     /// <summary>
     /// タイマー3
     /// </summary>
     [JsonPropertyName("timer3")]
-    public CycleTimerModel Timer3 { get; set; } = new();
+    public CycleTimerModel Timer3 { get; init; } = new();
 
     /// <summary>
     /// タイマー4
     /// </summary>
     [JsonPropertyName("timer4")]
-    public CycleTimerModel Timer4 { get; set; } = new();
+    public CycleTimerModel Timer4 { get; init; } = new();
 }
 
 /// <summary>
@@ -326,19 +326,19 @@ public class CycleTimerModel
     /// 有効かどうか
     /// </summary>
     [JsonPropertyName("checked")]
-    public bool Checked { get; set; } = false;
+    public bool Checked { get; init; }
 
     /// <summary>
     /// 実行間隔（分）
     /// </summary>
     [JsonPropertyName("interval")]
-    public int Interval { get; set; } = 60;
+    public int Interval { get; init; } = 60;
 
     /// <summary>
     /// 送信するメッセージ
     /// </summary>
     [JsonPropertyName("message")]
-    public string Message { get; set; } = "";
+    public string Message { get; init; } = "";
 }
 
 /// <summary>
@@ -350,25 +350,25 @@ public class FixedMessageModel
     /// タイマー1
     /// </summary>
     [JsonPropertyName("timer1")]
-    public FixedTimerModel Timer1 { get; set; } = new();
+    public FixedTimerModel Timer1 { get; init; } = new();
 
     /// <summary>
     /// タイマー2
     /// </summary>
     [JsonPropertyName("timer2")]
-    public FixedTimerModel Timer2 { get; set; } = new();
+    public FixedTimerModel Timer2 { get; init; } = new();
 
     /// <summary>
     /// タイマー3
     /// </summary>
     [JsonPropertyName("timer3")]
-    public FixedTimerModel Timer3 { get; set; } = new();
+    public FixedTimerModel Timer3 { get; init; } = new();
 
     /// <summary>
     /// タイマー4
     /// </summary>
     [JsonPropertyName("timer4")]
-    public FixedTimerModel Timer4 { get; set; } = new();
+    public FixedTimerModel Timer4 { get; init; } = new();
 }
 
 /// <summary>
@@ -380,17 +380,17 @@ public class FixedTimerModel
     /// 有効かどうか
     /// </summary>
     [JsonPropertyName("checked")]
-    public bool Checked { get; set; } = false;
+    public bool Checked { get; init; }
 
     /// <summary>
     /// 実行日時（文字列形式）
     /// </summary>
     [JsonPropertyName("datetime")]
-    public string DatetimeString { get; set; } = "2023/1/1 00:00:00";
+    public string DatetimeString { get; init; } = "2023/1/1 00:00:00";
 
     /// <summary>
     /// 送信するメッセージ
     /// </summary>
     [JsonPropertyName("message")]
-    public string Message { get; set; } = "";
+    public string Message { get; init; } = "";
 }

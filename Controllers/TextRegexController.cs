@@ -39,7 +39,7 @@ internal static class TextRegexController
 
             if (textRegex is null)
             {
-                var message = "<Error> Text conversion not possible.";
+                const string message = "<Error> Text conversion not possible.";
                 LogController.OutputLog(message);
                 throw new FileFormatException(message);
             }
@@ -97,18 +97,19 @@ internal static class TextRegexController
     {
         var textRegex = new TextRegexModel
         {
-            BeatSaberChat = new List<BeatSaberChatModel>
-            {
-                new("(?<=!bsr ).*", "から、ソングリクエスト{0}を頂きました。"),
-                new("(?<=Request ).*?(?= /)", "リクエスト曲 {0} が登録されました。"),
-                new("^[^/]+(?= */)|(?<=requested by )[^ ]+(?= +is next)",
+            BeatSaberChat =
+            [
+                new BeatSaberChatModel("(?<=!bsr ).*", "から、ソングリクエスト{0}を頂きました。"),
+                new BeatSaberChatModel("(?<=Request ).*?(?= /)", "リクエスト曲 {0} が登録されました。"),
+                new BeatSaberChatModel("^[^/]+(?= */)|(?<=requested by )[^ ]+(?= +is next)",
                     "次の曲は、{1}さんがリクエストした{0}です。"),
-                new("(?=Queue is closed).*", "ソングリクエストを終了します。皆さんありがとう！"),
-                new("(?=Queue is open).*", "ソングリクエストを開始しました。リクエストお待ちしてます。"),
-                new("(?<=No results found for request ).*", "{0}はリクエストにないよ。"),
-                new("(?<=Request for).*(?=produces)|(?<=produces).*(?=results)",
+
+                new BeatSaberChatModel("(?=Queue is closed).*", "ソングリクエストを終了します。皆さんありがとう！"),
+                new BeatSaberChatModel("(?=Queue is open).*", "ソングリクエストを開始しました。リクエストお待ちしてます。"),
+                new BeatSaberChatModel("(?<=No results found for request ).*", "{0}はリクエストにないよ。"),
+                new BeatSaberChatModel("(?<=Request for).*(?=produces)|(?<=produces).*(?=results)",
                     "{0} で検索したら {1}曲あったよ。絞り込んでみてね。")
-            }
+            ]
         };
         SaveBsrChatFile(textRegex);
     }

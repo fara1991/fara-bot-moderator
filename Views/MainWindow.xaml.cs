@@ -71,7 +71,6 @@ public partial class MainWindow : INotifyPropertyChanged
     {
         InitializeComponent();
         InitializeEncodeRegister();
-        InitializeSecretValue();
 
         DataContext = this;
         
@@ -81,10 +80,34 @@ public partial class MainWindow : INotifyPropertyChanged
         _ = RunWithExceptionHandlingAsync(StartMonitoringAsync, "Monitoring");
         _ = RunWithExceptionHandlingAsync(StartTwitchLibEventSubAsync, "TwitchPubSub");
 
-        Loaded += (_, _) =>
+        Loaded += async (_, _) =>
         {
-            var secretKeys = SecretKeyController.LoadKeys();
+            // 初期化処理の実行
+            await InitializeApplicationAsync();
+        };
+    }
+
+    /// <summary>
+    /// アプリケーションの初期化処理を非同期で行います。
+    /// secrets.jsonの読み込みが完了するまでUIをブロックします。
+    /// </summary>
+    private async Task InitializeApplicationAsync()
+    {
+        LoadingTextBlock.Text = "Loading secrets.json...";
+        LoadingOverlay.Visibility = Visibility.Visible;
+        try
+        {
+            // 非同期での読み込みと初期化
+            LogController.OutputLog("Starting to load secret keys...");
+            var secretKeys = await Task.Run(SecretKeyController.LoadKeys);
+            LogController.OutputLog("Secret keys loaded successfully.");
+
+            // UIスレッドで実行する必要がある処理
+            InitializeSecretValue(secretKeys);
+            LogController.OutputLog("UI initialized with secret values.");
+            
             _twitchApiController ??= new TwitchApiController(secretKeys);
+            await _twitchApiController.InitializeAsync();
             _twitchClientController ??= new TwitchClientController(secretKeys, _twitchApiController);
 
             _chatWindow ??= new ChatWindow(_twitchClientController);
@@ -92,7 +115,17 @@ public partial class MainWindow : INotifyPropertyChanged
 
             _raidListWindow ??= new RaidListWindow(_twitchApiController);
             _raidListWindow.Show();
-        };
+        }
+        catch (Exception ex)
+        {
+            LogController.OutputLog($"Initialization failed: {ex.Message}");
+            MessageBox.Show($"初期化に失敗しました: {ex.Message}", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        finally
+        {
+            // 読み込み完了後にオーバーレイを非表示にする
+            LoadingOverlay.Visibility = Visibility.Collapsed;
+        }
     }
 
     /// <summary>
@@ -103,10 +136,8 @@ public partial class MainWindow : INotifyPropertyChanged
         Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
     }
 
-    private void InitializeSecretValue()
+    private void InitializeSecretValue(SecretKeyModel secretKeys)
     {
-        var secretKeys = SecretKeyController.LoadKeys();
-        
         // Twitch
         TwitchClientUserNameTextBox.Text = secretKeys.Twitch.Client.UserName;
         TwitchClientDisplayNameTextBox.Text = secretKeys.Twitch.Client.DisplayName;
@@ -320,17 +351,14 @@ public partial class MainWindow : INotifyPropertyChanged
             if (_twitchClientController is not null) AddGridViewChatData();
 
             // 棒読みちゃん接続チェック
-            if (BouyomiChanConnectCheckBox.IsChecked == true && 
-                TwitchConnectionStateLabel.Content.ToString() == "State: Connect")
+            if (BouyomiChanConnectCheckBox.IsChecked != true || TwitchConnectionStateLabel.Content.ToString() != "State: Connect") continue;
+            if (_twitchClientController != null && !await BouyomiChanController.IsBouyomiChanRunningAsync())
             {
-                if (_twitchClientController != null && !await _twitchClientController.BouyomiChanController.IsBouyomiChanRunningAsync())
+                await Dispatcher.InvokeAsync(async () =>
                 {
-                    Dispatcher.Invoke(() =>
-                    {
-                        MessageBox.Show("棒読みちゃんが終了しました。Disconnectする前に棒読みちゃんを閉じないでください。\n安全のためTwitchから切断します。", "警告", MessageBoxButton.OK, MessageBoxImage.Warning);
-                        TwitchDisconnect();
-                    });
-                }
+                    MessageBox.Show("棒読みちゃんが終了しました。Disconnectする前に棒読みちゃんを閉じないでください。\n安全のためTwitchから切断します。", "警告", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    await TwitchDisconnect();
+                });
             }
         }
     }
@@ -778,69 +806,97 @@ public partial class MainWindow : INotifyPropertyChanged
 
     /// <summary>
     /// </summary>
-    private async void TwitchConnect()
+    private async Task TwitchConnect()
     {
-        var secretKeys = SecretKeyController.LoadKeys();
-
-        // トークンの有効期限チェック
-        if (DateTime.Now > Settings.Default.expiresDateTime)
+        LoadingTextBlock.Text = "Connecting to Twitch...";
+        LoadingOverlay.Visibility = Visibility.Visible;
+        try
         {
-            MessageBox.Show("アクセストークンの有効期限が切れています。Authorizeボタンから再認可を行ってください。", "警告", MessageBoxButton.OK, MessageBoxImage.Warning);
-            return;
-        }
+            var secretKeys = SecretKeyController.LoadKeys();
 
-        _twitchApiController ??= new TwitchApiController(secretKeys);
-        // var channelId = _twitchApiController.GetTwitchChannelId();
-
-        var isTokenValid = _twitchApiController.ValidateToken();
-        LogController.OutputLog($"Token validation result: {isTokenValid}");
-
-        if (!isTokenValid)
-        {
-            MessageBox.Show("アクセストークンが無効または期限切れです。Authorizeボタンから再認可を行ってください。", "警告", MessageBoxButton.OK, MessageBoxImage.Warning);
-            return;
-        }
-
-        _twitchClientController ??= new TwitchClientController(secretKeys, _twitchApiController);
-
-        // 棒読みちゃん接続チェック
-        if (BouyomiChanConnectCheckBox.IsChecked == true)
-        {
-            if (!await _twitchClientController.BouyomiChanController.IsBouyomiChanRunningAsync())
+            // トークンの有効期限チェック
+            if (DateTime.Now > Settings.Default.expiresDateTime)
             {
-                MessageBox.Show("棒読みちゃんが起動していません。起動してから接続してください。", "警告", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show("アクセストークンの有効期限が切れています。Authorizeボタンから再認可を行ってください。", "警告", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
+
+            _twitchApiController ??= new TwitchApiController(secretKeys);
+            await _twitchApiController.InitializeAsync();
+            // var channelId = _twitchApiController.GetTwitchChannelId();
+
+            var isTokenValid = _twitchApiController.ValidateToken();
+            LogController.OutputLog($"Token validation result: {isTokenValid}");
+
+            if (!isTokenValid)
+            {
+                MessageBox.Show("アクセストークンが無効または期限切れです。Authorizeボタンから再認可を行ってください。", "警告", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            _twitchClientController ??= new TwitchClientController(secretKeys, _twitchApiController);
+
+            // 棒読みちゃん接続チェック
+            if (BouyomiChanConnectCheckBox.IsChecked == true)
+            {
+                if (!await BouyomiChanController.IsBouyomiChanRunningAsync())
+                {
+                    MessageBox.Show("棒読みちゃんが起動していません。起動してから接続してください。", "警告", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+            }
+
+            _twitchClientController.Connect();
+
+            // EventSub
+            _twitchEventSubController = new TwitchEventSubController(_twitchClientController, _twitchApiController);
+            await TwitchEventSubController.ConnectAsync();
+
+            LockWindowControl();
         }
-
-        _twitchClientController.Connect();
-
-        // EventSub
-        _twitchEventSubController = new TwitchEventSubController(_twitchClientController, _twitchApiController);
-        await _twitchEventSubController.ConnectAsync();
-
-        // Window追加
-        _chatWindow ??= new ChatWindow(_twitchClientController);
-        _chatWindow.Show();
-
-        _raidListWindow ??= new RaidListWindow(_twitchApiController);
-        _raidListWindow.Show();
-
-        LockWindowControl();
+        catch (Exception ex)
+        {
+            LogController.OutputLog($"Twitch connect failed: {ex.Message}");
+            MessageBox.Show($"Twitchへの接続に失敗しました: {ex.Message}", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        finally
+        {
+            LoadingOverlay.Visibility = Visibility.Collapsed;
+        }
     }
 
     /// <summary>
     /// </summary>
-    private async void TwitchDisconnect()
+    private async Task TwitchDisconnect()
     {
-        if (_twitchEventSubController != null) await _twitchEventSubController.DisconnectAsync();
-        _twitchClientController?.Disconnect();
+        LoadingTextBlock.Text = "Disconnecting from Twitch...";
+        LoadingOverlay.Visibility = Visibility.Visible;
+        try
+        {
+            if (_twitchEventSubController != null)
+            {
+                await TwitchEventSubController.DisconnectAsync();
+            }
 
-        _twitchClientController = null;
-        _twitchApiController = null;
-        _twitchEventSubController = null;
+            if (_twitchClientController != null)
+            {
+                _twitchClientController.Disconnect();
+            }
 
-        UnlockWindowControl();
+            _twitchClientController = null;
+            _twitchApiController = null;
+            _twitchEventSubController = null;
+
+            UnlockWindowControl();
+        }
+        catch (Exception ex)
+        {
+            LogController.OutputLog($"Twitch disconnect failed: {ex.Message}");
+        }
+        finally
+        {
+            LoadingOverlay.Visibility = Visibility.Collapsed;
+        }
     }
 
     /// <summary>
@@ -857,7 +913,7 @@ public partial class MainWindow : INotifyPropertyChanged
     /// </summary>
     /// <param name="sender"></param>
     /// <param name="e"></param>
-    private void TwitchConnectionButton_Click(object sender, RoutedEventArgs e)
+    private async void TwitchConnectionButton_Click(object sender, RoutedEventArgs e)
     {
         try
         {
@@ -866,11 +922,11 @@ public partial class MainWindow : INotifyPropertyChanged
             var state = TwitchConnectionStateLabel.Content.ToString();
             if (state is not null && state.Equals("State: Connect"))
             {
-                TwitchDisconnect();
+                await TwitchDisconnect();
             }
             else
             {
-                TwitchConnect();
+                await TwitchConnect();
             }
         }
         catch (Exception ex)
@@ -883,11 +939,11 @@ public partial class MainWindow : INotifyPropertyChanged
     /// </summary>
     /// <param name="sender"></param>
     /// <param name="e"></param>
-    private void TwitchDisconnectButton_Click(object sender, RoutedEventArgs e)
+    private async void TwitchDisconnectButton_Click(object sender, RoutedEventArgs e)
     {
         try
         {
-            TwitchDisconnect();
+            await TwitchDisconnect();
         }
         catch (Exception ex)
         {

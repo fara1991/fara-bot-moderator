@@ -75,12 +75,12 @@ public class SaberTailorModel
     /// <summary>
     /// </summary>
     [JsonPropertyName("GripLeftRotation")]
-    public GripLeftRotationModel GripLeftRotation { get; set; } = new();
+    public GripLeftRotationModel GripLeftRotation { get; } = new();
 
     /// <summary>
     /// </summary>
     [JsonPropertyName("GripRightRotation")]
-    public GripRightRotationModel GripRightRotation { get; set; } = new();
+    public GripRightRotationModel GripRightRotation { get; } = new();
 
     /// <summary>
     /// </summary>

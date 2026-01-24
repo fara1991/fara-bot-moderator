@@ -48,7 +48,7 @@ public partial class RaidListWindow : Window
 
             // ボタンと同じレベルにあるPopupを探す
             var grid = VisualTreeHelper.GetParent(button) as Grid;
-            Popup popup = null;
+            Popup? popup = null;
 
             if (grid != null)
             {

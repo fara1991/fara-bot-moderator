@@ -31,13 +31,13 @@ public class TwitchTestEventController
     /// </summary>
     public void TestFollowEvent()
     {
-        var followerName = "game_fara_dev";
-        var followerChannelUrl = "https://twitch.tv/game_fara_dev";
+        const string followerName = "game_fara_dev";
+        const string followerChannelUrl = "https://twitch.tv/game_fara_dev";
         var message = _secretKeys.Event.Follow.Message.Replace("{followerName}", followerName)
             .Replace("{followerChannelUrl}", followerChannelUrl);
 
         _twitchClientController.SendTestMessage(followerName, $"[{Settings.Default.BotName} Test] {message}");
-        _bouyomiChanController.AddEventTalkTask($"{followerName}さんがFollowしました", _secretKeys.BouyomiChan.Checked);
+        BouyomiChanController.AddEventTalkTask($"{followerName}さんがFollowしました", _secretKeys.BouyomiChan.Checked);
         LogController.OutputLog($"<Follow Test> Name: {followerName}, URL: {followerChannelUrl}",
             TwitchEventEnum.Follow);
     }
@@ -47,12 +47,12 @@ public class TwitchTestEventController
     /// </summary>
     public void TestRaidEvent()
     {
-        var raiderName = "game_fara_dev";
-        var raiderChannelUrl = "https://twitch.tv/game_fara_dev";
+        const string raiderName = "game_fara_dev";
+        const string raiderChannelUrl = "https://twitch.tv/game_fara_dev";
         var message = _secretKeys.Event.Raid.Message.Replace("{raiderName}", raiderName)
             .Replace("{raiderChannelUrl}", raiderChannelUrl);
         _twitchClientController.SendTestMessage(raiderName, $"[{Settings.Default.BotName} Test] {message}");
-        _bouyomiChanController.AddEventTalkTask($"{raiderName}さんにRaidされました", _secretKeys.BouyomiChan.Checked);
+        BouyomiChanController.AddEventTalkTask($"{raiderName}さんにRaidされました", _secretKeys.BouyomiChan.Checked);
         LogController.OutputLog($"<Raid Test> Name: {raiderName}, URL: {raiderChannelUrl}", TwitchEventEnum.Raid);
     }
 
@@ -61,11 +61,11 @@ public class TwitchTestEventController
     /// </summary>
     public void TestSubscriptionEvent()
     {
-        var subscriberName = "game_fara_dev";
+        const string subscriberName = "game_fara_dev";
         var message = _secretKeys.Event.Subscription.Message.Replace("{subscriberName}", subscriberName)
             .Replace("{totalSubscriptionMonth}", "1");
         _twitchClientController.SendTestMessage(subscriberName, $"[{Settings.Default.BotName} Test] {message}");
-        _bouyomiChanController.AddEventTalkTask($"{subscriberName}さんサブスクありがとうございます",
+        BouyomiChanController.AddEventTalkTask($"{subscriberName}さんサブスクありがとうございます",
                 _secretKeys.BouyomiChan.Checked);
         LogController.OutputLog($"<Subscription Test> Name: {subscriberName}", TwitchEventEnum.Subscriber);
     }
@@ -75,14 +75,14 @@ public class TwitchTestEventController
     /// </summary>
     public void TestBitsEvent()
     {
-        var bitsSendUserName = "game_fara_dev";
-        var bitsAmount = 100;
+        const string bitsSendUserName = "game_fara_dev";
+        const int bitsAmount = 100;
         var message = _secretKeys.Event.Bits.Message.Replace("{bitsAmount}", bitsAmount.ToString())
             .Replace("{bitsSendUserName}", bitsSendUserName);
 
         _twitchClientController.SendTestMessage(bitsSendUserName, $"[{Settings.Default.BotName} Test] {message}");
 
-        _bouyomiChanController.AddEventTalkTask($"{bitsSendUserName}さん{bitsAmount}bitsありがとうございます",
+        BouyomiChanController.AddEventTalkTask($"{bitsSendUserName}さん{bitsAmount}bitsありがとうございます",
                 _secretKeys.BouyomiChan.Checked);
         LogController.OutputLog($"<Bits Test> UserName: {bitsSendUserName}, Amount: {bitsAmount}", TwitchEventEnum.Bits);
     }
@@ -92,10 +92,10 @@ public class TwitchTestEventController
     /// </summary>
     public void TestGiftEvent()
     {
-        var giftedUserName = "game_fara_dev";
+        const string giftedUserName = "game_fara_dev";
         var message = _secretKeys.Event.Gift.Message.Replace("{giftedUserName}", giftedUserName);
         _twitchClientController.SendTestMessage(giftedUserName, $"[{Settings.Default.BotName} Test] {message}");
-        _bouyomiChanController.AddEventTalkTask($"{giftedUserName}さんGiftありがとうございます",
+        BouyomiChanController.AddEventTalkTask($"{giftedUserName}さんGiftありがとうございます",
                 _secretKeys.BouyomiChan.Checked);
         LogController.OutputLog($"<Gift Test> Name: {giftedUserName}", TwitchEventEnum.Gift);
     }
@@ -105,9 +105,9 @@ public class TwitchTestEventController
     /// </summary>
     public void TestChannelPointEvent()
     {
-        var channelPointTitle = "Test Reward";
-        var channelPointCost = 100;
-        var channelPointUserName = "game_fara_dev";
+        const string channelPointTitle = "Test Reward";
+        const int channelPointCost = 100;
+        const string channelPointUserName = "game_fara_dev";
         var message = _secretKeys.Event.ChannelPoint.Message
             .Replace("{channelPointCost}", channelPointCost.ToString())
             .Replace("{channelPointTitle}", channelPointTitle)

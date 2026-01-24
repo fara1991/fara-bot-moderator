@@ -10,7 +10,7 @@ public class TextRegexModel
     /// <summary>
     /// </summary>
     [JsonPropertyName("bsrChat")]
-    public List<BeatSaberChatModel> BeatSaberChat { get; set; } = new();
+    public List<BeatSaberChatModel> BeatSaberChat { get; init; } = [];
 }
 
 /// <summary>
@@ -30,7 +30,7 @@ public class BeatSaberChatModel
     /// <summary>
     /// </summary>
     [JsonPropertyName("key")]
-    public string Key { get; set; }
+    public string Key { get; }
 
     /// <summary>
     /// </summary>

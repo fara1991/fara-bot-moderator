@@ -27,11 +27,11 @@ public class TwitchClientController
     private readonly Queue<ChatModel> _chatDataQueue = new();
     private readonly SecretKeyModel _secretKeys;
     private readonly TwitchApiController _twitchApiController;
-    private readonly TwitchClient _twitchClient;
+    private TwitchClient? _twitchClient;
     private readonly UniqueChannelPointController _uniqueChannelPointController = new();
     private readonly TwitchTranslationController _twitchTranslationController;
-    private readonly string _twitchUserName;
-    private readonly string _twitchUserDisplayName;
+    private string _twitchUserName = "";
+    private string _twitchUserDisplayName = "";
 
     /// <summary>
     /// Twitch チャットクライアントが接続されているかどうかを取得します。
@@ -53,18 +53,28 @@ public class TwitchClientController
         _secretKeys = secretKeys;
         _twitchApiController = twitchApiController;
         _twitchTranslationController = new TwitchTranslationController(_secretKeys.DeepL.ApiKey);
+    }
 
+    /// <summary>
+    /// Twitch チャットクライアントを接続します。
+    /// </summary>
+    public void Connect()
+    {
         var client = _secretKeys.Twitch.Client;
-        var credentials = new ConnectionCredentials(client.UserName, Settings.Default.AccessToken);
+        _twitchUserName = client.UserName;
+        _twitchUserDisplayName = client.DisplayName;
+
+        var credentials = new ConnectionCredentials(_twitchUserName, Settings.Default.AccessToken);
         var clientOptions = new ClientOptions
         {
             MessagesAllowedInPeriod = 750,
             ThrottlingPeriod = TimeSpan.FromSeconds(30),
-            ClientType = ClientType.Chat
+            ClientType = ClientType.Chat,
+            ReconnectionPolicy = new ReconnectionPolicy(0) // 再接続を無効化
         };
         var customClient = new WebSocketClient(clientOptions);
         _twitchClient = new TwitchClient(customClient);
-        _twitchClient.Initialize(credentials, client.UserName);
+        _twitchClient.Initialize(credentials, _twitchUserName);
 
         _twitchClient.OnLog += TwitchClientOnLog;
         _twitchClient.OnJoinedChannel += TwitchClientOnJoinedChannel;
@@ -78,17 +88,7 @@ public class TwitchClientController
         _twitchClient.OnConnected += TwitchClientOnConnected;
         _twitchClient.OnDisconnected += TwitchClientOnDisconnected;
         _twitchClient.OnAnnouncement += TwitchClientOnAnnouncement;
-        // OnDisconnectedはタイムラグの関係で実装しない
 
-        _twitchUserName = client.UserName;
-        _twitchUserDisplayName = client.DisplayName;
-    }
-
-    /// <summary>
-    /// Twitch チャットクライアントを接続します。
-    /// </summary>
-    public void Connect()
-    {
         _twitchClient.Connect();
     }
 
@@ -97,11 +97,20 @@ public class TwitchClientController
     /// </summary>
     public void Disconnect()
     {
-        SendMessage(_twitchUserName, $"Logout {Settings.Default.BotName}.");
+        if (_twitchClient == null) return;
+        
+        if (_twitchClient.IsConnected)
+        {
+            SendMessage(_twitchUserName, $"Logout {Settings.Default.BotName}.");
+        }
+        
         LogController.OutputLog($"Logout {Settings.Default.BotName}.");
 
         _twitchTranslationController.Dispose();
-        _twitchClient.Disconnect();
+        
+        // DisconnectをTask.Runで実行してUIスレッドのブロックを回避（TwitchLib内部で待機が発生する場合があるため）
+        var client = _twitchClient;
+        Task.Run(() => client.Disconnect());
     }
 
     /// <summary>
@@ -143,6 +152,7 @@ public class TwitchClientController
     /// <param name="userId">送信者ユーザーID（任意）</param>
     private void SendMessage(string userName, string message, string userId = "")
     {
+        if (_twitchClient == null) return;
         _twitchClient.SendMessage(_twitchUserName, message);
         AddChatListData(userName, message, userId);
     }
@@ -240,7 +250,7 @@ public class TwitchClientController
     /// EventSubからのフォローイベントを処理し、メッセージ送信と読み上げを行います。
     /// </summary>
     /// <param name="e">フォローイベント引数</param>
-    public async void TwitchEventSubOnFollow(ChannelFollowArgs e)
+    public void TwitchEventSubOnFollow(ChannelFollowArgs e)
     {
         var followEvent = e.Notification.Payload.Event;
         var followerName = followEvent.UserName;
@@ -249,7 +259,7 @@ public class TwitchClientController
             .Replace("{followerChannelUrl}", followerChannelUrl);
 
         SendMessage(followerName, $"[{Settings.Default.BotName}] {message}");
-        _bouyomiChanController.AddEventTalkTask($"{followerName}さんがFollowしました", _secretKeys.BouyomiChan.Checked);
+        BouyomiChanController.AddEventTalkTask($"{followerName}さんがFollowしました", _secretKeys.BouyomiChan.Checked);
         LogController.OutputLog($"<Follow> Name: {followerName}, URL: {followerChannelUrl}",
             TwitchEventEnum.Follow);
     }
@@ -270,7 +280,7 @@ public class TwitchClientController
             .Replace("{bitsSendUserName}", bitsSendUserName);
         SendMessage(bitsSendUserName, $"[{Settings.Default.BotName}] {message}");
 
-        _bouyomiChanController.AddEventTalkTask($"{bitsSendUserName}さん{bitsAmount}bitsありがとうございます",
+        BouyomiChanController.AddEventTalkTask($"{bitsSendUserName}さん{bitsAmount}bitsありがとうございます",
                 _secretKeys.BouyomiChan.Checked);
         LogController.OutputLog($"<Bits> UserName: {bitsSendUserName}, Amount: {bitsAmount}", TwitchEventEnum.Bits);
     }
@@ -309,7 +319,7 @@ public class TwitchClientController
         var message = _secretKeys.Event.Raid.Message.Replace("{raiderName}", raiderName)
             .Replace("{raiderChannelUrl}", raiderChannelUrl);
         SendMessage(raiderName, $"[{Settings.Default.BotName}] {message}");
-        _bouyomiChanController.AddEventTalkTask($"{raiderName}さんにRaidされました", _secretKeys.BouyomiChan.Checked);
+        BouyomiChanController.AddEventTalkTask($"{raiderName}さんにRaidされました", _secretKeys.BouyomiChan.Checked);
         LogController.OutputLog($"<Raid> Name: {raiderName}, URL: {raiderChannelUrl}", TwitchEventEnum.Raid);
 
         await _twitchApiController.SendShoutoutAsync(raiderName);
@@ -324,7 +334,7 @@ public class TwitchClientController
         var message = _secretKeys.Event.Subscription.Message.Replace("{subscriberName}", subscriberName)
             .Replace("{totalSubscriptionMonth}", "1");
         SendMessage(subscriberName, $"[{Settings.Default.BotName}] {message}", e.Subscriber.UserId);
-        _bouyomiChanController.AddEventTalkTask($"{subscriberName}さんサブスクありがとうございます",
+        BouyomiChanController.AddEventTalkTask($"{subscriberName}さんサブスクありがとうございます",
                 _secretKeys.BouyomiChan.Checked);
         LogController.OutputLog($"<New Subscriber> Name: {subscriberName}", TwitchEventEnum.Subscriber);
     }
@@ -339,7 +349,7 @@ public class TwitchClientController
         var message = _secretKeys.Event.Subscription.Message.Replace("{subscriberName}", subscriberName)
             .Replace("{totalSubscriptionMonth}", months);
         SendMessage(subscriberName, $"[{Settings.Default.BotName}] {message}", e.PrimePaidSubscriber.UserId);
-        _bouyomiChanController.AddEventTalkTask($"{subscriberName}さんサブスクありがとうございます",
+        BouyomiChanController.AddEventTalkTask($"{subscriberName}さんサブスクありがとうございます",
                 _secretKeys.BouyomiChan.Checked);
         LogController.OutputLog($"<Prime Subscriber> Name: {subscriberName}", TwitchEventEnum.Subscriber);
     }
@@ -363,14 +373,14 @@ public class TwitchClientController
             LogController.OutputLog($"<Subscriber> Message: {message}",
                 TwitchEventEnum.Subscriber);
             SendMessage(subscriberName, $"[{Settings.Default.BotName}] {message}", e.ReSubscriber.UserId);
-            _bouyomiChanController.AddEventTalkTask($"{subscriberName}さん{totalSubscriptionMonth}か月目のサブスクありがとうございます",
+            BouyomiChanController.AddEventTalkTask($"{subscriberName}さん{totalSubscriptionMonth}か月目のサブスクありがとうございます",
                     _secretKeys.BouyomiChan.Checked);
             LogController.OutputLog($"<Subscriber> Name: {subscriberName}, total: {totalSubscriptionMonth} time.",
                 TwitchEventEnum.Subscriber);
         }
         catch (Exception ex)
         {
-            _bouyomiChanController.AddEventTalkTask("翻訳に失敗しました", _secretKeys.BouyomiChan.Checked);
+            BouyomiChanController.AddEventTalkTask("翻訳に失敗しました", _secretKeys.BouyomiChan.Checked);
             LogController.OutputLog($"<Subscriber> Error: {ex.Message}", TwitchEventEnum.Subscriber);
         }
     }
@@ -384,7 +394,7 @@ public class TwitchClientController
         var url = $"https://twitch.tv/{giftedUserName}";
         var message = _secretKeys.Event.Gift.Message.Replace("{giftedUserName}", giftedUserName);
         SendMessage(giftedUserName, $"[{Settings.Default.BotName}] {message}");
-        _bouyomiChanController.AddEventTalkTask($"{giftedUserName}さんGiftありがとうございます",
+        BouyomiChanController.AddEventTalkTask($"{giftedUserName}さんGiftありがとうございます",
                 _secretKeys.BouyomiChan.Checked);
         LogController.OutputLog($"<Gift> Name: {giftedUserName} URL: {url}", TwitchEventEnum.Gift);
     }
@@ -394,6 +404,7 @@ public class TwitchClientController
     /// </summary>
     private async void TwitchClientOnMessageReceived(object? sender, OnMessageReceivedArgs e)
     {
+        if (_twitchClient == null) return;
         // Twitchチャット上のコメントのみ受け取れる
         if (e.ChatMessage.Message.Contains(@"badword"))
             _twitchClient.TimeoutUser(e.ChatMessage.Channel, e.ChatMessage.Username, TimeSpan.FromMinutes(30),
@@ -418,13 +429,13 @@ public class TwitchClientController
     private async Task SendMessageTranslationAsync(string userName, string displayName, string sourceMessage,
         bool isAnnouncement = false, string userId = "")
     {
-        if (!_twitchTranslationController.IsTargetTranslationWord(sourceMessage)) return;
+        if (!TwitchTranslationController.IsTargetTranslationWord(sourceMessage)) return;
 
         var beatSaberRegexMessage = TextRegexController.LoadBsrChat(sourceMessage);
         if (sourceMessage != beatSaberRegexMessage && !isAnnouncement)
         {
             // BeatSaber関連は読み上げだけ行う
-            _bouyomiChanController.AddTalkTask(userName, beatSaberRegexMessage, _secretKeys.BouyomiChan.Checked);
+            BouyomiChanController.AddTalkTask(userName, beatSaberRegexMessage, _secretKeys.BouyomiChan.Checked);
             return;
         }
 
@@ -441,24 +452,31 @@ public class TwitchClientController
         {
             // URLのみは翻訳しない
             var message = sourceMessage;
-            if (!_twitchTranslationController.IsOnlyUrl(message))
+            if (!TwitchTranslationController.IsOnlyUrl(message))
             {
-                var targetLanguage = _twitchTranslationController.IsJapanese(sourceMessage)
+                var targetLanguage = TwitchTranslationController.IsJapanese(sourceMessage)
                     ? "EN-US"
                     : "JA";
 
             // Emote文字列は翻訳と読み上げで使わないので削除する
-                var sourceMessageForTranslation = _twitchTranslationController.RemoveEmotes(sourceMessage, _twitchClient);
+                var sourceMessageForTranslation = _twitchClient != null 
+                    ? TwitchTranslationController.RemoveEmotes(sourceMessage, _twitchClient)
+                    : sourceMessage;
                 if (string.IsNullOrEmpty(sourceMessageForTranslation))
                 {
-                    _bouyomiChanController.AddTalkTask(displayName, "", _secretKeys.BouyomiChan.Checked);
+                    BouyomiChanController.AddTalkTask(displayName, "", _secretKeys.BouyomiChan.Checked);
                     return;
                 }
 
                 var text = await _twitchTranslationController.TranslateAsync(sourceMessageForTranslation, targetLanguage);
+                if (text == null)
+                {
+                    BouyomiChanController.AddTalkTask(displayName, sourceMessage, _secretKeys.BouyomiChan.Checked);
+                    return;
+                }
                 var sourceLanguage = text.DetectedSourceLanguageCode.ToUpper();
                 // 誤検知対策: 日本語なのに他言語と判定された場合
-                if (sourceLanguage != "JA" && _twitchTranslationController.IsJapanese(sourceMessageForTranslation))
+                if (sourceLanguage != "JA" && TwitchTranslationController.IsJapanese(sourceMessageForTranslation))
                 {
                     sourceLanguage = "JA";
                 }
@@ -473,18 +491,21 @@ public class TwitchClientController
             // 母国語で読み上げ
             if (!isAnnouncement)
             {
-                _bouyomiChanController.AddTalkTask(displayName, message, _secretKeys.BouyomiChan.Checked);
+                BouyomiChanController.AddTalkTask(displayName, message, _secretKeys.BouyomiChan.Checked);
             }
         }
         catch (Exception ex)
         {
             var errorMessage = "DeepL翻訳に失敗しています。";
-            SendMessage(displayName,
-                $"[{Settings.Default.BotName}] @{_twitchClient.TwitchUsername} {errorMessage}", userId);
-            if (_secretKeys.BouyomiChan.Checked && !isAnnouncement)
+            if (_twitchClient != null)
             {
-                _bouyomiChanController.AddTalkTask(_twitchClient.TwitchUsername, errorMessage,
+                SendMessage(displayName,
+                    $"[{Settings.Default.BotName}] @{_twitchClient.TwitchUsername} {errorMessage}", userId);
+                if (_secretKeys.BouyomiChan.Checked && !isAnnouncement)
+                {
+                    BouyomiChanController.AddTalkTask(_twitchClient.TwitchUsername, errorMessage,
                         _secretKeys.BouyomiChan.Checked);
+                }
             }
 
             LogController.OutputLog($"<Error> {ex.Message}");

@@ -15,7 +15,7 @@ public class StreamingUserModel
     /// <summary>
     /// </summary>
     [JsonPropertyName("loginId")]
-    public string LoginId { get; set; } = "";
+    public string LoginId { get; init; } = "";
 
     /// <summary>
     /// </summary>

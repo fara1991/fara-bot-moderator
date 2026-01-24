@@ -10,9 +10,9 @@ namespace FaraBotModerator.Controllers;
 /// <summary>
 /// DeepL APIを用いた翻訳処理を担当するコントローラー
 /// </summary>
-public class TwitchTranslationController : System.IDisposable
+public partial class TwitchTranslationController : System.IDisposable
 {
-    private readonly Translator _deepLTranslator;
+    private readonly Translator? _deepLTranslator;
 
     /// <summary>
     /// TwitchTranslationController のコンストラクタ
@@ -20,7 +20,10 @@ public class TwitchTranslationController : System.IDisposable
     /// <param name="deepLApiKey">DeepL APIキー</param>
     public TwitchTranslationController(string deepLApiKey)
     {
-        _deepLTranslator = new Translator(deepLApiKey);
+        if (!string.IsNullOrEmpty(deepLApiKey))
+        {
+            _deepLTranslator = new Translator(deepLApiKey);
+        }
     }
 
     /// <summary>
@@ -29,18 +32,10 @@ public class TwitchTranslationController : System.IDisposable
     /// <param name="text">翻訳対象テキスト</param>
     /// <param name="targetLanguageCode">ターゲット言語コード（例: "EN-US", "JA"）</param>
     /// <returns>翻訳結果モデル</returns>
-    public async Task<TextResult> TranslateAsync(string text, string targetLanguageCode)
+    public async Task<TextResult?> TranslateAsync(string text, string targetLanguageCode)
     {
+        if (_deepLTranslator == null) return null;
         return await _deepLTranslator.TranslateTextAsync(text, null, targetLanguageCode);
-    }
-
-    /// <summary>
-    /// DeepL APIの使用状況を取得します。
-    /// </summary>
-    /// <returns>使用状況情報</returns>
-    public async Task<Usage> GetUsageAsync()
-    {
-        return await _deepLTranslator.GetUsageAsync();
     }
 
     /// <summary>
@@ -48,9 +43,9 @@ public class TwitchTranslationController : System.IDisposable
     /// </summary>
     /// <param name="text">判定対象テキスト</param>
     /// <returns>日本語を含んでいればtrue</returns>
-    public bool IsJapanese(string text)
+    public static bool IsJapanese(string text)
     {
-        return Regex.IsMatch(text, @"[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]");
+        return JapaneseRegex().IsMatch(text);
     }
 
     /// <summary>
@@ -59,11 +54,10 @@ public class TwitchTranslationController : System.IDisposable
     /// <param name="message">メッセージ</param>
     /// <param name="twitchClient">Twitchクライアントインスタンス</param>
     /// <returns>エモート削除後のメッセージ</returns>
-    public string RemoveEmotes(string message, TwitchClient twitchClient)
+    public static string RemoveEmotes(string message, TwitchClient twitchClient)
     {
         var replaceEmoteMessage = twitchClient.ChannelEmotes.ReplaceEmotes(message);
-        var deleteEmoteMessage =
-            Regex.Replace(replaceEmoteMessage, "https://static-cdn.jtvnw.net/emoticons/v1/.*?/[0-9].0", "");
+        var deleteEmoteMessage = EmoteRegex().Replace(replaceEmoteMessage, "");
         return deleteEmoteMessage.Trim();
     }
 
@@ -72,13 +66,9 @@ public class TwitchTranslationController : System.IDisposable
     /// </summary>
     /// <param name="message">メッセージ</param>
     /// <returns>URLのみであればtrue</returns>
-    public bool IsOnlyUrl(string message)
+    public static bool IsOnlyUrl(string message)
     {
-        return message.Split(" ").Length == 1 &&
-               Regex.IsMatch(
-                   message,
-                   "^(http|https):\\/\\/[a-zA-Z0-9-]+(\\.[a-zA-Z0-9-]+)*(\\/[^\\s]*)?$"
-               );
+        return message.Split(" ").Length == 1 && UrlRegex().IsMatch(message);
     }
 
     /// <summary>
@@ -86,7 +76,7 @@ public class TwitchTranslationController : System.IDisposable
     /// </summary>
     /// <param name="message">判定対象メッセージ</param>
     /// <returns>翻訳対象であればtrue</returns>
-    public bool IsTargetTranslationWord(string message)
+    public static bool IsTargetTranslationWord(string message)
     {
         if (string.IsNullOrEmpty(message)) return false;
         if (message.Contains(Settings.Default.BotName)) return false;
@@ -101,6 +91,14 @@ public class TwitchTranslationController : System.IDisposable
     /// </summary>
     public void Dispose()
     {
-        _deepLTranslator.Dispose();
+        _deepLTranslator?.Dispose();
     }
+
+    [GeneratedRegex(@"[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]")]
+    private static partial Regex JapaneseRegex();
+    
+    [GeneratedRegex("^(http|https):\\/\\/[a-zA-Z0-9-]+(\\.[a-zA-Z0-9-]+)*(\\/[^\\s]*)?$")]
+    private static partial Regex UrlRegex();
+    [GeneratedRegex("https://static-cdn.jtvnw.net/emoticons/v1/.*?/[0-9].0")]
+    private static partial Regex EmoteRegex();
 }

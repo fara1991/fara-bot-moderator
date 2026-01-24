@@ -50,7 +50,8 @@
             </Setter>
         </Style>
     </Window.Resources>
-    <TabControl x:Name="MenuTabControl">
+    <Grid>
+        <TabControl x:Name="MenuTabControl">
         <TabItem x:Name="MainSettingsTabItem" Header="Main Settings">
             <Canvas x:Name="MainSettingsCanvas" Background="#FFE5E5E5">
                 <GroupBox x:Name="TwitchGroupBox" HorizontalAlignment="Center" Height="493"
@@ -746,4 +747,11 @@
             </Canvas>
         </TabItem>
     </TabControl>
+        <Grid x:Name="LoadingOverlay" Visibility="Visible" Background="#80000000">
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}" Value="0" IsIndeterminate="True" Width="50" Height="50" Foreground="White" />
+                <TextBlock x:Name="LoadingTextBlock" Text="Loading secrets.json..." Foreground="White" Margin="0,10,0,0" FontSize="16" />
+            </StackPanel>
+        </Grid>
+    </Grid>
 </Window>

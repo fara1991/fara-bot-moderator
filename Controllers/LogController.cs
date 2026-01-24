@@ -40,7 +40,7 @@ public static class LogController
 
         // Follow等のTwitchEventログは配信終了画像に自動で追加
         var eventFileName =
-            $"{System.Enum.GetName(typeof(TwitchEventEnum), eventEnum)}_{d.Year:0000}.{d.Month:00}.{d.Day:00}.log";
+            $"{Enum.GetName(typeof(TwitchEventEnum), eventEnum)}_{d.Year:0000}.{d.Month:00}.{d.Day:00}.log";
         var eventFilePath = $@"{directoryName}\{eventFileName}";
 
         // 排他制御

@@ -20,23 +20,20 @@ public static class SecretKeyController
     /// <returns>読み込まれた設定情報モデル</returns>
     public static SecretKeyModel LoadKeys()
     {
-        SecretKeyModel? secretKeys;
         if (!File.Exists(SecretFile)) CreateKeys();
 
+        SecretKeyModel? secretKeys;
         using (var file = File.OpenText(SecretFile))
         {
             var jsonData = file.ReadToEnd();
             secretKeys = JsonSerializer.Deserialize<SecretKeyModel>(jsonData);
         }
 
-        if (secretKeys is null)
-        {
-            var message = "Secret Keys don't initialize.";
-            LogController.OutputLog(message);
-            throw new FileFormatException(message);
-        }
-
-        return secretKeys;
+        if (secretKeys is not null) return secretKeys;
+        
+        const string message = "Secret Keys don't initialize.";
+        LogController.OutputLog(message);
+        throw new FileFormatException(message);
     }
 
     /// <summary>
@@ -116,6 +113,20 @@ public static class SecretKeyController
                     Checked = true,
                     Message = "{channelPointUserName} use channelPoint of {channelPointTitle} gamefa16Hi"
                 }
+            },
+            CycleMessage = new CycleMessageModel
+            {
+                Timer1 = new CycleTimerModel { Checked = false, Interval = 60, Message = "" },
+                Timer2 = new CycleTimerModel { Checked = false, Interval = 60, Message = "" },
+                Timer3 = new CycleTimerModel { Checked = false, Interval = 60, Message = "" },
+                Timer4 = new CycleTimerModel { Checked = false, Interval = 60, Message = "" }
+            },
+            FixedMessage = new FixedMessageModel
+            {
+                Timer1 = new FixedTimerModel { Checked = false, DatetimeString = "2023/1/1 00:00:00", Message = "" },
+                Timer2 = new FixedTimerModel { Checked = false, DatetimeString = "2023/1/1 00:00:00", Message = "" },
+                Timer3 = new FixedTimerModel { Checked = false, DatetimeString = "2023/1/1 00:00:00", Message = "" },
+                Timer4 = new FixedTimerModel { Checked = false, DatetimeString = "2023/1/1 00:00:00", Message = "" }
             }
         };
 

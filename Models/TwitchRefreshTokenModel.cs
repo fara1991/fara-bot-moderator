@@ -10,20 +10,20 @@ public class TwitchRefreshTokenModel
     /// <summary>
     /// </summary>
     [JsonPropertyName("access_token")]
-    public string AccessToken { get; set; } = "";
+    public string AccessToken { get; init; } = "";
 
     /// <summary>
     /// </summary>
     [JsonPropertyName("refresh_token")]
-    public string RefreshToken { get; set; } = "";
+    public string RefreshToken { get; init; } = "";
 
     /// <summary>
     /// </summary>
     [JsonPropertyName("scope")]
-    public List<string> Scope { get; set; } = new();
+    public List<string> Scope { get; init; } = [];
 
     /// <summary>
     /// </summary>
     [JsonPropertyName("token_type")]
-    public string TokenType { get; set; } = "";
+    public string TokenType { get; init; } = "";
 }

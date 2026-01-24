@@ -50,7 +50,7 @@ public class UniqueChannelPointController
         var rot = new[]
             {r.Next(-45, 45), r.Next(-45, 45), r.Next(-45, 45)};
 
-        var beatSaberUserPath = "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Beat Saber\\UserData";
+        const string beatSaberUserPath = "C:\\Users\\Fara\\BSManager\\BSInstances\\1.29.1\\UserData";
         var d = DateTime.Now;
         // userNameは日本語が入るとSaber Tailorが認識しないらしい
         var fileName =

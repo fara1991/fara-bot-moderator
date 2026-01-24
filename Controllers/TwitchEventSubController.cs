@@ -46,7 +46,7 @@ public class TwitchEventSubController
     /// <summary>
     /// EventSubクライアントを接続する
     /// </summary>
-    public async Task ConnectAsync()
+    public static async Task ConnectAsync()
     {
         if (_eventSubClient != null)
         {
@@ -58,7 +58,7 @@ public class TwitchEventSubController
     /// <summary>
     /// EventSubクライアントを切断する
     /// </summary>
-    public async Task DisconnectAsync()
+    public static async Task DisconnectAsync()
     {
         if (_eventSubClient != null)
         {
@@ -75,17 +75,15 @@ public class TwitchEventSubController
     private Task TwitchEventSubOnConnected(object? sender, WebsocketConnectedArgs e)
     {
         var sessionId = _eventSubClient?.SessionId;
-        if (sessionId != null)
-        {
-            LogController.OutputLog($"EventSub WebSocket {sessionId} connected.");
-            IsConnected = true;
-            if (!e.IsRequestedReconnect)
-            {
-                _ = _twitchApiController.CreateEventSubFollowAsync(sessionId);
-                _ = _twitchApiController.CreateEventSubCheerAsync(sessionId);
-                _ = _twitchApiController.CreateEventSubChannelPointAsync(sessionId);
-            }
-        }
+        if (sessionId == null) return Task.CompletedTask;
+        
+        LogController.OutputLog($"EventSub WebSocket {sessionId} connected.");
+        IsConnected = true;
+        if (e.IsRequestedReconnect) return Task.CompletedTask;
+        
+        _ = _twitchApiController.CreateEventSubFollowAsync(sessionId);
+        _ = _twitchApiController.CreateEventSubCheerAsync(sessionId);
+        _ = _twitchApiController.CreateEventSubChannelPointAsync(sessionId);
 
         return Task.CompletedTask;
     }

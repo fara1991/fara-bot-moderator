@@ -16,10 +16,10 @@ namespace FaraBotModerator.Controllers;
 /// </summary>
 public class TwitchApiController
 {
-    private readonly TwitchAPI _twitchApi;
+    private TwitchAPI? _twitchApi;
     private readonly SecretKeyModel _secretKeyModel;
-    private readonly User _myUserInfo;
-    private readonly Stream _myStreamInfo;
+    private User? _myUserInfo;
+    private Stream? _myStreamInfo;
 
     /// <summary>
     /// Twitch API経由の操作をするControllerのコンストラクタ
@@ -28,6 +28,13 @@ public class TwitchApiController
     public TwitchApiController(SecretKeyModel secretKeyModel)
     {
         _secretKeyModel = secretKeyModel;
+    }
+
+    /// <summary>
+    /// Twitch API クライアントを初期化し、自身のユーザー情報・配信情報を取得します。
+    /// </summary>
+    public async Task InitializeAsync()
+    {
         _twitchApi = new TwitchAPI
         {
             Settings =
@@ -37,11 +44,18 @@ public class TwitchApiController
                 AccessToken = Settings.Default.AccessToken
             }
         };
+
+        if (string.IsNullOrEmpty(_secretKeyModel.Twitch.Client.UserName))
+        {
+            _myUserInfo = new User();
+            _myStreamInfo = new Stream();
+            return;
+        }
+
         try
         {
-            // コンストラクタでの同期待機はやむを得ないが、既存のコードに合わせてTask.Run().Resultを使用
-            _myUserInfo = Task.Run(() => GetTwitchChannelByLoginAsync(_secretKeyModel.Twitch.Client.UserName)).Result;
-            _myStreamInfo = Task.Run(() => GetTwitchStreamingAsync(_secretKeyModel.Twitch.Client.UserName)).Result;
+            _myUserInfo = await GetTwitchChannelByLoginAsync(_secretKeyModel.Twitch.Client.UserName);
+            _myStreamInfo = await GetTwitchStreamingAsync(_secretKeyModel.Twitch.Client.UserName);
         }
         catch (Exception ex)
         {
@@ -50,7 +64,9 @@ public class TwitchApiController
             {
                 LogController.OutputLog($@"<Error> Inner Exception: {ex.InnerException.Message}");
             }
-            // 呼び出し側で致命的なエラーにならないよう、nullを許容するかデフォルト値を設定
+        }
+        finally
+        {
             _myUserInfo ??= new User();
             _myStreamInfo ??= new Stream();
         }
@@ -83,8 +99,9 @@ public class TwitchApiController
     /// </summary>
     /// <param name="userId">TwitchユーザーID</param>
     /// <returns>ユーザー情報モデル</returns>
-    private async Task<User> GetTwitchChannelByIdAsync(string userId)
+    private async Task<User?> GetTwitchChannelByIdAsync(string userId)
     {
+        if (_twitchApi == null) return null;
         try
         {
             var userIds = new List<string> {userId};
@@ -104,8 +121,9 @@ public class TwitchApiController
     /// </summary>
     /// <param name="userName">Twitchログイン名</param>
     /// <returns>ユーザー情報モデル</returns>
-    private async Task<User> GetTwitchChannelByLoginAsync(string userName)
+    private async Task<User?> GetTwitchChannelByLoginAsync(string userName)
     {
+        if (_twitchApi == null) return null;
         try
         {
             var userIds = new List<string>();
@@ -126,6 +144,7 @@ public class TwitchApiController
     /// <param name="raiderUserName">シャウトアウト対象のユーザー名</param>
     public async Task SendShoutoutAsync(string raiderUserName)
     {
+        if (_twitchApi == null || _myUserInfo == null) return;
         try
         {
             var raidUserIds = new List<string>();
@@ -150,6 +169,7 @@ public class TwitchApiController
     /// <returns>ストリーム情報モデル</returns>
     private async Task<Stream> GetTwitchStreamingAsync(string userName)
     {
+        if (_twitchApi == null) return new Stream();
         try
         {
             var userIds = new List<string>();
@@ -170,6 +190,7 @@ public class TwitchApiController
     /// <returns>配信中ユーザー情報のリスト</returns>
     public async Task<List<StreamingUserModel>> GetStreamingSameGameUsersAsync()
     {
+        if (_twitchApi == null || _myStreamInfo == null) return new List<StreamingUserModel>();
         try
         {
             var userIds = new List<string>();
@@ -213,6 +234,7 @@ public class TwitchApiController
     /// <returns>配信中ユーザー情報のリスト</returns>
     public async Task<List<StreamingUserModel>> GetStreamingFollowerUsersAsync()
     {
+        if (_twitchApi == null || string.IsNullOrEmpty(_myUserInfo?.Id)) return new List<StreamingUserModel>();
         try
         {
             var followingUsers = await _twitchApi.Helix.Streams.GetFollowedStreamsAsync(_myUserInfo.Id);
@@ -243,6 +265,7 @@ public class TwitchApiController
     private async Task CreateEventSubSubscriptionAsync(string subscriptionType, string version,
         Dictionary<string, string> conditions, string sessionId)
     {
+        if (_twitchApi == null) return;
         try
         {
             await _twitchApi.Helix.EventSub.CreateEventSubSubscriptionAsync(
@@ -306,6 +329,7 @@ public class TwitchApiController
     /// <returns>有効であればtrue</returns>
     public bool ValidateToken()
     {
+        if (_twitchApi == null) return false;
         try
         {
             var accessToken = Settings.Default.AccessToken;

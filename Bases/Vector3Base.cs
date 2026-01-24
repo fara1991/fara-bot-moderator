@@ -9,15 +9,15 @@ public class Vector3Base
     /// <summary>
     /// </summary>
     [JsonPropertyName("x")]
-    public int x { get; set; } = 0;
+    public int x { get; set; }
 
     /// <summary>
     /// </summary>
     [JsonPropertyName("y")]
-    public int y { get; set; } = 0;
+    public int y { get; set; }
 
     /// <summary>
     /// </summary>
     [JsonPropertyName("z")]
-    public int z { get; set; } = 0;
+    public int z { get; set; }
 }
