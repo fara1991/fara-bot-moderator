@@ -101,11 +101,11 @@ public class TwitchClientController
     /// FaraBotModeratorのWindowからチャットをTwitchへ送信
     /// </summary>
     /// <param name="message"></param>
-    public void SendApplicationMessage(string message)
+    public async void SendApplicationMessage(string message)
     {
         if (message.Equals("")) return;
         SendMessage(_twitchUserName, message);
-        SendMessageTranslation(_twitchUserName, _twitchUserDisplayName, message);
+        await SendMessageTranslationAsync(_twitchUserName, _twitchUserDisplayName, message);
     }
 
     /// <summary>
@@ -196,14 +196,14 @@ public class TwitchClientController
     /// </summary>
     /// <param name="sender"></param>
     /// <param name="e"></param>
-    private void TwitchClientOnAnnouncement(object? sender, OnAnnouncementArgs e)
+    private async void TwitchClientOnAnnouncement(object? sender, OnAnnouncementArgs e)
     {
         try
         {
             var userName = e.Channel;
             var displayName = _secretKeys.Twitch.Client.DisplayName;
             var sourceMessage = e.Announcement.Message;
-            SendMessageTranslation(userName, displayName, sourceMessage, true);
+            await SendMessageTranslationAsync(userName, displayName, sourceMessage, true);
         }
         catch (Exception ex)
         {
@@ -235,7 +235,7 @@ public class TwitchClientController
     /// EventSubからのフォローイベントを処理
     /// </summary>
     /// <param name="e">フォローイベント引数</param>
-    public void TwitchEventSubOnFollow(ChannelFollowArgs e)
+    public async void TwitchEventSubOnFollow(ChannelFollowArgs e)
     {
         var followEvent = e.Notification.Payload.Event;
         var followerName = followEvent.UserName;
@@ -398,7 +398,7 @@ public class TwitchClientController
     /// </summary>
     /// <param name="sender"></param>
     /// <param name="e"></param>
-    private void TwitchClientOnMessageReceived(object? sender, OnMessageReceivedArgs e)
+    private async void TwitchClientOnMessageReceived(object? sender, OnMessageReceivedArgs e)
     {
         // Twitchチャット上のコメントのみ受け取れる
         if (e.ChatMessage.Message.Contains(@"badword"))
@@ -409,7 +409,7 @@ public class TwitchClientController
             var userName = e.ChatMessage.Username;
             var displayName = e.ChatMessage.DisplayName;
             var sourceMessage = e.ChatMessage.Message;
-            SendMessageTranslation(userName, displayName, sourceMessage, false, e.ChatMessage.UserId);
+            await SendMessageTranslationAsync(userName, displayName, sourceMessage, false, e.ChatMessage.UserId);
         }
         catch (Exception ex)
         {
@@ -425,7 +425,7 @@ public class TwitchClientController
     /// <param name="sourceMessage"></param>
     /// <param name="isAnnouncement"></param>
     /// <param name="userId"></param>
-    private void SendMessageTranslation(string userName, string displayName, string sourceMessage,
+    private async Task SendMessageTranslationAsync(string userName, string displayName, string sourceMessage,
         bool isAnnouncement = false, string userId = "")
     {
         if (!_twitchTranslationController.IsTargetTranslationWord(sourceMessage)) return;
@@ -438,7 +438,7 @@ public class TwitchClientController
             return;
         }
 
-        MessageTranslationProcess(sourceMessage, userName, displayName, isAnnouncement, userId);
+        await MessageTranslationProcessAsync(sourceMessage, userName, displayName, isAnnouncement, userId);
     }
 
     /// <summary>
@@ -448,7 +448,7 @@ public class TwitchClientController
     /// <param name="displayName"></param>
     /// <param name="isAnnouncement"></param>
     /// <param name="userId"></param>
-    private void MessageTranslationProcess(string sourceMessage, string userName, string displayName,
+    private async Task MessageTranslationProcessAsync(string sourceMessage, string userName, string displayName,
         bool isAnnouncement = false, string userId = "")
     {
         try
@@ -469,8 +469,7 @@ public class TwitchClientController
                     return;
                 }
 
-                var text = Task.Run(() => _twitchTranslationController.TranslateAsync(sourceMessageForTranslation, targetLanguage))
-                    .Result;
+                var text = await _twitchTranslationController.TranslateAsync(sourceMessageForTranslation, targetLanguage);
                 var sourceLanguage = text.DetectedSourceLanguageCode.ToUpper();
                 // 誤検知対策: 日本語なのに他言語と判定された場合
                 if (sourceLanguage != "JA" && _twitchTranslationController.IsJapanese(sourceMessageForTranslation))

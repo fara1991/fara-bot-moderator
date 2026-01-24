@@ -1,5 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Net.Http;
+using System.Threading.Tasks;
 
 namespace FaraBotModerator.Controllers;
 
@@ -13,23 +15,21 @@ public class BouyomiChanController
     /// <param name="talkName">喋らせたい名前</param>
     /// <param name="talkText">喋らせたい文章</param>
     /// <param name="bouyomiChanCall"></param>
-    public bool AddTalkTask(string talkName, string talkText, bool bouyomiChanCall)
+    public void AddTalkTask(string talkName, string talkText, bool bouyomiChanCall)
     {
-        if (bouyomiChanCall) return CreateTalk($"{talkName}さん {talkText}");
-        return true;
+        if (bouyomiChanCall) _ = CreateTalkAsync($"{talkName}さん {talkText}");
     }
 
     /// <summary>
     /// </summary>
     /// <param name="talkText"></param>
     /// <param name="bouyomiChanCall"></param>
-    public bool AddEventTalkTask(string talkText, bool bouyomiChanCall)
+    public void AddEventTalkTask(string talkText, bool bouyomiChanCall)
     {
-        if (bouyomiChanCall) return CreateTalk(talkText);
-        return true;
+        if (bouyomiChanCall) _ = CreateTalkAsync(talkText);
     }
 
-    private bool CreateTalk(string talkText)
+    private async Task<bool> CreateTalkAsync(string talkText)
     {
         try
         {
@@ -44,8 +44,8 @@ public class BouyomiChanController
 
             using var client = new HttpClient();
             // タイムアウトを短めに設定（棒読みちゃんが起動していない場合に長時間待たされないようにするため）
-            client.Timeout = System.TimeSpan.FromSeconds(2);
-            var response = client.PostAsync("http://localhost:5008/Talk", content).Result;
+            client.Timeout = TimeSpan.FromSeconds(2);
+            var response = await client.PostAsync("http://localhost:5008/Talk", content);
             return response.IsSuccessStatusCode;
         }
         catch (System.Exception ex)
@@ -65,10 +65,10 @@ public class BouyomiChanController
         try
         {
             using var client = new HttpClient();
-            client.Timeout = System.TimeSpan.FromSeconds(2);
+            client.Timeout = TimeSpan.FromSeconds(2);
             // 棒読みちゃんのHTTP連携が有効であれば、GET /Talk に対して (恐らく405 Method Not Allowed等が返るが) 接続はできるはず
             // 接続自体が拒否される場合は起動していないとみなす
-            var response = client.GetAsync("http://localhost:5008/Talk").Result;
+            var response = Task.Run(() => client.GetAsync("http://localhost:5008/Talk")).Result;
             return true;
         }
         catch

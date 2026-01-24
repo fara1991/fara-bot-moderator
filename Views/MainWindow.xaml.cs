@@ -204,31 +204,31 @@ public partial class MainWindow : INotifyPropertyChanged
             else timer4Count = 0;
 
             var cycleTimer1Minute = (int) CycleTimer1Slider.Value * 60;
-            if (timer1Count >= cycleTimer1Minute)
+            if (timer1Count >= cycleTimer1Minute && cycleTimer1Minute > 0)
             {
                 timer1Count %= cycleTimer1Minute;
                 _twitchClientController.SendModeratorMessage(CycleTimer1TextBox.Text);
             }
 
             var cycleTimer2Minute = (int) CycleTimer2Slider.Value * 60;
-            if (timer2Count >= cycleTimer2Minute)
+            if (timer2Count >= cycleTimer2Minute && cycleTimer2Minute > 0)
             {
-                timer2Count %= cycleTimer1Minute;
-                _twitchClientController.SendModeratorMessage(CycleTimer1TextBox.Text);
+                timer2Count %= cycleTimer2Minute;
+                _twitchClientController.SendModeratorMessage(CycleTimer2TextBox.Text);
             }
 
             var cycleTimer3Minute = (int) CycleTimer3Slider.Value * 60;
-            if (timer3Count >= cycleTimer3Minute)
+            if (timer3Count >= cycleTimer3Minute && cycleTimer3Minute > 0)
             {
                 timer3Count %= cycleTimer3Minute;
-                _twitchClientController.SendModeratorMessage(CycleTimer1TextBox.Text);
+                _twitchClientController.SendModeratorMessage(CycleTimer3TextBox.Text);
             }
 
-            var cycleTimer4Minute = (int) CycleTimer3Slider.Value * 60;
-            if (timer4Count >= cycleTimer4Minute)
+            var cycleTimer4Minute = (int) CycleTimer4Slider.Value * 60;
+            if (timer4Count >= cycleTimer4Minute && cycleTimer4Minute > 0)
             {
                 timer4Count %= cycleTimer4Minute;
-                _twitchClientController.SendModeratorMessage(CycleTimer1TextBox.Text);
+                _twitchClientController.SendModeratorMessage(CycleTimer4TextBox.Text);
             }
 
             // FixedTimer
@@ -285,13 +285,13 @@ public partial class MainWindow : INotifyPropertyChanged
         var accessTokenQuery = new[] {$"http://localhost:{Settings.Default.Port}", "code=", "scope=", "state="};
         while (true)
         {
-            await Task.Delay(1);
+            await Task.Delay(100);
             if (FaraBotModeratorWebView.Source is null)
                 continue;
 
             var url = FaraBotModeratorWebView.Source.ToString();
             // URL毎に処理を追加
-            if (accessTokenQuery.All(key => url.Contains(key))) await Task.Run(() => UpdateAccessToken(url));
+            if (accessTokenQuery.All(key => url.Contains(key))) await UpdateAccessTokenAsync(url);
         }
     }
 
@@ -308,7 +308,7 @@ public partial class MainWindow : INotifyPropertyChanged
             if (DateTime.Now > Settings.Default.expiresDateTime)
             {
                 TwitchApiNotificationCanvas.Visibility = Visibility.Visible;
-                if (!string.IsNullOrEmpty(Settings.Default.RefreshToken)) await Task.Run(UpdateRefreshToken);
+                if (!string.IsNullOrEmpty(Settings.Default.RefreshToken)) await UpdateRefreshTokenAsync();
             }
             else
             {
@@ -339,9 +339,9 @@ public partial class MainWindow : INotifyPropertyChanged
     {
         while (true)
         {
-            while (_twitchClientController is null) await Task.Delay(1);
+            while (_twitchClientController is null) await Task.Delay(100);
 
-            await Task.Delay(1);
+            await Task.Delay(500);
             var isConnected = _twitchClientController is { IsConnected: true } &&
                               _twitchEventSubController is { IsConnected: true };
 
@@ -387,7 +387,7 @@ public partial class MainWindow : INotifyPropertyChanged
     ///     Token期限切れの時に呼び出してTokenを更新します。
     /// </summary>
     /// <exception cref="HttpRequestException"></exception>
-    private void UpdateRefreshToken()
+    private async Task UpdateRefreshTokenAsync()
     {
         var parameter =
             $"client_id={TwitchApiClientIdPasswordBox.Password}" +
@@ -396,7 +396,7 @@ public partial class MainWindow : INotifyPropertyChanged
             $"&refresh_token={Settings.Default.RefreshToken}";
         try
         {
-            var response = Task.Run(() => PostResponseBodyAsync(parameter, "https://id.twitch.tv/oauth2/token")).Result;
+            var response = await PostResponseBodyAsync(parameter, "https://id.twitch.tv/oauth2/token");
             var jsonString =
                 JsonSerializer.Deserialize<TwitchRefreshTokenModel>(response.responseBody, response.option);
 
@@ -417,7 +417,7 @@ public partial class MainWindow : INotifyPropertyChanged
     /// </summary>
     /// <param name="url"></param>
     /// <exception cref="HttpRequestException"></exception>
-    private void UpdateAccessToken(string url)
+    private async Task UpdateAccessTokenAsync(string url)
     {
         var state = Regex.Match(url, @"state=(.*)").Groups[1];
         if (state.ToString() != Settings.Default.OAuth2State)
@@ -434,7 +434,7 @@ public partial class MainWindow : INotifyPropertyChanged
             $"&code={code}" +
             "&grant_type=authorization_code" +
             $"&redirect_uri=http://localhost:{Settings.Default.Port}";
-        var response = Task.Run(() => PostResponseBodyAsync(parameter, "https://id.twitch.tv/oauth2/token")).Result;
+        var response = await PostResponseBodyAsync(parameter, "https://id.twitch.tv/oauth2/token");
 
         // Token取得失敗は何もしない
         if (response.responseBody.Contains("Invalid authorization code")) return;
@@ -529,7 +529,7 @@ public partial class MainWindow : INotifyPropertyChanged
         var content = new StringContent(parameter, Encoding.Default, "application/x-www-form-urlencoded");
         var response = await httpClient.PostAsync(url, content);
 
-        var responseBody = response.Content.ReadAsStringAsync().Result;
+        var responseBody = await response.Content.ReadAsStringAsync();
         var option = new JsonSerializerOptions
         {
             Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
