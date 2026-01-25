@@ -35,8 +35,6 @@ $zipName = "$releaseDir\$projectName`_$version.zip"
 Write-Host "Step 2: Creating a ZIP package..." -ForegroundColor Yellow
 Compress-Archive -Path "$publishDir\*" -DestinationPath $zipName -Force
 
-Write-Host "Package created: $zipName" -ForegroundColor Green
-
 # 3. Compile Inno Setup (if ISCC is available)
 $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
 if (Test-Path $iscc) {

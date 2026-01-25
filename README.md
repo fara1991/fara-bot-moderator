@@ -1,81 +1,58 @@
 ﻿# FaraBotModerator
 
-Twitch用BOTです。まだ開発中なのでいろいろ動かない箇所があります。
+Twitch配信者向けの多機能BOTツールです。WPF (C# / .NET 8) で構築されており、チャット管理、イベント通知、翻訳、棒読みちゃん連携などの機能を備えています。
 
-画面はWPFで作成しています。使用するAPIは[Twitch Developers](https://dev.twitch.tv/), [TwitchLib](https://github.com/TwitchLib/TwitchLib)
-を使用しています。
+## 主な機能
 
-## メイン機能
+- **チャット連携**: Twitchチャットの取得、送信、表示。
+- **イベント通知**: Follow, Raid, Subscription, Bits, チャンネルポイント等のイベントを検知し、自動応答チャットを送信。
+- **翻訳機能**: DeepL APIと連携し、受信したチャットをリアルタイムで翻訳。
+- **棒読みちゃん連携**: 受信したチャットを棒読みちゃんで読み上げ。
+- **API連携**: Twitch API (Helix) を使用したユーザー情報の取得や各種アクション。
+- **EventSub対応**: WebSocketを使用した低遅延なイベント受信。
+- **タイマー機能**: 定期的なメッセージ送信や指定日時での自動チャット。
 
-![image](https://github.com/fara1991/FaraBotModerator/assets/69506848/10e34a0c-a2c6-4322-9726-f64a6a5e549c)
+## セットアップと使用方法
 
-* ### Client
+### 1. 動作環境
+- Windows 10/11 (x64)
+- [.NET 8 Runtime](https://dotnet.microsoft.com/download/dotnet/8.0)
+- [Microsoft Edge WebView2 Runtime](https://developer.microsoft.com/en-us/microsoft-edge/webview2/)
 
-Get Tokenボタンを押すとWebView画面にToken取得用の画面になるので、そこでTwitchのログイン情報を入れ、Connectを押すとoauth
-tokenを取得できます。
+### 2. インストール
+- [Releases](https://github.com/fara1991/FaraBotModerator/releases) から最新の `FaraBotModerator_Setup.exe` をダウンロードして実行してください。
+- または、ZIP版を解凍して `FaraBotModerator.exe` を直接実行することも可能です。
 
-取得したtokenをAccessTokenに入力します。
+### 3. 初期設定
+1. **Client設定**: `Get Token` ボタンからTwitch連携を行い、AccessTokenを取得して設定します。
+2. **API設定**: [Twitch Developers](https://dev.twitch.tv/console) でアプリを登録し、`ClientID` と `ClientSecret` を設定します。
+3. **DeepL連携 (任意)**: 翻訳機能を使用する場合は、DeepLの認証キーを設定します。
+4. **棒読みちゃん連携 (任意)**: 棒読みちゃんのHTTP連携設定（ポート 5008）を有効にします。
 
+## 開発者向け情報
+
+### ビルド方法
+リポジトリをクローンし、PowerShellスクリプトを使用してビルドおよびパッケージングが可能です。
+
+```powershell
+./build_release.ps1
 ```
-UserName: Twitchチャンネルのログイン時の名前
-AccessToken: 上記のAccessToken
-```
 
-これを入力しておくことで、Twitchに接続後のチャット内容、Raid通知、Gift通知、Subscription通知等を取得できるようになります。
+このスクリプトは以下の処理を行います：
+1. `dotnet publish` による実行ファイルの生成（シングルファイル形式）
+2. 配布用ZIPの作成
+3. Inno Setupを使用したインストーラー (`.exe`) の作成（Inno Setup 6 がインストールされている場合）
 
-* ### API
+### プロジェクト構成
+- `FaraBotModerator`: アプリ本体 (WPF)
+- `Installer`: Inno Setup用スクリプトおよび関連ファイル
+- `Resources`: アイコンや画像リソース
 
-チャット通知者のアイコン画像や、接続するTwitchのIDを取得するのに使用します。IDはTwitch PubSubの機能で使用します。
+## ライセンス
+本プロジェクトは開発中のプロトタイプです。
 
-Twitch Developersで事前にアプリケーション登録をする必要があります。https://dev.twitch.tv/console
-
-![image](https://github.com/fara1991/FaraBotModerator/assets/69506848/62e93213-935f-4f9f-91eb-1be1812db307)
-
-```
-clientId: 画像の赤枠内のクライアントID
-clientSecret: 画像の赤枠内のSecret
-```
-
-Authorizeボタンを押すとAPI Tokenを取得します。有効期限は短く設定しており、有効期限切れ状態では赤文字の警告を表示します。
-
-警告中は再度Authorizeボタンを押すことで再度token取得を行います。(いずれrefresh
-tokenを使うようにし、自動で更新できるように実装します。)
-
-* ### PubSub
-
-Twitch配信中のFollow通知、Bits通知、チャンネルポイント通知等を取得します。
-
-直接アプリケーションで設定する項目はなく、APIで入力した内容を使用します。
-
-* ### BouyomiChan
-
-BouyomiChanConnectにチェックを入れている場合、Connectボタンで接続時に棒読みちゃんとも連携します。
-
-棒読みちゃん側でHTTP連携をTrueにし、ポート番号を5008にする必要があります。
-
-![image](https://github.com/fara1991/FaraBotModerator/assets/69506848/c6faf23b-b0c8-479d-91a1-c35594ad9e22)
-
-これらを設定後、Connectボタンを押すとTwitchに接続、Disconnectボタンを押すとTwitch接続解除します。
-
-## Twitch Event機能
-
-![image](https://github.com/fara1991/FaraBotModerator/assets/69506848/662bdbba-ff93-42be-b3da-c7584e793f5f)
-
-TwitchのFoolow, Raid, Subscription, Bits, Gift,
-ChannelPointのそれぞれのイベントが発火したときにTwitch接続中であれば、設定したチャットをTwitchのチャットに表示できるようになります。
-
-name等`{}`で囲った文字については、下の内容でそれぞれ置き換わります。
-
-## Bot追加機能
-
-![image](https://github.com/fara1991/FaraBotModerator/assets/69506848/a47a9db4-38ff-47a7-9a6f-b7be8f54114c)
-
-* ### Translate
-
-DeepL翻訳機能です。DeepL APIの認証キーを入力すると、Twitchでチャットされた後翻訳チャットも表示します。
-
-* ### Timer
-
-定期的に入力したチャットを表示する機能と、指定の日時にチャットを表示する機能の2種類あります。
-
-何かしら宣伝したい時用に使用します。
+## 使用ライブラリ
+- [TwitchLib](https://github.com/TwitchLib/TwitchLib)
+- [DeepL.net](https://github.com/DeepLcom/deepl-dotnet)
+- [MaterialDesignInXamlToolkit](https://github.com/MaterialDesignInXAML/MaterialDesignInXamlToolkit)
+- [obs-websocket-dotnet](https://github.com/BarRaider/obs-websocket-dotnet)
