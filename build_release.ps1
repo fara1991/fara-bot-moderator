@@ -16,7 +16,7 @@ if ($LASTEXITCODE -ne 0) {
 
 Write-Host "Publish completed. Files are in: $publishDir" -ForegroundColor Green
 
-# 2. Package (Simple ZIP for now, can be extended for Inno Setup)
+# 2. Compile Inno Setup (if ISCC is available)
 $releaseDir = "Releases"
 if (!(Test-Path $releaseDir)) {
     New-Item -ItemType Directory -Path $releaseDir
@@ -29,16 +29,9 @@ if (!(Test-Path $webv2Installer)) {
     Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/p/?LinkId=2124703" -OutFile $webv2Installer
 }
 
-$version = (Get-Date -Format "yyyyMMdd_HHmm")
-$zipName = "$releaseDir\$projectName`_$version.zip"
-
-Write-Host "Step 2: Creating a ZIP package..." -ForegroundColor Yellow
-Compress-Archive -Path "$publishDir\*" -DestinationPath $zipName -Force
-
-# 3. Compile Inno Setup (if ISCC is available)
 $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
 if (Test-Path $iscc) {
-    Write-Host "Step 3: Compiling Inno Setup Installer..." -ForegroundColor Yellow
+    Write-Host "Step 2: Compiling Inno Setup Installer..." -ForegroundColor Yellow
     & $iscc "Installer\installer.iss"
     Write-Host "Installer created in $releaseDir" -ForegroundColor Green
 } else {

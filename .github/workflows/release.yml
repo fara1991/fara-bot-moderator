@@ -1,0 +1,144 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'バージョン (例: v1.0.0)'
+        required: true
+        type: string
+      branch:
+        description: 'ビルド対象のブランチ'
+        required: true
+        default: 'master'
+        type: string
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout (tag push)
+        if: github.event_name == 'push'
+        uses: actions/checkout@v4
+
+      - name: Checkout (manual)
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch }}
+
+      - name: Set version
+        id: version
+        run: |
+          if ("${{ github.event_name }}" -eq "push") {
+            $version = "${{ github.ref_name }}"
+          } else {
+            $version = "${{ inputs.version }}"
+          }
+          # vプレフィックスがない場合は追加
+          if (-not $version.StartsWith("v")) {
+            $version = "v$version"
+          }
+          echo "VERSION=$version" >> $env:GITHUB_OUTPUT
+          echo "Version: $version"
+        shell: pwsh
+
+      - name: Check and create tag (manual)
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          $version = "${{ steps.version.outputs.VERSION }}"
+
+          # タグが存在するか確認
+          git fetch --tags
+          $tagExists = git tag -l $version
+
+          if (-not $tagExists) {
+            Write-Host "Tag $version does not exist. Creating..." -ForegroundColor Yellow
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git tag $version
+            git push origin $version
+            Write-Host "Tag $version created and pushed." -ForegroundColor Green
+          } else {
+            Write-Host "Tag $version already exists." -ForegroundColor Green
+          }
+        shell: pwsh
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Install Inno Setup
+        run: |
+          choco install innosetup -y
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Create secrets.json
+        run: |
+          @'
+          {
+            "twitch": {
+              "client": { "userName": "", "displayName": "" },
+              "api": { "clientId": "", "secret": "" }
+            },
+            "deepL": { "apiKey": "" },
+            "bouyomiChan": { "isActive": false },
+            "event": {
+              "follow": { "checked": true, "message": "" },
+              "raid": { "checked": true, "message": "" },
+              "subscription": { "checked": true, "message": "" },
+              "bits": { "checked": true, "message": "" },
+              "gift": { "checked": true, "message": "" },
+              "channelPoint": { "checked": true, "message": "" }
+            },
+            "cycleMessage": {
+              "timer1": { "checked": false, "interval": 60, "message": "" },
+              "timer2": { "checked": false, "interval": 60, "message": "" },
+              "timer3": { "checked": false, "interval": 60, "message": "" },
+              "timer4": { "checked": false, "interval": 60, "message": "" }
+            },
+            "fixedMessage": {
+              "timer1": { "checked": false, "datetime": "2023/1/1 00:00:00", "message": "" },
+              "timer2": { "checked": false, "datetime": "2023/1/1 00:00:00", "message": "" },
+              "timer3": { "checked": false, "datetime": "2023/1/1 00:00:00", "message": "" },
+              "timer4": { "checked": false, "datetime": "2023/1/1 00:00:00", "message": "" }
+            },
+            "beatSaber": { "userDataPath": "" }
+          }
+          '@ | Out-File -FilePath secrets.json -Encoding UTF8
+
+      - name: Build and Package
+        run: |
+          ./build_release.ps1
+        shell: pwsh
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.version.outputs.VERSION }}
+          name: FaraBotModerator ${{ steps.version.outputs.VERSION }}
+          body: |
+            ## FaraBotModerator ${{ steps.version.outputs.VERSION }}
+
+            ### インストール方法
+            1. `FaraBotModerator_Setup.exe` をダウンロード
+            2. インストーラーを実行
+            3. 画面の指示に従ってインストール
+
+            ### 必要条件
+            - Windows 10/11
+            - .NET 8.0 ランタイム（インストーラーに含まれません）
+            - WebView2 ランタイム（インストーラーが自動でインストールします）
+          files: |
+            Releases/FaraBotModerator_Setup.exe
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

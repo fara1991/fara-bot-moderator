@@ -40,6 +40,7 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 [Files]
 Source: "..\bin\Release\net8.0-windows10.0.22621.0\publish\win-x64\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "..\secrets.json"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\Manual.md"; DestDir: "{app}"; Flags: ignoreversion
 Source: "WebView2RuntimeInstaller.exe"; DestDir: "{tmp}"; Flags: deleteafterinstall
 
 [InstallDelete]

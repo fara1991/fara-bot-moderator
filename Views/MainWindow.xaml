@@ -716,10 +716,10 @@
                     </GroupBox.Header>
                     <Grid x:Name="WindowsControlGrid" Margin="10" TextBlock.Foreground="Black">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="510" />
+                            <ColumnDefinition Width="510" />
                         </Grid.ColumnDefinitions>
-                        <GroupBox x:Name="ChatWindowGroupBox" Grid.Column="0" Margin="5" Height="130">
+                        <GroupBox x:Name="ChatWindowGroupBox" Grid.Column="0" Margin="5" Height="130" VerticalAlignment="Top">
                             <GroupBox.Header>
                                 <TextBlock Text="Chat Window" />
                             </GroupBox.Header>
@@ -730,7 +730,7 @@
                                         HorizontalAlignment="Center" Click="OpenChatWindowButton_Click" />
                             </StackPanel>
                         </GroupBox>
-                        <GroupBox x:Name="RaidListWindowGroupBox" Grid.Column="1" Margin="5" Height="130">
+                        <GroupBox x:Name="RaidListWindowGroupBox" Grid.Column="1" Margin="5" Height="130" VerticalAlignment="Top">
                             <GroupBox.Header>
                                 <TextBlock Text="Raid List Window" />
                             </GroupBox.Header>

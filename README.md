@@ -21,9 +21,10 @@ Twitch配信者向けの多機能BOTツールです。WPF (C# / .NET 8) で構�
 
 ### 2. インストール
 - [Releases](https://github.com/fara1991/FaraBotModerator/releases) から最新の `FaraBotModerator_Setup.exe` をダウンロードして実行してください。
-- または、ZIP版を解凍して `FaraBotModerator.exe` を直接実行することも可能です。
 
 ### 3. 初期設定
+詳細な設定手順や使い方は、[操作説明書 (Manual.md)](Manual.md) を参照してください。
+
 1. **Client設定**: `Get Token` ボタンからTwitch連携を行い、AccessTokenを取得して設定します。
 2. **API設定**: [Twitch Developers](https://dev.twitch.tv/console) でアプリを登録し、`ClientID` と `ClientSecret` を設定します。
 3. **DeepL連携 (任意)**: 翻訳機能を使用する場合は、DeepLの認証キーを設定します。
@@ -40,8 +41,7 @@ Twitch配信者向けの多機能BOTツールです。WPF (C# / .NET 8) で構�
 
 このスクリプトは以下の処理を行います：
 1. `dotnet publish` による実行ファイルの生成（シングルファイル形式）
-2. 配布用ZIPの作成
-3. Inno Setupを使用したインストーラー (`.exe`) の作成（Inno Setup 6 がインストールされている場合）
+2. Inno Setupを使用したインストーラー (`.exe`) の作成（Inno Setup 6 がインストールされている場合）
 
 ### プロジェクト構成
 - `FaraBotModerator`: アプリ本体 (WPF)
