@@ -42,6 +42,24 @@ public class SecretKeyModel
     /// </summary>
     [JsonPropertyName("fixedMessage")]
     public FixedMessageModel FixedMessage { get; init; } = new();
+
+    /// <summary>
+    /// BeatSaber関連の設定
+    /// </summary>
+    [JsonPropertyName("beatSaber")]
+    public BeatSaberModel BeatSaber { get; init; } = new();
+}
+
+/// <summary>
+/// BeatSaber関連の設定を保持するモデル
+/// </summary>
+public class BeatSaberModel
+{
+    /// <summary>
+    /// BeatSaberのUserDataディレクトリパス
+    /// </summary>
+    [JsonPropertyName("userDataPath")]
+    public string UserDataPath { get; init; } = "";
 }
 
 /// <summary>

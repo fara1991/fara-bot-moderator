@@ -1,12 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Net.Http;
-using System.Security.Cryptography;
 using System.Text;
-using System.Text.Encodings.Web;
-using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
@@ -64,6 +59,10 @@ public partial class MainWindow : INotifyPropertyChanged
     /// <summary>
     /// </summary>
     private TwitchTestEventController? _twitchTestEventController;
+
+    /// <summary>
+    /// </summary>
+    private readonly TwitchAuthService _twitchAuthService = new();
 
     /// <summary>
     /// </summary>
@@ -225,82 +224,85 @@ public partial class MainWindow : INotifyPropertyChanged
     /// <returns></returns>
     private async Task StartTimerAsync()
     {
-        var timer1Count = 0;
-        var timer2Count = 0;
-        var timer3Count = 0;
-        var timer4Count = 0;
+        var cycleTimerCounts = new int[4];
+
+        // UI element arrays for cycle timers
+        CheckBox[] cycleCheckBoxes = null!;
+        Slider[] cycleSliders = null!;
+        TextBox[] cycleTextBoxes = null!;
+
+        // UI element arrays for fixed timers
+        CheckBox[] fixedCheckBoxes = null!;
+        DatePicker[] fixedDatePickers = null!;
+        MaterialDesignThemes.Wpf.TimePicker[] fixedTimePickers = null!;
+        TextBox[] fixedTextBoxes = null!;
+
+        // Initialize UI element arrays on the UI thread
+        await Dispatcher.InvokeAsync(() =>
+        {
+            cycleCheckBoxes = [CycleTimer1CheckBox, CycleTimer2CheckBox, CycleTimer3CheckBox, CycleTimer4CheckBox];
+            cycleSliders = [CycleTimer1Slider, CycleTimer2Slider, CycleTimer3Slider, CycleTimer4Slider];
+            cycleTextBoxes = [CycleTimer1TextBox, CycleTimer2TextBox, CycleTimer3TextBox, CycleTimer4TextBox];
+
+            fixedCheckBoxes = [FixedTimer1CheckBox, FixedTimer2CheckBox, FixedTimer3CheckBox, FixedTimer4CheckBox];
+            fixedDatePickers = [FixedTimer1DatePicker, FixedTimer2DatePicker, FixedTimer3DatePicker, FixedTimer4DatePicker];
+            fixedTimePickers = [FixedTimer1TimePicker, FixedTimer2TimePicker, FixedTimer3TimePicker, FixedTimer4TimePicker];
+            fixedTextBoxes = [FixedTimer1TextBox, FixedTimer2TextBox, FixedTimer3TextBox, FixedTimer4TextBox];
+        });
+
         while (true)
         {
             while (_twitchClientController is null) await Task.Delay(1);
 
-            // Timerは秒数管理しても大丈夫
             await Task.Delay(1000);
 
-            // Interval Timer
-            if (CycleTimer1CheckBox.IsChecked ?? false) timer1Count++;
-            else timer1Count = 0;
-            if (CycleTimer2CheckBox.IsChecked ?? false) timer2Count++;
-            else timer2Count = 0;
-            if (CycleTimer3CheckBox.IsChecked ?? false) timer3Count++;
-            else timer3Count = 0;
-            if (CycleTimer4CheckBox.IsChecked ?? false) timer4Count++;
-            else timer4Count = 0;
-
-            var cycleTimer1Minute = (int) CycleTimer1Slider.Value * 60;
-            if (timer1Count >= cycleTimer1Minute && cycleTimer1Minute > 0)
+            // Process cycle timers
+            for (var i = 0; i < 4; i++)
             {
-                timer1Count %= cycleTimer1Minute;
-                _twitchClientController.SendModeratorMessage(CycleTimer1TextBox.Text);
+                var isChecked = false;
+                var intervalMinutes = 0;
+                var message = "";
+
+                await Dispatcher.InvokeAsync(() =>
+                {
+                    isChecked = cycleCheckBoxes[i].IsChecked ?? false;
+                    intervalMinutes = (int)cycleSliders[i].Value;
+                    message = cycleTextBoxes[i].Text;
+                });
+
+                if (isChecked)
+                    cycleTimerCounts[i]++;
+                else
+                    cycleTimerCounts[i] = 0;
+
+                var intervalSeconds = intervalMinutes * 60;
+                if (cycleTimerCounts[i] >= intervalSeconds && intervalSeconds > 0)
+                {
+                    cycleTimerCounts[i] %= intervalSeconds;
+                    _twitchClientController.SendModeratorMessage(message);
+                }
             }
 
-            var cycleTimer2Minute = (int) CycleTimer2Slider.Value * 60;
-            if (timer2Count >= cycleTimer2Minute && cycleTimer2Minute > 0)
+            // Process fixed timers
+            for (var i = 0; i < 4; i++)
             {
-                timer2Count %= cycleTimer2Minute;
-                _twitchClientController.SendModeratorMessage(CycleTimer2TextBox.Text);
-            }
+                var isChecked = false;
+                DateTime? date = null;
+                DateTime? time = null;
+                var message = "";
 
-            var cycleTimer3Minute = (int) CycleTimer3Slider.Value * 60;
-            if (timer3Count >= cycleTimer3Minute && cycleTimer3Minute > 0)
-            {
-                timer3Count %= cycleTimer3Minute;
-                _twitchClientController.SendModeratorMessage(CycleTimer3TextBox.Text);
-            }
+                await Dispatcher.InvokeAsync(() =>
+                {
+                    isChecked = fixedCheckBoxes[i].IsChecked ?? false;
+                    date = fixedDatePickers[i].SelectedDate;
+                    time = fixedTimePickers[i].SelectedTime;
+                    message = fixedTextBoxes[i].Text;
+                });
 
-            var cycleTimer4Minute = (int) CycleTimer4Slider.Value * 60;
-            if (timer4Count >= cycleTimer4Minute && cycleTimer4Minute > 0)
-            {
-                timer4Count %= cycleTimer4Minute;
-                _twitchClientController.SendModeratorMessage(CycleTimer4TextBox.Text);
-            }
-
-            // FixedTimer
-            if (FixedTimer1CheckBox.IsChecked ?? false)
-            {
-                var date = FixedTimer1DatePicker.SelectedDate;
-                var time = FixedTimer1TimePicker.SelectedTime;
-                FixedTimerMessage(date, time, FixedTimer1TextBox.Text);
-            }
-
-            if (FixedTimer2CheckBox.IsChecked ?? false)
-            {
-                var date = FixedTimer2DatePicker.SelectedDate;
-                var time = FixedTimer2TimePicker.SelectedTime;
-                FixedTimerMessage(date, time, FixedTimer2TextBox.Text);
-            }
-
-            if (FixedTimer3CheckBox.IsChecked ?? false)
-            {
-                var date = FixedTimer3DatePicker.SelectedDate;
-                var time = FixedTimer3TimePicker.SelectedTime;
-                FixedTimerMessage(date, time, FixedTimer3TextBox.Text);
-            }
-
-            if (FixedTimer4CheckBox.IsChecked ?? false)
-            {
-                var date = FixedTimer4DatePicker.SelectedDate;
-                var time = FixedTimer4TimePicker.SelectedTime;
-                FixedTimerMessage(date, time, FixedTimer4TextBox.Text);
+                if (isChecked)
+                {
+                    FixedTimerMessage(date, time, message);
+                }
             }
         }
     }
@@ -427,27 +429,14 @@ public partial class MainWindow : INotifyPropertyChanged
     /// <summary>
     ///     Token期限切れの時に呼び出してTokenを更新します。
     /// </summary>
-    /// <exception cref="HttpRequestException"></exception>
     private async Task UpdateRefreshTokenAsync()
     {
-        var parameter =
-            $"client_id={TwitchApiClientIdPasswordBox.Password}" +
-            $"&client_secret={TwitchApiClientSecretPasswordBox.Password}" +
-            "&grant_type=refresh_token" +
-            $"&refresh_token={Settings.Default.RefreshToken}";
-        try
-        {
-            var response = await PostResponseBodyAsync(parameter, "https://id.twitch.tv/oauth2/token");
-            var jsonString =
-                JsonSerializer.Deserialize<TwitchRefreshTokenModel>(response.responseBody, response.option);
+        var success = await _twitchAuthService.RefreshAccessTokenAsync(
+            TwitchApiClientIdPasswordBox.Password,
+            TwitchApiClientSecretPasswordBox.Password);
 
-            Settings.Default.AccessToken = jsonString?.AccessToken;
-            Settings.Default.RefreshToken = jsonString?.RefreshToken;
-            Settings.Default.Save();
-        }
-        catch (Exception ex)
+        if (!success)
         {
-            LogController.OutputLog(ex.Message);
             RequestApiAccessToken();
         }
     }
@@ -457,38 +446,22 @@ public partial class MainWindow : INotifyPropertyChanged
     ///     Token取得はPOST通信をするため、WebViewは通さずPostRequestを行う。
     /// </summary>
     /// <param name="url"></param>
-    /// <exception cref="HttpRequestException"></exception>
     private async Task UpdateAccessTokenAsync(string url)
     {
-        var state = Regex.Match(url, @"state=(.*)").Groups[1];
-        if (state.ToString() != Settings.Default.OAuth2State)
+        var state = Regex.Match(url, @"state=(.*)").Groups[1].ToString();
+        var code = Regex.Match(url, @"code=(.*)&").Groups[1].ToString();
+
+        var success = await _twitchAuthService.ExchangeAuthorizationCodeAsync(
+            code,
+            TwitchApiClientIdPasswordBox.Password,
+            TwitchApiClientSecretPasswordBox.Password,
+            Settings.Default.OAuth2State,
+            state);
+
+        if (success)
         {
-            var message = "The token differs between request and response.";
-            LogController.OutputLog(message);
-            throw new HttpRequestException(message);
+            UnlockWindowControl();
         }
-
-        var code = Regex.Match(url, @"code=(.*)&").Groups[1];
-        var parameter =
-            $"client_id={TwitchApiClientIdPasswordBox.Password}" +
-            $"&client_secret={TwitchApiClientSecretPasswordBox.Password}" +
-            $"&code={code}" +
-            "&grant_type=authorization_code" +
-            $"&redirect_uri=http://localhost:{Settings.Default.Port}";
-        var response = await PostResponseBodyAsync(parameter, "https://id.twitch.tv/oauth2/token");
-
-        // Token取得失敗は何もしない
-        if (response.responseBody.Contains("Invalid authorization code")) return;
-
-        var jsonString =
-            JsonSerializer.Deserialize<TwitchOAuthTokenModel>(response.responseBody, response.option);
-        Settings.Default.AccessToken = jsonString?.AccessToken;
-        Settings.Default.RefreshToken = jsonString?.RefreshToken;
-        if (jsonString?.ExpiresIn != null)
-            Settings.Default.expiresDateTime = DateTime.Now.AddSeconds(jsonString.ExpiresIn);
-        Settings.Default.Save();
-
-        UnlockWindowControl();
     }
 
     /// <summary>
@@ -496,87 +469,17 @@ public partial class MainWindow : INotifyPropertyChanged
     /// </summary>
     private void RequestApiAccessToken()
     {
-        var buffer = RandomNumberGenerator.GetBytes(50);
-        var stateGenerator =
-            buffer.Select(x => x % 62)
-                .Select(x =>
-                {
-                    // 特殊文字は含めない
-                    return x switch
-                    {
-                        < 10 => (char) ('0' + x),
-                        < 36 => (char) ('A' + x - 10),
-                        _ => (char) ('a' + x - 36)
-                    };
-                }).ToArray();
-        var state = new string(stateGenerator);
-        Settings.Default.OAuth2State = state;
-        Settings.Default.Save();
-
-        //refreshTokenはaccessToken期限切れなら設定
-        var requestUrl =
-            "https://id.twitch.tv/oauth2/authorize" +
-            $"?client_id={TwitchApiClientIdPasswordBox.Password}" +
-            $"&redirect_uri=http://localhost%3A{Settings.Default.Port}" +
-            "&response_type=code" +
-            "&scope=bits%3Aread " + // bitsリーダーボード表示
-            "channel%3Amanage%3Apredictions " + // prediction作成、終了
-            "channel%3Amanage%3Araids " + // raid開始、キャンセル
-            "channel%3amanage%3Aredemptions " + // チャンネルポイント管理
-            "channel%3Amanage%3Aschedule " + // スケジュール管理
-            "channel%3Aread%3Ahype_train " + // ハイプトレイン取得
-            "channel%3Aread%3Apolls " + // アンケート表示
-            "channel%3Aread%3Apredictions " + // predictions取得
-            "channel%3Aread%3Aredemptions " + // チャンネルポイント一覧
-            "channel%3Aread%3Astream_key " + // ストリームキー表示
-            "channel%3Aread%3Asubscriptions " + // SubScription一覧表示
-            "channel%3Aread%3Avips " + // Vipメンバー一覧表示
-            "moderation%3Aread " + // Moderators, Bans, Timeouts, Automod設定
-            "moderator%3Amanage%3Aannouncements " + // Moderator権限者によるannouncementコマンド実行
-            "user%3Aread%3Abroadcast " + // broadcast設定取得
-            "user%3Aread%3Afollows " + // follower取得
-            "user%3Aread%3Asubscriptions " + // SubScriptionメンバー一覧取得
-            "user%3Aread%3Aemail " + // mail取得
-            "channel%3Amoderate " + // Moderator権限実行
-            "chat%3Aedit " + // Chat送信
-            "chat%3Aread " + // Chat受信
-            "whispers%3Aread " + // Whisper受信
-            "channel%3Amanage%3Araids " + // raid管理
-            "moderator%3Amanage%3Ashoutouts " + // shoutoutコマンド実行権限
-            "moderator%3Aread%3Afollowers" + //EventSub Follow通知
-            $"&state={state}"; // ランダムなUID
         try
         {
+            var requestUrl = _twitchAuthService.GenerateAuthorizationUrl(TwitchApiClientIdPasswordBox.Password);
             LockWindowControl(true);
-            FaraBotModeratorWebView.Source = new Uri(requestUrl); // WebView表示して操作
+            FaraBotModeratorWebView.Source = new Uri(requestUrl);
         }
         catch (Exception ex)
         {
             UnlockWindowControl();
             LogController.OutputLog(ex.Message);
         }
-    }
-
-    /// <summary>
-    ///     指定URLに対してPost Requestを送信します。
-    /// </summary>
-    /// <param name="parameter"></param>
-    /// <param name="url"></param>
-    /// <returns></returns>
-    private async Task<(string responseBody, JsonSerializerOptions option)> PostResponseBodyAsync(string parameter,
-        string url)
-    {
-        using var httpClient = new HttpClient();
-        var content = new StringContent(parameter, Encoding.Default, "application/x-www-form-urlencoded");
-        var response = await httpClient.PostAsync(url, content);
-
-        var responseBody = await response.Content.ReadAsStringAsync();
-        var option = new JsonSerializerOptions
-        {
-            Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
-        };
-
-        return (responseBody, option);
     }
 
     /// <summary>
@@ -810,7 +713,9 @@ public partial class MainWindow : INotifyPropertyChanged
                     DatetimeString = timer4,
                     Message = FixedTimer4TextBox.Text
                 }
-            }
+            },
+            // Preserve existing BeatSaber settings (no UI, edited via secrets.json)
+            BeatSaber = SecretKeyController.LoadKeys().BeatSaber
         };
 
         SecretKeyController.SaveKeys(secretKeys);

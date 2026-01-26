@@ -28,7 +28,7 @@ public class TwitchClientController
     private readonly SecretKeyModel _secretKeys;
     private readonly TwitchApiController _twitchApiController;
     private TwitchClient? _twitchClient;
-    private readonly UniqueChannelPointController _uniqueChannelPointController = new();
+    private readonly UniqueChannelPointController _uniqueChannelPointController;
     private readonly TwitchTranslationController _twitchTranslationController;
     private string _twitchUserName = "";
     private string _twitchUserDisplayName = "";
@@ -53,6 +53,7 @@ public class TwitchClientController
         _secretKeys = secretKeys;
         _twitchApiController = twitchApiController;
         _twitchTranslationController = new TwitchTranslationController(_secretKeys.DeepL.ApiKey);
+        _uniqueChannelPointController = new UniqueChannelPointController(_secretKeys);
     }
 
     /// <summary>

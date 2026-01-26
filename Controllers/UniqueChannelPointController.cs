@@ -13,12 +13,15 @@ namespace FaraBotModerator.Controllers;
 /// </summary>
 public class UniqueChannelPointController
 {
+    private readonly SecretKeyModel _secretKeys;
+
     /// <summary>
     /// UniqueChannelPointController のコンストラクタ
     /// </summary>
-    public UniqueChannelPointController()
+    /// <param name="secretKeys">設定情報</param>
+    public UniqueChannelPointController(SecretKeyModel secretKeys)
     {
-        // 最初にTwitch APIでChannelPoint一覧を取得できるようにしてもいいかも
+        _secretKeys = secretKeys;
     }
 
     /// <summary>
@@ -29,7 +32,7 @@ public class UniqueChannelPointController
     /// <returns>処理結果のメッセージ（ボットがチャットに送信するためのもの）</returns>
     public string Exec(string userName, string channelPointTitle)
     {
-        if (channelPointTitle == "Random Tailor") return ExecRandomTailor(userName);
+        if (channelPointTitle == "Random Tailor") return ExecRandomTailor(userName, _secretKeys.BeatSaber.UserDataPath);
 
         return "";
     }
@@ -39,9 +42,15 @@ public class UniqueChannelPointController
     /// BeatSaberのSaber Tailorプラグイン用設定ファイルをランダムな値で生成します。
     /// </summary>
     /// <param name="userName">ユーザー名</param>
+    /// <param name="beatSaberUserPath">BeatSaberのUserDataディレクトリパス</param>
     /// <returns>チャットに通知する詳細メッセージ</returns>
-    private static string ExecRandomTailor(string userName)
+    private static string ExecRandomTailor(string userName, string beatSaberUserPath)
     {
+        if (string.IsNullOrEmpty(beatSaberUserPath))
+        {
+            return "BeatSaber UserData path is not configured.";
+        }
+
         // PosX, PosY, PosZ, RotX, RotY, RotZ
         // pos -100~100mm  rot -45~45deg
         var r = new Random();
@@ -50,7 +59,6 @@ public class UniqueChannelPointController
         var rot = new[]
             {r.Next(-45, 45), r.Next(-45, 45), r.Next(-45, 45)};
 
-        const string beatSaberUserPath = "C:\\Users\\Fara\\BSManager\\BSInstances\\1.29.1\\UserData";
         var d = DateTime.Now;
         // userNameは日本語が入るとSaber Tailorが認識しないらしい
         var fileName =
