@@ -403,4 +403,7 @@ obj/
 
 .claude/
 
+# Installer binaries (downloaded at build time)
+Installer/WebView2RuntimeInstaller.exe
+
 # End of https://www.toptal.com/developers/gitignore/api/csharp,dotnetcore
