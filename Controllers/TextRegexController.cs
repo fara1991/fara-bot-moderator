@@ -101,11 +101,17 @@ internal static class TextRegexController
             [
                 new BeatSaberChatModel("(?<=!bsr ).*", "から、ソングリクエスト{0}を頂きました。"),
                 new BeatSaberChatModel("(?<=Request ).*?(?= /)", "リクエスト曲 {0} が登録されました。"),
+                new BeatSaberChatModel("(?=.*requested by )(?=.*added to queue).*",
+                    ""),
+                new BeatSaberChatModel("(?=.*already in queue).*",
+                    "既にリクエストされた曲です。"),
                 new BeatSaberChatModel("^[^/]+(?= */)|(?<=requested by )[^ ]+(?= +is next)",
                     "次の曲は、{1}さんがリクエストした{0}です。"),
 
                 new BeatSaberChatModel("(?=Queue is closed).*", "ソングリクエストを終了します。皆さんありがとう！"),
                 new BeatSaberChatModel("(?=Queue is open).*", "ソングリクエストを開始しました。リクエストお待ちしてます。"),
+                new BeatSaberChatModel("(?<=map ).*?(?= not found)",
+                    "リクエスト曲{0}は存在しません。"),
                 new BeatSaberChatModel("(?<=No results found for request ).*", "{0}はリクエストにないよ。"),
                 new BeatSaberChatModel("(?<=Request for).*(?=produces)|(?<=produces).*(?=results)",
                     "{0} で検索したら {1}曲あったよ。絞り込んでみてね。")

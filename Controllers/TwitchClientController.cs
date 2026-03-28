@@ -435,8 +435,11 @@ public class TwitchClientController
         var beatSaberRegexMessage = TextRegexController.LoadBsrChat(sourceMessage);
         if (sourceMessage != beatSaberRegexMessage && !isAnnouncement)
         {
-            // BeatSaber関連は読み上げだけ行う
-            BouyomiChanController.AddTalkTask(userName, beatSaberRegexMessage, _secretKeys.BouyomiChan.Checked);
+            // BeatSaber関連は読み上げだけ行う（空文字の場合は読み上げもスキップ）
+            if (!string.IsNullOrEmpty(beatSaberRegexMessage))
+            {
+                BouyomiChanController.AddTalkTask(userName, beatSaberRegexMessage, _secretKeys.BouyomiChan.Checked);
+            }
             return;
         }
 
