@@ -401,4 +401,9 @@ obj/
 /node_modules
 /wwwroot/node_modules
 
+.claude/
+
+# Installer binaries (downloaded at build time)
+Installer/WebView2RuntimeInstaller.exe
+
 # End of https://www.toptal.com/developers/gitignore/api/csharp,dotnetcore
