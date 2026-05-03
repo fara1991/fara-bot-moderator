@@ -1,6 +1,6 @@
 ﻿; Inno Setup Script for FaraBotModerator
 #define MyAppName "FaraBotModerator"
-#define MyAppVersion "1.0"
+#define MyAppVersion "1.0.1"
 #define MyAppPublisher "Fara"
 #define MyAppExeName "FaraBotModerator.exe"
 

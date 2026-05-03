@@ -87,32 +87,32 @@ public static class SecretKeyController
                 Follow = new ReactionFollowEvent
                 {
                     Checked = true,
-                    Message = "{followerName}, thanks follow gamefa16Hi. Follower Channel URL: {followerChannelUrl}"
+                    Message = "{followerName}, thanks follow. Follower Channel URL: {followerChannelUrl}"
                 },
                 Raid = new ReactionRaidEvent
                 {
                     Checked = true,
-                    Message = "Welcome raiders, thanks raid {raiderName} gamefa16Hi. Channel URL: {raiderChannelUrl}"
+                    Message = "Welcome raiders, thanks raid {raiderName}. Channel URL: {raiderChannelUrl}"
                 },
                 Subscription = new ReactionSubscriptionEvent
                 {
                     Checked = true,
-                    Message = "{subscriberName}, thanks subscription {totalSubscriptionMonth} time gamefa16Hi"
+                    Message = "{subscriberName}, thanks subscription {totalSubscriptionMonth} time."
                 },
                 Bits = new ReactionBitsEvent
                 {
                     Checked = true,
-                    Message = "{bitsSendUserName}, thanks {bitsAmount} bits (total {totalBitsAmount}) gamefa16Hi"
+                    Message = "{bitsSendUserName}, thanks {bitsAmount} bits (total {totalBitsAmount})."
                 },
                 Gift = new ReactionGiftEvent
                 {
                     Checked = true,
-                    Message = "{giftedUserName}, thanks gift present gamefa16Hi"
+                    Message = "{giftedUserName}, thanks gift present."
                 },
                 ChannelPoint = new ReactionChannelPointEvent
                 {
                     Checked = true,
-                    Message = "{channelPointUserName} use channelPoint of {channelPointTitle} gamefa16Hi"
+                    Message = "{channelPointUserName} use channelPoint of {channelPointTitle}."
                 }
             },
             CycleMessage = new CycleMessageModel
