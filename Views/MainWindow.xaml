@@ -39,7 +39,8 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="ToolTip">
                         <Grid Margin="5">
-                            <Path Data="M 0,10 L 10,0 L 20,10 Z" Fill="#FF666666" HorizontalAlignment="Left" Margin="10,0,0,0" VerticalAlignment="Top" />
+                            <Path Data="M 0,10 L 10,0 L 20,10 Z" Fill="#FF666666" HorizontalAlignment="Left"
+                                  Margin="10,0,0,0" VerticalAlignment="Top" />
                             <Border Background="#FF666666" CornerRadius="5" Margin="0,10,0,0" Padding="10,5">
                                 <ContentPresenter TextBlock.Foreground="White" />
                             </Border>
@@ -51,705 +52,818 @@
     </Window.Resources>
     <Grid>
         <TabControl x:Name="MenuTabControl">
-        <TabItem x:Name="MainSettingsTabItem" Header="Main Settings">
-            <Canvas x:Name="MainSettingsCanvas" Background="#FFE5E5E5">
-                <GroupBox x:Name="TwitchGroupBox" HorizontalAlignment="Center" Height="493"
-                          Canvas.Left="10" Canvas.Top="10" VerticalAlignment="Center" Width="550">
-                    <GroupBox.Header>
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="Twitch" />
-                            <Button Style="{StaticResource MaterialDesignIconButton}" 
-                                    Width="20" Height="20" Margin="5,0,0,0"
-                                    ToolTipService.InitialShowDelay="0"
-                                    ToolTipService.Placement="Bottom"
-                                    ToolTipService.HorizontalOffset="-10"
-                                    Click="HelpButton_Click">
-                                <Button.ToolTip>
-                                    <ToolTip Content="Twitchへの接続と基本設定" />
-                                </Button.ToolTip>
-                                <materialDesign:PackIcon Kind="HelpCircleOutline" Width="16" Height="16" Foreground="White" />
-                            </Button>
-                        </StackPanel>
-                    </GroupBox.Header>
-                    <Canvas x:Name="TwitchCanvas" TextBlock.Foreground="Black">
-                        <CheckBox x:Name="BouyomiChanConnectCheckBox" Content="BouyomiChanConnect" IsChecked="True"
-                                  HorizontalAlignment="Center" Canvas.Top="341" VerticalAlignment="Top" />
-                        <Label x:Name="TwitchConnectionStateLabel" Content="State: Disconnect"
-                               HorizontalAlignment="Center" Canvas.Top="364" VerticalAlignment="Top" />
-                        <Button x:Name="TwitchPageButton" Content="TwitchPage" Height="30" Width="105"
-                                HorizontalAlignment="Left" Canvas.Left="202" Canvas.Top="361"
-                                VerticalAlignment="Center" Click="TwitchPageButton_Click" />
-                        <Button x:Name="TwitchConnectionButton" Content="Connect" Height="30" Width="105"
-                                HorizontalAlignment="Left" Canvas.Left="311" Canvas.Top="361"
-                                VerticalAlignment="Center" Click="TwitchConnectionButton_Click" />
-                        <Button x:Name="TwitchDisconnectButton" Content="Disconnect" Height="30" Width="105"
-                                HorizontalAlignment="Left" Canvas.Left="420" Canvas.Top="361"
-                                VerticalAlignment="Center" Click="TwitchDisconnectButton_Click" />
-                        <GroupBox x:Name="TwitchClientGroupBox" HorizontalAlignment="Center"
-                                  Height="120" VerticalAlignment="Top" Width="533">
-                            <GroupBox.Header>
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="Client" />
-                                    <Button Style="{StaticResource MaterialDesignIconButton}" 
-                                            Width="20" Height="20" Margin="5,0,0,0"
-                                            ToolTipService.InitialShowDelay="0"
-                                            ToolTipService.Placement="Bottom"
-                                            ToolTipService.HorizontalOffset="-10"
-                                            Click="HelpButton_Click">
-                                        <Button.ToolTip>
-                                            <ToolTip Content="Twitchチャットクライアントの設定" />
-                                        </Button.ToolTip>
-                                        <materialDesign:PackIcon Kind="HelpCircleOutline" Width="16" Height="16" Foreground="White" />
-                                    </Button>
-                                </StackPanel>
-                            </GroupBox.Header>
-                            <Canvas x:Name="TwitchClientCanvas" TextBlock.Foreground="Black">
-                                <StackPanel Orientation="Horizontal" Canvas.Top="0">
-                                    <Label x:Name="TwitchClientUserNameLabel" Content="UserName" Height="25"
-                                           Background="{x:Null}" Width="83" HorizontalAlignment="Center"
-                                           VerticalAlignment="Top" />
-                                    <Button Style="{StaticResource MaterialDesignIconButton}" 
-                                            Width="20" Height="20" Margin="-8,0,0,0"
-                                            ToolTipService.InitialShowDelay="0"
-                                            ToolTipService.Placement="Bottom"
-                                            ToolTipService.HorizontalOffset="-10"
-                                            Click="HelpButton_Click">
-                                        <Button.ToolTip>
-                                            <ToolTip Content="Twitchにログインするときの名前" />
-                                        </Button.ToolTip>
-                                        <materialDesign:PackIcon Kind="HelpCircleOutline" Width="16" Height="16" Foreground="Gray" />
-                                    </Button>
-                                </StackPanel>
-                                <TextBox x:Name="TwitchClientUserNameTextBox" TextWrapping="Wrap" Width="420"
-                                         Height="25" HorizontalAlignment="Left" Canvas.Left="100"
-                                         VerticalAlignment="Top" Canvas.Top="0" />
-                                
-                                <StackPanel Orientation="Horizontal" Canvas.Top="34">
-                                    <Label x:Name="TwitchClientDisplayNameLabel" Content="DisplayName" Height="25"
-                                           Background="{x:Null}" Width="83" HorizontalAlignment="Center"
-                                           VerticalAlignment="Top" />
-                                    <Button Style="{StaticResource MaterialDesignIconButton}" 
-                                            Width="20" Height="20" Margin="-8,0,0,0"
-                                            ToolTipService.InitialShowDelay="0"
-                                            ToolTipService.Placement="Bottom"
-                                            ToolTipService.HorizontalOffset="-10"
-                                            Click="HelpButton_Click">
-                                        <Button.ToolTip>
-                                            <ToolTip Content="Twitchの自分のページで表示される名前" />
-                                        </Button.ToolTip>
-                                        <materialDesign:PackIcon Kind="HelpCircleOutline" Width="16" Height="16" Foreground="Gray" />
-                                    </Button>
-                                </StackPanel>
-                                <TextBox x:Name="TwitchClientDisplayNameTextBox" TextWrapping="Wrap" Width="420"
-                                         Height="25" HorizontalAlignment="Left" Canvas.Left="100" Canvas.Top="34"
-                                         VerticalAlignment="Top" />
-                            </Canvas>
-                        </GroupBox>
-                        <GroupBox x:Name="TwitchApiGroupBox" HorizontalAlignment="Center" Height="187"
-                                  Canvas.Top="149" VerticalAlignment="Top" Width="533">
-                            <GroupBox.Header>
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="API" />
-                                    <Button Style="{StaticResource MaterialDesignIconButton}" 
-                                            Width="20" Height="20" Margin="5,0,0,0"
-                                            ToolTipService.InitialShowDelay="0"
-                                            ToolTipService.Placement="Bottom"
-                                            ToolTipService.HorizontalOffset="-10"
-                                            Click="HelpButton_Click">
-                                        <Button.ToolTip>
-                                            <ToolTip Content="Twitch API連携の設定" />
-                                        </Button.ToolTip>
-                                        <materialDesign:PackIcon Kind="HelpCircleOutline" Width="16" Height="16" Foreground="White" />
-                                    </Button>
-                                </StackPanel>
-                            </GroupBox.Header>
-                            <Canvas x:Name="TwitchApiCanvas" TextBlock.Foreground="Black">
-                                <StackPanel Orientation="Horizontal" Canvas.Top="0">
-                                    <Label x:Name="TwitchApiClientIdLabel" Content="ClientId" HorizontalAlignment="Center"
-                                           VerticalAlignment="Center" Height="25" Background="{x:Null}" Width="83" />
-                                    <Button Style="{StaticResource MaterialDesignIconButton}" 
-                                            Width="20" Height="20" Margin="-8,0,0,0"
-                                            ToolTipService.InitialShowDelay="0"
-                                            ToolTipService.Placement="Bottom"
-                                            ToolTipService.HorizontalOffset="-10"
-                                            Click="HelpButton_Click">
-                                        <Button.ToolTip>
-                                            <ToolTip Content="Twitch API Client ID" />
-                                        </Button.ToolTip>
-                                        <materialDesign:PackIcon Kind="HelpCircleOutline" Width="16" Height="16" Foreground="Gray" />
-                                    </Button>
-                                </StackPanel>
-                                <PasswordBox x:Name="TwitchApiClientIdPasswordBox" HorizontalAlignment="Left"
-                                             VerticalAlignment="Center" Width="415" Height="25" Canvas.Left="100" />
-
-                                <StackPanel Orientation="Horizontal" Canvas.Top="30">
-                                    <Label x:Name="TwitchApiClientSecretLabel" Content="ClientSecret"
-                                           HorizontalAlignment="Center" VerticalAlignment="Top" Height="25" Width="83" />
-                                    <Button Style="{StaticResource MaterialDesignIconButton}" 
-                                            Width="20" Height="20" Margin="-8,0,0,0"
-                                            ToolTipService.InitialShowDelay="0"
-                                            ToolTipService.Placement="Bottom"
-                                            ToolTipService.HorizontalOffset="-10"
-                                            Click="HelpButton_Click">
-                                        <Button.ToolTip>
-                                            <ToolTip Content="Twitch API Client Secret" />
-                                        </Button.ToolTip>
-                                        <materialDesign:PackIcon Kind="HelpCircleOutline" Width="16" Height="16" Foreground="Gray" />
-                                    </Button>
-                                </StackPanel>
-                                <PasswordBox x:Name="TwitchApiClientSecretPasswordBox" HorizontalAlignment="Center"
-                                             VerticalAlignment="Top" Width="415" Height="25" Canvas.Left="100"
-                                             Canvas.Top="30" />
-                                <Canvas x:Name="TwitchApiNotificationCanvas" Height="39" Width="355" Canvas.Top="96"
-                                        HorizontalAlignment="Center" VerticalAlignment="Top">
-                                    <TextBlock HorizontalAlignment="Center" VerticalAlignment="Top" Width="355"
-                                               Height="15" Text="※Your API AccessToken has expired." Foreground="Red"
-                                               Canvas.Top="1" />
-                                    <TextBlock HorizontalAlignment="Center" VerticalAlignment="Top" Width="405"
-                                               Canvas.Top="19" Height="30"
-                                               Text="　Please press the Authorize button to get the Token."
-                                               Foreground="Red" TextWrapping="Wrap" />
-                                </Canvas>
-                                <TextBlock x:Name="TwitchApiExpireDateTimeTextBlock" Canvas.Left="310"
-                                           TextWrapping="Wrap" Text="Token expiration: 2023/01/01 12:00:00"
-                                           Canvas.Top="75" HorizontalAlignment="Left" VerticalAlignment="Top"
-                                           Height="20" Width="205" />
-                                <Button x:Name="TwitchApiAuthorizeButton" Content="Authorize"
-                                        HorizontalAlignment="Center" VerticalAlignment="Top" Height="30" Width="105"
-                                        Canvas.Left="410" Canvas.Top="100" Click="TwitchApiAuthorizeButton_Click" />
-                            </Canvas>
-                        </GroupBox>
-                    </Canvas>
-                </GroupBox>
-                <GroupBox x:Name="WebViewGroupBox" HorizontalAlignment="Left" Height="493"
-                          Canvas.Left="565" Canvas.Top="10" VerticalAlignment="Center" Width="510">
-                    <GroupBox.Header>
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="WebView" />
-                            <Button Style="{StaticResource MaterialDesignIconButton}" 
-                                    Width="20" Height="20" Margin="5,0,0,0"
-                                    ToolTipService.InitialShowDelay="0"
-                                    ToolTipService.Placement="Bottom"
-                                    ToolTipService.HorizontalOffset="-10"
-                                    Click="HelpButton_Click">
-                                <Button.ToolTip>
-                                    <ToolTip Content="Twitchサイトを表示する内蔵ブラウザ" />
-                                </Button.ToolTip>
-                                <materialDesign:PackIcon Kind="HelpCircleOutline" Width="16" Height="16" Foreground="White" />
-                            </Button>
-                        </StackPanel>
-                    </GroupBox.Header>
-                    <Grid Background="White">
-                        <wpf:WebView2 x:Name="FaraBotModeratorWebView" 
-                                      NavigationCompleted="FaraBotModeratorWebView_NavigationCompleted"
-                                      HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
-                    </Grid>
-                </GroupBox>
-            </Canvas>
-        </TabItem>
-        <TabItem x:Name="ReactionEventSettingsTabItem" Header="Reaction Event Settings">
-            <Canvas x:Name="ReactionEventSettingsCanvas" Background="#FFE5E5E5">
-                <GroupBox x:Name="ReactionEventSettingsGroupBox" HorizontalAlignment="Left" Height="255"
-                          Canvas.Left="10" Canvas.Top="10" VerticalAlignment="Top" Width="1065">
-                    <GroupBox.Header>
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="Event Notification Settings" />
-                            <Button Style="{StaticResource MaterialDesignIconButton}" 
-                                    Width="20" Height="20" Margin="5,0,0,0"
-                                    ToolTipService.InitialShowDelay="0"
-                                    ToolTipService.Placement="Bottom"
-                                    ToolTipService.HorizontalOffset="-10"
-                                    Click="HelpButton_Click">
-                                <Button.ToolTip>
-                                    <ToolTip Content="各種イベント（フォロー、レイド等）発生時の通知設定" />
-                                </Button.ToolTip>
-                                <materialDesign:PackIcon Kind="HelpCircleOutline" Width="16" Height="16" Foreground="White" />
-                            </Button>
-                        </StackPanel>
-                    </GroupBox.Header>
-                    <Canvas x:Name="ReactionEventSettingsGroupBoxCanvas" TextBlock.Foreground="Black">
-                        <Grid x:Name="FollowGrid" HorizontalAlignment="Left" Height="30" Canvas.Left="0" Canvas.Top="0"
-                              VerticalAlignment="Center" Width="1040" TextBlock.Foreground="Black">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="110" />
-                                <ColumnDefinition Width="30" />
-                                <ColumnDefinition Width="770" />
-                                <ColumnDefinition Width="130" />
-                            </Grid.ColumnDefinitions>
-                            <CheckBox x:Name="FollowEventCheckBox" Content="Follow" Height="30" Grid.Column="0"
-                                      VerticalAlignment="Center" />
-                            <Button Style="{StaticResource MaterialDesignIconButton}" 
-                                    Width="20" Height="20" Grid.Column="1"
-                                    ToolTipService.InitialShowDelay="0"
-                                    ToolTipService.Placement="Bottom"
-                                    ToolTipService.HorizontalOffset="-10"
-                                    Click="HelpButton_Click" VerticalAlignment="Center" HorizontalAlignment="Left">
-                                <Button.ToolTip>
-                                    <ToolTip Content="誰かがフォローした時に送信するメッセージ" />
-                                </Button.ToolTip>
-                                <materialDesign:PackIcon Kind="HelpCircleOutline" Width="16" Height="16" Foreground="Gray" />
-                            </Button>
-                            <TextBox x:Name="FollowEventTextBox" TextWrapping="Wrap" Height="30" Grid.Column="2"
-                                     VerticalAlignment="Center"
-                                     Text="{}{followerName}, thanks follow. Channel URL: {followerChannelUrl}" />
-                            <Button x:Name="FollowTestButton" Content="Test Send" Grid.Column="3" VerticalAlignment="Center"
-                                    Width="120" Height="30" Click="FollowTestButton_Click" HorizontalAlignment="Right" />
-                        </Grid>
-                        <Grid x:Name="RaidGrid" HorizontalAlignment="Left" Height="30" Canvas.Left="0" Canvas.Top="35"
-                              VerticalAlignment="Center" Width="1040" TextBlock.Foreground="Black">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="110" />
-                                <ColumnDefinition Width="30" />
-                                <ColumnDefinition Width="770" />
-                                <ColumnDefinition Width="130" />
-                            </Grid.ColumnDefinitions>
-                            <CheckBox x:Name="RaidEventCheckBox" Content="Raid" Height="30" Grid.Column="0"
-                                      VerticalAlignment="Center" />
-                            <Button Style="{StaticResource MaterialDesignIconButton}" 
-                                    Width="20" Height="20" Grid.Column="1"
-                                    ToolTipService.InitialShowDelay="0"
-                                    ToolTipService.Placement="Bottom"
-                                    ToolTipService.HorizontalOffset="-10"
-                                    Click="HelpButton_Click" VerticalAlignment="Center" HorizontalAlignment="Left">
-                                <Button.ToolTip>
-                                    <ToolTip Content="誰かがレイドしてくれた時に送信するメッセージ" />
-                                </Button.ToolTip>
-                                <materialDesign:PackIcon Kind="HelpCircleOutline" Width="16" Height="16" Foreground="Gray" />
-                            </Button>
-                            <TextBox x:Name="RaidEventTextBox" TextWrapping="Wrap" Height="30" Grid.Column="2"
-                                     VerticalAlignment="Center"
-                                     Text="Welcome raiders, thanks raid {raiderName}. Channel URL: {raiderChannelUrl}" />
-                            <Button x:Name="RaidTestButton" Content="Test Send" Grid.Column="3" VerticalAlignment="Center"
-                                    Width="120" Height="30" Click="RaidTestButton_Click" HorizontalAlignment="Right" />
-                        </Grid>
-                        <Grid x:Name="SubscriptionGrid" HorizontalAlignment="Left" Height="30" Canvas.Left="0" Canvas.Top="70"
-                              VerticalAlignment="Center" Width="1040" TextBlock.Foreground="Black">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="110" />
-                                <ColumnDefinition Width="30" />
-                                <ColumnDefinition Width="770" />
-                                <ColumnDefinition Width="130" />
-                            </Grid.ColumnDefinitions>
-                            <CheckBox x:Name="SubscriptionEventCheckBox" Content="Subscription" Height="30" Grid.Column="0"
-                                      VerticalAlignment="Center" />
-                            <Button Style="{StaticResource MaterialDesignIconButton}" 
-                                    Width="20" Height="20" Grid.Column="1"
-                                    ToolTipService.InitialShowDelay="0"
-                                    ToolTipService.Placement="Bottom"
-                                    ToolTipService.HorizontalOffset="-10"
-                                    Click="HelpButton_Click" VerticalAlignment="Center" HorizontalAlignment="Left">
-                                <Button.ToolTip>
-                                    <ToolTip Content="誰かがサブスクライブしてくれた時に送信するメッセージ" />
-                                </Button.ToolTip>
-                                <materialDesign:PackIcon Kind="HelpCircleOutline" Width="16" Height="16" Foreground="Gray" />
-                            </Button>
-                            <TextBox x:Name="SubscriptionEventTextBox" TextWrapping="Wrap" Height="30" Grid.Column="2"
-                                     VerticalAlignment="Center"
-                                     Text="{}{subscriberName}, thanks subscription {totalSubscriptionMonth} time." />
-                            <Button x:Name="SubscriptionTestButton" Content="Test Send" Grid.Column="3" VerticalAlignment="Center"
-                                    Width="120" Height="30" Click="SubscriptionTestButton_Click" HorizontalAlignment="Right" />
-                        </Grid>
-                        <Grid x:Name="BitsGrid" HorizontalAlignment="Left" Height="30" Canvas.Left="0" Canvas.Top="105"
-                              VerticalAlignment="Center" Width="1040" TextBlock.Foreground="Black">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="110" />
-                                <ColumnDefinition Width="30" />
-                                <ColumnDefinition Width="770" />
-                                <ColumnDefinition Width="130" />
-                            </Grid.ColumnDefinitions>
-                            <CheckBox x:Name="BitsEventCheckBox" Content="Bits" Height="30" Grid.Column="0"
-                                      VerticalAlignment="Center" />
-                            <Button Style="{StaticResource MaterialDesignIconButton}" 
-                                    Width="20" Height="20" Grid.Column="1"
-                                    ToolTipService.InitialShowDelay="0"
-                                    ToolTipService.Placement="Bottom"
-                                    ToolTipService.HorizontalOffset="-10"
-                                    Click="HelpButton_Click" VerticalAlignment="Center" HorizontalAlignment="Left">
-                                <Button.ToolTip>
-                                    <ToolTip Content="誰かがビッツ（チアー）を投げてくれた時に送信するメッセージ" />
-                                </Button.ToolTip>
-                                <materialDesign:PackIcon Kind="HelpCircleOutline" Width="16" Height="16" Foreground="Gray" />
-                            </Button>
-                            <TextBox x:Name="BitsEventTextBox" TextWrapping="Wrap" Height="30" Grid.Column="2"
-                                     VerticalAlignment="Center"
-                                     Text="{}{bitsSendUserName}, thanks {bitsAmount} bits." />
-                            <Button x:Name="BitsTestButton" Content="Test Send" Grid.Column="3" VerticalAlignment="Center"
-                                    Width="120" Height="30" Click="BitsTestButton_Click" HorizontalAlignment="Right" />
-                        </Grid>
-                        <Grid x:Name="GiftGrid" HorizontalAlignment="Left" Height="30" Canvas.Left="0" Canvas.Top="140"
-                              VerticalAlignment="Center" Width="1040" TextBlock.Foreground="Black">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="110" />
-                                <ColumnDefinition Width="30" />
-                                <ColumnDefinition Width="770" />
-                                <ColumnDefinition Width="130" />
-                            </Grid.ColumnDefinitions>
-                            <CheckBox x:Name="GiftEventCheckBox" Content="Gift" Height="30" Grid.Column="0"
-                                      VerticalAlignment="Center" />
-                            <Button Style="{StaticResource MaterialDesignIconButton}" 
-                                    Width="20" Height="20" Grid.Column="1"
-                                    ToolTipService.InitialShowDelay="0"
-                                    ToolTipService.Placement="Bottom"
-                                    ToolTipService.HorizontalOffset="-10"
-                                    Click="HelpButton_Click" VerticalAlignment="Center" HorizontalAlignment="Left">
-                                <Button.ToolTip>
-                                    <ToolTip Content="誰かがサブスクギフトを贈ってくれた時に送信するメッセージ" />
-                                </Button.ToolTip>
-                                <materialDesign:PackIcon Kind="HelpCircleOutline" Width="16" Height="16" Foreground="Gray" />
-                            </Button>
-                            <TextBox x:Name="GiftEventTextBox" TextWrapping="Wrap" Height="30" Grid.Column="2"
-                                     VerticalAlignment="Center"
-                                     Text="{}{giftedUserName}, thanks gift present." />
-                            <Button x:Name="GiftTestButton" Content="Test Send" Grid.Column="3" VerticalAlignment="Center"
-                                    Width="120" Height="30" Click="GiftTestButton_Click" HorizontalAlignment="Right" />
-                        </Grid>
-                        <Grid x:Name="ChannelPointGrid" HorizontalAlignment="Left" Height="30" Canvas.Left="0"
-                              Canvas.Top="175" VerticalAlignment="Center" Width="1040" TextBlock.Foreground="Black">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="110" />
-                                <ColumnDefinition Width="30" />
-                                <ColumnDefinition Width="770" />
-                                <ColumnDefinition Width="130" />
-                            </Grid.ColumnDefinitions>
-                            <CheckBox x:Name="ChannelPointEventCheckBox" Content="ChannelPoint" Height="30" Grid.Column="0"
-                                      VerticalAlignment="Center" />
-                            <Button Style="{StaticResource MaterialDesignIconButton}" 
-                                    Width="20" Height="20" Grid.Column="1"
-                                    ToolTipService.InitialShowDelay="0"
-                                    ToolTipService.Placement="Bottom"
-                                    ToolTipService.HorizontalOffset="-10"
-                                    Click="HelpButton_Click" VerticalAlignment="Center" HorizontalAlignment="Left">
-                                <Button.ToolTip>
-                                    <ToolTip Content="誰かがチャンネルポイントを使用した時に送信するメッセージ" />
-                                </Button.ToolTip>
-                                <materialDesign:PackIcon Kind="HelpCircleOutline" Width="16" Height="16" Foreground="Gray" />
-                            </Button>
-                            <TextBox x:Name="ChannelPointEventTextBox" TextWrapping="Wrap" Height="30" Grid.Column="2"
-                                     VerticalAlignment="Center"
-                                     Text="{}{channel Point UserName} used the {channel Point Title} with {cost} channel points" />
-                            <Button x:Name="ChannelPointTestButton" Content="Test Send" Grid.Column="3" VerticalAlignment="Center"
-                                    Width="120" Height="30" Click="ChannelPointTestButton_Click" HorizontalAlignment="Right" />
-                        </Grid>
-                    </Canvas>
-                </GroupBox>
-
-                <GroupBox x:Name="ReplaceWordsDescriptionGroupBox" HorizontalAlignment="Left" Height="230"
-                          Canvas.Left="10" Canvas.Top="275" VerticalAlignment="Top" Width="1065">
-                    <GroupBox.Header>
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="Replace Words Description" />
-                            <Button Style="{StaticResource MaterialDesignIconButton}" 
-                                    Width="20" Height="20" Margin="5,0,0,0"
-                                    ToolTipService.InitialShowDelay="0"
-                                    ToolTipService.Placement="Bottom"
-                                    ToolTipService.HorizontalOffset="-10"
-                                    Click="HelpButton_Click">
-                                <Button.ToolTip>
-                                    <ToolTip Content="メッセージ内の特定の単語を置き換えるための設定説明" />
-                                </Button.ToolTip>
-                                <materialDesign:PackIcon Kind="HelpCircleOutline" Width="16" Height="16" Foreground="White" />
-                            </Button>
-                        </StackPanel>
-                    </GroupBox.Header>
-                    <RichTextBox x:Name="ReplaceNotificationRichTextBox" Height="180"
-                                 Width="1040" HorizontalScrollBarVisibility="Disabled" HorizontalAlignment="Left"
-                                 VerticalAlignment="Top" Padding="0,0,0,0" VerticalScrollBarVisibility="Visible"
-                                 OpacityMask="Black" Background="{DynamicResource AttentionToActionBrush}"
-                                 IsReadOnly="True" Foreground="Black">
-                        <FlowDocument>
-                            <Paragraph>
-                                <Run
-                                Text="・Follow&#xA;{followedName} -&gt; When followed by a user, replace the userName.&#xA;{followerChannelUrl} -&gt; When twitch events, replace event userChannel.&#xA;&#xA;----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------&#xA;・Raid&#xA;{raiderName} -&gt; When raid by a user, replace the userName.&#xA;{raiderChannelUrl} -&gt; When raid by a user, replace the channelUrl.&#xA;&#xA;----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------&#xA;・Subscription&#xA;{subscriberName} -&gt; When subscription by a user, replace the userName.&#xA;{totalSubscriptionMonth} -&gt; When subscription by a user, replace total subscription count.&#xA;&#xA;----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------&#xA;・Bits&#xA;{bitsAmount} -&gt; When throw bits by a user, replace the bits amount.&#xA;{bitsSendUserName} -&gt; When throw bits by a user, replace the userName.&#xA;&#xA;----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------&#xA;・Gift&#xA;{giftedUserName} -&gt; When throw gifted by a user, replace the userName.&#xA;&#xA;----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------&#xA;・ChannelPoint&#xA;{channelPointCost} -&gt; When use channelPoint, replace the number of channelPoints used.&#xA;{channelPointTitle} -&gt; When use channelPoint, replace the channelPoint title.&#xA;{channelPointUserName} -&gt; When use channelPoint, replace userName with channelPoint.&#xA;" />
-                            </Paragraph>
-                        </FlowDocument>
-                    </RichTextBox>
-                </GroupBox>
-            </Canvas>
-        </TabItem>
-        <TabItem x:Name="AutoBotSettingsTabItem" Header="Auto Bot Settings">
-            <Canvas x:Name="AutoBotSettingsCanvas" Background="#FFE5E5E5">
-                <TabControl x:Name="AutoBotSettingsTabControl" Height="513" HorizontalAlignment="Left"
-                            VerticalAlignment="Center" Width="1100">
-                    <TabItem x:Name="AutoBotTranslateTabItem" Header="Translate">
-                        <Canvas x:Name="AutoBotTranslateCanvas" Background="#FFE5E5E5">
-                            <GroupBox x:Name="DeepLGroupBox" HorizontalAlignment="Center" Height="443"
-                                      Canvas.Left="10" Canvas.Top="10" VerticalAlignment="Top" Width="1065">
+            <TabItem x:Name="MainSettingsTabItem" Header="Main Settings">
+                <Canvas x:Name="MainSettingsCanvas" Background="#FFE5E5E5">
+                    <GroupBox x:Name="TwitchGroupBox" HorizontalAlignment="Center" Height="495"
+                              Canvas.Left="10" Canvas.Top="10" VerticalAlignment="Center" Width="550">
+                        <GroupBox.Header>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="Twitch" />
+                                <Button Style="{StaticResource MaterialDesignIconButton}"
+                                        Width="20" Height="20" Margin="5,0,0,0"
+                                        ToolTipService.InitialShowDelay="0"
+                                        ToolTipService.Placement="Bottom"
+                                        ToolTipService.HorizontalOffset="-10"
+                                        Click="HelpButton_Click">
+                                    <Button.ToolTip>
+                                        <ToolTip Content="Twitchへの接続と基本設定" />
+                                    </Button.ToolTip>
+                                    <materialDesign:PackIcon Kind="HelpCircleOutline" Width="16" Height="16"
+                                                             Foreground="White" />
+                                </Button>
+                            </StackPanel>
+                        </GroupBox.Header>
+                        <Canvas x:Name="TwitchCanvas" TextBlock.Foreground="Black">
+                            <CheckBox x:Name="BouyomiChanConnectCheckBox" Content="BouyomiChanConnect" IsChecked="True"
+                                      HorizontalAlignment="Center" Canvas.Top="341" VerticalAlignment="Top" />
+                            <Label x:Name="TwitchConnectionStateLabel" Content="State: Disconnect"
+                                   HorizontalAlignment="Center" Canvas.Top="364" VerticalAlignment="Top" />
+                            <Button x:Name="TwitchPageButton" Content="TwitchPage" Height="30" Width="105"
+                                    HorizontalAlignment="Left" Canvas.Left="202" Canvas.Top="361"
+                                    VerticalAlignment="Center" Click="TwitchPageButton_Click" />
+                            <Button x:Name="TwitchConnectionButton" Content="Connect" Height="30" Width="105"
+                                    HorizontalAlignment="Left" Canvas.Left="311" Canvas.Top="361"
+                                    VerticalAlignment="Center" Click="TwitchConnectionButton_Click" />
+                            <Button x:Name="TwitchDisconnectButton" Content="Disconnect" Height="30" Width="105"
+                                    HorizontalAlignment="Left" Canvas.Left="420" Canvas.Top="361"
+                                    VerticalAlignment="Center" Click="TwitchDisconnectButton_Click" />
+                            <GroupBox x:Name="TwitchClientGroupBox" HorizontalAlignment="Center"
+                                      Height="120" VerticalAlignment="Top" Width="533">
                                 <GroupBox.Header>
                                     <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="DeepL" />
-                                        <Button Style="{StaticResource MaterialDesignIconButton}" 
+                                        <TextBlock Text="Client" />
+                                        <Button Style="{StaticResource MaterialDesignIconButton}"
                                                 Width="20" Height="20" Margin="5,0,0,0"
                                                 ToolTipService.InitialShowDelay="0"
                                                 ToolTipService.Placement="Bottom"
                                                 ToolTipService.HorizontalOffset="-10"
                                                 Click="HelpButton_Click">
                                             <Button.ToolTip>
-                                                <ToolTip Content="DeepL翻訳APIの設定" />
+                                                <ToolTip Content="Twitchチャットクライアントの設定" />
                                             </Button.ToolTip>
-                                            <materialDesign:PackIcon Kind="HelpCircleOutline" Width="16" Height="16" Foreground="White" />
+                                            <materialDesign:PackIcon Kind="HelpCircleOutline" Width="16" Height="16"
+                                                                     Foreground="White" />
                                         </Button>
                                     </StackPanel>
                                 </GroupBox.Header>
-                                <Canvas x:Name="DeepLCanvas" TextBlock.Foreground="Black">
-                                    <StackPanel Orientation="Horizontal" Canvas.Left="1" Canvas.Top="10">
-                                        <Label x:Name="DeepLApiKeyLabel" Content="DeepL API Key" HorizontalAlignment="Left"
-                                               VerticalAlignment="Center" Height="30" Width="97" />
-                                        <Button Style="{StaticResource MaterialDesignIconButton}" 
-                                                Width="20" Height="20" Margin="-5,0,0,0"
+                                <Canvas x:Name="TwitchClientCanvas" TextBlock.Foreground="Black">
+                                    <StackPanel Orientation="Horizontal" Canvas.Top="0">
+                                        <Label x:Name="TwitchClientUserNameLabel" Content="UserName" Height="25"
+                                               Background="{x:Null}" Width="83" HorizontalAlignment="Center"
+                                               VerticalAlignment="Top" />
+                                        <Button Style="{StaticResource MaterialDesignIconButton}"
+                                                Width="20" Height="20" Margin="-8,0,0,0"
                                                 ToolTipService.InitialShowDelay="0"
                                                 ToolTipService.Placement="Bottom"
                                                 ToolTipService.HorizontalOffset="-10"
                                                 Click="HelpButton_Click">
                                             <Button.ToolTip>
-                                                <ToolTip Content="DeepL APIを使用するための認証キー" />
+                                                <ToolTip Content="Twitchにログインするときの名前" />
                                             </Button.ToolTip>
-                                            <materialDesign:PackIcon Kind="HelpCircleOutline" Width="16" Height="16" Foreground="Gray" />
+                                            <materialDesign:PackIcon Kind="HelpCircleOutline" Width="16" Height="16"
+                                                                     Foreground="Gray" />
                                         </Button>
                                     </StackPanel>
-                                    <PasswordBox x:Name="DeepLApiKeyPasswordBox" HorizontalAlignment="Left"
-                                                 VerticalAlignment="Center" Width="805" Height="30" Canvas.Left="115"
-                                                 Canvas.Top="10" />
-                                    <Label x:Name="DeepLCautionLabel" Content="※Enter a Key for either DeepL API Free or Pro"
-                                           HorizontalAlignment="Left" VerticalAlignment="Top" Width="349" Foreground="Red"
-                                           Canvas.Left="10" Canvas.Top="42" />
-                                    <Button x:Name="DeepLSiteGoButton" Content="DeepL Site" HorizontalAlignment="Left"
-                                            VerticalAlignment="Center" Height="30" Width="105" Canvas.Left="940"
-                                            Canvas.Top="10" Click="DeepLSiteGoButton_Click" />
+                                    <TextBox x:Name="TwitchClientUserNameTextBox" TextWrapping="Wrap" Width="420"
+                                             Height="25" HorizontalAlignment="Left" Canvas.Left="100"
+                                             VerticalAlignment="Top" Canvas.Top="0" />
+
+                                    <StackPanel Orientation="Horizontal" Canvas.Top="34">
+                                        <Label x:Name="TwitchClientDisplayNameLabel" Content="DisplayName" Height="25"
+                                               Background="{x:Null}" Width="83" HorizontalAlignment="Center"
+                                               VerticalAlignment="Top" />
+                                        <Button Style="{StaticResource MaterialDesignIconButton}"
+                                                Width="20" Height="20" Margin="-8,0,0,0"
+                                                ToolTipService.InitialShowDelay="0"
+                                                ToolTipService.Placement="Bottom"
+                                                ToolTipService.HorizontalOffset="-10"
+                                                Click="HelpButton_Click">
+                                            <Button.ToolTip>
+                                                <ToolTip Content="Twitchの自分のページで表示される名前" />
+                                            </Button.ToolTip>
+                                            <materialDesign:PackIcon Kind="HelpCircleOutline" Width="16" Height="16"
+                                                                     Foreground="Gray" />
+                                        </Button>
+                                    </StackPanel>
+                                    <TextBox x:Name="TwitchClientDisplayNameTextBox" TextWrapping="Wrap" Width="420"
+                                             Height="25" HorizontalAlignment="Left" Canvas.Left="100" Canvas.Top="34"
+                                             VerticalAlignment="Top" />
+                                </Canvas>
+                            </GroupBox>
+                            <GroupBox x:Name="TwitchApiGroupBox" HorizontalAlignment="Center" Height="187"
+                                      Canvas.Top="149" VerticalAlignment="Top" Width="533">
+                                <GroupBox.Header>
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="API" />
+                                        <Button Style="{StaticResource MaterialDesignIconButton}"
+                                                Width="20" Height="20" Margin="5,0,0,0"
+                                                ToolTipService.InitialShowDelay="0"
+                                                ToolTipService.Placement="Bottom"
+                                                ToolTipService.HorizontalOffset="-10"
+                                                Click="HelpButton_Click">
+                                            <Button.ToolTip>
+                                                <ToolTip Content="Twitch API連携の設定" />
+                                            </Button.ToolTip>
+                                            <materialDesign:PackIcon Kind="HelpCircleOutline" Width="16" Height="16"
+                                                                     Foreground="White" />
+                                        </Button>
+                                    </StackPanel>
+                                </GroupBox.Header>
+                                <Canvas x:Name="TwitchApiCanvas" TextBlock.Foreground="Black">
+                                    <StackPanel Orientation="Horizontal" Canvas.Top="0">
+                                        <Label x:Name="TwitchApiClientIdLabel" Content="ClientId"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center" Height="25" Background="{x:Null}" Width="83" />
+                                        <Button Style="{StaticResource MaterialDesignIconButton}"
+                                                Width="20" Height="20" Margin="-8,0,0,0"
+                                                ToolTipService.InitialShowDelay="0"
+                                                ToolTipService.Placement="Bottom"
+                                                ToolTipService.HorizontalOffset="-10"
+                                                Click="HelpButton_Click">
+                                            <Button.ToolTip>
+                                                <ToolTip Content="Twitch API Client ID" />
+                                            </Button.ToolTip>
+                                            <materialDesign:PackIcon Kind="HelpCircleOutline" Width="16" Height="16"
+                                                                     Foreground="Gray" />
+                                        </Button>
+                                    </StackPanel>
+                                    <PasswordBox x:Name="TwitchApiClientIdPasswordBox" HorizontalAlignment="Left"
+                                                 VerticalAlignment="Center" Width="415" Height="25" Canvas.Left="100" />
+
+                                    <StackPanel Orientation="Horizontal" Canvas.Top="30">
+                                        <Label x:Name="TwitchApiClientSecretLabel" Content="ClientSecret"
+                                               HorizontalAlignment="Center" VerticalAlignment="Top" Height="25"
+                                               Width="83" />
+                                        <Button Style="{StaticResource MaterialDesignIconButton}"
+                                                Width="20" Height="20" Margin="-8,0,0,0"
+                                                ToolTipService.InitialShowDelay="0"
+                                                ToolTipService.Placement="Bottom"
+                                                ToolTipService.HorizontalOffset="-10"
+                                                Click="HelpButton_Click">
+                                            <Button.ToolTip>
+                                                <ToolTip Content="Twitch API Client Secret" />
+                                            </Button.ToolTip>
+                                            <materialDesign:PackIcon Kind="HelpCircleOutline" Width="16" Height="16"
+                                                                     Foreground="Gray" />
+                                        </Button>
+                                    </StackPanel>
+                                    <PasswordBox x:Name="TwitchApiClientSecretPasswordBox" HorizontalAlignment="Center"
+                                                 VerticalAlignment="Top" Width="415" Height="25" Canvas.Left="100"
+                                                 Canvas.Top="30" />
+                                    <Canvas x:Name="TwitchApiNotificationCanvas" Height="39" Width="355"
+                                            Canvas.Top="96"
+                                            HorizontalAlignment="Center" VerticalAlignment="Top">
+                                        <TextBlock HorizontalAlignment="Center" VerticalAlignment="Top" Width="355"
+                                                   Height="15" Text="※Your API AccessToken has expired."
+                                                   Foreground="Red"
+                                                   Canvas.Top="1" />
+                                        <TextBlock HorizontalAlignment="Center" VerticalAlignment="Top" Width="405"
+                                                   Canvas.Top="19" Height="30"
+                                                   Text="　Please press the Authorize button to get the Token."
+                                                   Foreground="Red" TextWrapping="Wrap" />
+                                    </Canvas>
+                                    <TextBlock x:Name="TwitchApiExpireDateTimeTextBlock" Canvas.Left="310"
+                                               TextWrapping="Wrap" Text="Token expiration: 2023/01/01 12:00:00"
+                                               Canvas.Top="75" HorizontalAlignment="Left" VerticalAlignment="Top"
+                                               Height="20" Width="205" />
+                                    <Button x:Name="TwitchApiAuthorizeButton" Content="Authorize"
+                                            HorizontalAlignment="Center" VerticalAlignment="Top" Height="30"
+                                            Width="105"
+                                            Canvas.Left="410" Canvas.Top="100" Click="TwitchApiAuthorizeButton_Click" />
                                 </Canvas>
                             </GroupBox>
                         </Canvas>
-                    </TabItem>
-                    <TabItem x:Name="AutoBotTimerTabItem" Header="Timer">
-                        <Canvas x:Name="AutoBotTimerCanvas" Background="#FFE5E5E5">
-                            <GroupBox x:Name="CycleNotificationGroupBox" Height="194"
-                                      Canvas.Left="10" Width="1065" HorizontalAlignment="Center"
-                                      VerticalAlignment="Center" Canvas.Top="10">
-                                <GroupBox.Header>
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="Cycle Notifications" />
-                                        <Button Style="{StaticResource MaterialDesignIconButton}" 
-                                                Width="20" Height="20" Margin="5,0,0,0"
-                                                ToolTipService.InitialShowDelay="0"
-                                                ToolTipService.Placement="Bottom"
-                                                ToolTipService.HorizontalOffset="-10"
-                                                Click="HelpButton_Click">
-                                            <Button.ToolTip>
-                                                <ToolTip Content="定期的に自動でチャットに送信するメッセージの設定" />
-                                            </Button.ToolTip>
-                                            <materialDesign:PackIcon Kind="HelpCircleOutline" Width="16" Height="16" Foreground="White" />
-                                        </Button>
-                                    </StackPanel>
-                                </GroupBox.Header>
-                                <Canvas x:Name="CycleNotificationCanvas" TextBlock.Foreground="Black">
-                                    <Grid x:Name="CycleTimer1Grid" HorizontalAlignment="Left" Height="30"
-                                          Canvas.Left="10" Canvas.Top="0" VerticalAlignment="Center" Width="1027">
-                                        <CheckBox x:Name="CycleTimer1CheckBox" Content="CycleTimer1"
-                                                  HorizontalAlignment="Left" VerticalAlignment="Center" Height="30"
-                                                  Width="90" />
-                                        <Slider x:Name="CycleTimer1Slider" Width="120" Maximum="120" Minimum="15"
-                                                Value="15" TickPlacement="TopLeft" Ticks="15,30,45,60,90,120"
-                                                AutoToolTipPlacement="TopLeft" IsSnapToTickEnabled="True"
-                                                HorizontalAlignment="Left" VerticalAlignment="Center" Margin="95,0,0,0"
-                                                ManipulationStarted="CycleTimerSlider_ManipulationStarted"
-                                                ManipulationDelta="CycleTimerSlider_ManipulationDelta" />
-                                        <Label x:Name="CycleTimer1Label" Content="min/time" HorizontalAlignment="Left"
-                                               VerticalAlignment="Center" Width="60" Margin="220,0,0,0" Height="30" />
-                                        <TextBox x:Name="CycleTimer1TextBox" TextWrapping="Wrap" Width="742"
-                                                 HorizontalAlignment="Left" VerticalAlignment="Center"
-                                                 Margin="285,0,0,0" Height="30" />
-                                    </Grid>
-                                    <Grid x:Name="CycleTimer2Grid" HorizontalAlignment="Left" Height="30"
-                                          Canvas.Left="10" Canvas.Top="38" VerticalAlignment="Center" Width="1027">
-                                        <CheckBox x:Name="CycleTimer2CheckBox" Content="CycleTimer2"
-                                                  HorizontalAlignment="Left" VerticalAlignment="Center" Height="30"
-                                                  Width="90" />
-                                        <Slider x:Name="CycleTimer2Slider" Width="120" Maximum="120" Minimum="15"
-                                                Value="15" TickPlacement="TopLeft" Ticks="15,30,45,60,90,120"
-                                                AutoToolTipPlacement="TopLeft" IsSnapToTickEnabled="True"
-                                                HorizontalAlignment="Left" VerticalAlignment="Center" Margin="95,0,0,0"
-                                                Grid.ColumnSpan="2" Grid.Column="0" />
-                                        <Label x:Name="CycleTimer2Label" Content="min/time" HorizontalAlignment="Left"
-                                               VerticalAlignment="Center" Width="60" Margin="220,0,0,0" Height="30"
-                                               Grid.Column="1" />
-                                        <TextBox x:Name="CycleTimer2TextBox" TextWrapping="Wrap" Width="742"
-                                                 HorizontalAlignment="Left" VerticalAlignment="Center"
-                                                 Margin="285,0,0,0" Height="30" Grid.Column="1" />
-                                    </Grid>
-                                    <Grid x:Name="CycleTimer3Grid" HorizontalAlignment="Left" Height="30"
-                                          Canvas.Left="10" Canvas.Top="76" VerticalAlignment="Center" Width="1027">
-                                        <CheckBox x:Name="CycleTimer3CheckBox" Content="CycleTimer3"
-                                                  HorizontalAlignment="Left" VerticalAlignment="Center" Height="30"
-                                                  Width="90" />
-                                        <Slider x:Name="CycleTimer3Slider" Width="120" Maximum="120" Minimum="15"
-                                                Value="15" TickPlacement="TopLeft" Ticks="15,30,45,60,90,120"
-                                                AutoToolTipPlacement="TopLeft" IsSnapToTickEnabled="True"
-                                                HorizontalAlignment="Left" VerticalAlignment="Center" Margin="95,0,0,0" />
-                                        <Label x:Name="CycleTimer3Label" Content="min/time" HorizontalAlignment="Left"
-                                               VerticalAlignment="Center" Width="60" Margin="220,0,0,0" Height="30" />
-                                        <TextBox x:Name="CycleTimer3TextBox" TextWrapping="Wrap" Width="742"
-                                                 HorizontalAlignment="Left" VerticalAlignment="Center"
-                                                 Margin="285,0,0,0" Height="30" />
-                                    </Grid>
-                                    <Grid x:Name="CycleTimer4Grid" HorizontalAlignment="Left" Height="30"
-                                          Canvas.Left="10" Canvas.Top="114" VerticalAlignment="Center" Width="1027">
-                                        <CheckBox x:Name="CycleTimer4CheckBox" Content="CycleTimer4"
-                                                  HorizontalAlignment="Left" VerticalAlignment="Center" Height="30"
-                                                  Width="90" />
-                                        <Slider x:Name="CycleTimer4Slider" Width="120" Maximum="120" Minimum="15"
-                                                Value="15" TickPlacement="TopLeft" Ticks="15,30,45,60,90,120"
-                                                AutoToolTipPlacement="TopLeft" IsSnapToTickEnabled="True"
-                                                HorizontalAlignment="Left" VerticalAlignment="Center" Margin="95,0,0,0" />
-                                        <Label x:Name="CycleTimer4Label" Content="min/time" HorizontalAlignment="Left"
-                                               VerticalAlignment="Center" Width="60" Margin="220,0,0,0" Height="29" />
-                                        <TextBox x:Name="CycleTimer4TextBox" TextWrapping="Wrap" Width="742"
-                                                 HorizontalAlignment="Left" VerticalAlignment="Center"
-                                                 Margin="285,0,0,0" Height="30" />
-                                    </Grid>
-                                </Canvas>
-                            </GroupBox>
-                            <GroupBox x:Name="FixedNotificationGroupBox" Height="194"
-                                      Canvas.Left="10" Canvas.Top="213" Width="1065" HorizontalAlignment="Center"
+                    </GroupBox>
+                    <GroupBox x:Name="WebViewGroupBox" HorizontalAlignment="Left" Height="493"
+                              Canvas.Left="565" Canvas.Top="10" VerticalAlignment="Center" Width="510">
+                        <GroupBox.Header>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="WebView" />
+                                <Button Style="{StaticResource MaterialDesignIconButton}"
+                                        Width="20" Height="20" Margin="5,0,0,0"
+                                        ToolTipService.InitialShowDelay="0"
+                                        ToolTipService.Placement="Bottom"
+                                        ToolTipService.HorizontalOffset="-10"
+                                        Click="HelpButton_Click">
+                                    <Button.ToolTip>
+                                        <ToolTip Content="Twitchサイトを表示する内蔵ブラウザ" />
+                                    </Button.ToolTip>
+                                    <materialDesign:PackIcon Kind="HelpCircleOutline" Width="16" Height="16"
+                                                             Foreground="White" />
+                                </Button>
+                            </StackPanel>
+                        </GroupBox.Header>
+                        <Grid Background="White">
+                            <wpf:WebView2 x:Name="FaraBotModeratorWebView"
+                                          NavigationCompleted="FaraBotModeratorWebView_NavigationCompleted"
+                                          HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
+                        </Grid>
+                    </GroupBox>
+                </Canvas>
+            </TabItem>
+            <TabItem x:Name="ReactionEventSettingsTabItem" Header="Reaction Event Settings">
+                <Canvas x:Name="ReactionEventSettingsCanvas" Background="#FFE5E5E5">
+                    <GroupBox x:Name="ReactionEventSettingsGroupBox" HorizontalAlignment="Left" Height="255"
+                              Canvas.Left="10" Canvas.Top="10" VerticalAlignment="Top" Width="1065">
+                        <GroupBox.Header>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="Event Notification Settings" />
+                                <Button Style="{StaticResource MaterialDesignIconButton}"
+                                        Width="20" Height="20" Margin="5,0,0,0"
+                                        ToolTipService.InitialShowDelay="0"
+                                        ToolTipService.Placement="Bottom"
+                                        ToolTipService.HorizontalOffset="-10"
+                                        Click="HelpButton_Click">
+                                    <Button.ToolTip>
+                                        <ToolTip Content="各種イベント（フォロー、レイド等）発生時の通知設定" />
+                                    </Button.ToolTip>
+                                    <materialDesign:PackIcon Kind="HelpCircleOutline" Width="16" Height="16"
+                                                             Foreground="White" />
+                                </Button>
+                            </StackPanel>
+                        </GroupBox.Header>
+                        <Canvas x:Name="ReactionEventSettingsGroupBoxCanvas" TextBlock.Foreground="Black">
+                            <Grid x:Name="FollowGrid" HorizontalAlignment="Left" Height="30" Canvas.Left="0"
+                                  Canvas.Top="0"
+                                  VerticalAlignment="Center" Width="1040" TextBlock.Foreground="Black">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="110" />
+                                    <ColumnDefinition Width="30" />
+                                    <ColumnDefinition Width="770" />
+                                    <ColumnDefinition Width="130" />
+                                </Grid.ColumnDefinitions>
+                                <CheckBox x:Name="FollowEventCheckBox" Content="Follow" Height="30" Grid.Column="0"
+                                          VerticalAlignment="Center" />
+                                <Button Style="{StaticResource MaterialDesignIconButton}"
+                                        Width="20" Height="20" Grid.Column="1"
+                                        ToolTipService.InitialShowDelay="0"
+                                        ToolTipService.Placement="Bottom"
+                                        ToolTipService.HorizontalOffset="-10"
+                                        Click="HelpButton_Click" VerticalAlignment="Center" HorizontalAlignment="Left">
+                                    <Button.ToolTip>
+                                        <ToolTip Content="誰かがフォローした時に送信するメッセージ" />
+                                    </Button.ToolTip>
+                                    <materialDesign:PackIcon Kind="HelpCircleOutline" Width="16" Height="16"
+                                                             Foreground="Gray" />
+                                </Button>
+                                <TextBox x:Name="FollowEventTextBox" TextWrapping="Wrap" Height="30" Grid.Column="2"
+                                         VerticalAlignment="Center"
+                                         Text="{}{followerName}, thanks follow. Channel URL: {followerChannelUrl}" />
+                                <Button x:Name="FollowTestButton" Content="Test Send" Grid.Column="3"
+                                        VerticalAlignment="Center"
+                                        Width="120" Height="30" Click="FollowTestButton_Click"
+                                        HorizontalAlignment="Right" />
+                            </Grid>
+                            <Grid x:Name="RaidGrid" HorizontalAlignment="Left" Height="30" Canvas.Left="0"
+                                  Canvas.Top="35"
+                                  VerticalAlignment="Center" Width="1040" TextBlock.Foreground="Black">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="110" />
+                                    <ColumnDefinition Width="30" />
+                                    <ColumnDefinition Width="770" />
+                                    <ColumnDefinition Width="130" />
+                                </Grid.ColumnDefinitions>
+                                <CheckBox x:Name="RaidEventCheckBox" Content="Raid" Height="30" Grid.Column="0"
+                                          VerticalAlignment="Center" />
+                                <Button Style="{StaticResource MaterialDesignIconButton}"
+                                        Width="20" Height="20" Grid.Column="1"
+                                        ToolTipService.InitialShowDelay="0"
+                                        ToolTipService.Placement="Bottom"
+                                        ToolTipService.HorizontalOffset="-10"
+                                        Click="HelpButton_Click" VerticalAlignment="Center" HorizontalAlignment="Left">
+                                    <Button.ToolTip>
+                                        <ToolTip Content="誰かがレイドしてくれた時に送信するメッセージ" />
+                                    </Button.ToolTip>
+                                    <materialDesign:PackIcon Kind="HelpCircleOutline" Width="16" Height="16"
+                                                             Foreground="Gray" />
+                                </Button>
+                                <TextBox x:Name="RaidEventTextBox" TextWrapping="Wrap" Height="30" Grid.Column="2"
+                                         VerticalAlignment="Center"
+                                         Text="Welcome raiders, thanks raid {raiderName}. Channel URL: {raiderChannelUrl}" />
+                                <Button x:Name="RaidTestButton" Content="Test Send" Grid.Column="3"
+                                        VerticalAlignment="Center"
+                                        Width="120" Height="30" Click="RaidTestButton_Click"
+                                        HorizontalAlignment="Right" />
+                            </Grid>
+                            <Grid x:Name="SubscriptionGrid" HorizontalAlignment="Left" Height="30" Canvas.Left="0"
+                                  Canvas.Top="70"
+                                  VerticalAlignment="Center" Width="1040" TextBlock.Foreground="Black">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="110" />
+                                    <ColumnDefinition Width="30" />
+                                    <ColumnDefinition Width="770" />
+                                    <ColumnDefinition Width="130" />
+                                </Grid.ColumnDefinitions>
+                                <CheckBox x:Name="SubscriptionEventCheckBox" Content="Subscription" Height="30"
+                                          Grid.Column="0"
+                                          VerticalAlignment="Center" />
+                                <Button Style="{StaticResource MaterialDesignIconButton}"
+                                        Width="20" Height="20" Grid.Column="1"
+                                        ToolTipService.InitialShowDelay="0"
+                                        ToolTipService.Placement="Bottom"
+                                        ToolTipService.HorizontalOffset="-10"
+                                        Click="HelpButton_Click" VerticalAlignment="Center" HorizontalAlignment="Left">
+                                    <Button.ToolTip>
+                                        <ToolTip Content="誰かがサブスクライブしてくれた時に送信するメッセージ" />
+                                    </Button.ToolTip>
+                                    <materialDesign:PackIcon Kind="HelpCircleOutline" Width="16" Height="16"
+                                                             Foreground="Gray" />
+                                </Button>
+                                <TextBox x:Name="SubscriptionEventTextBox" TextWrapping="Wrap" Height="30"
+                                         Grid.Column="2"
+                                         VerticalAlignment="Center"
+                                         Text="{}{subscriberName}, thanks subscription {totalSubscriptionMonth} time." />
+                                <Button x:Name="SubscriptionTestButton" Content="Test Send" Grid.Column="3"
+                                        VerticalAlignment="Center"
+                                        Width="120" Height="30" Click="SubscriptionTestButton_Click"
+                                        HorizontalAlignment="Right" />
+                            </Grid>
+                            <Grid x:Name="BitsGrid" HorizontalAlignment="Left" Height="30" Canvas.Left="0"
+                                  Canvas.Top="105"
+                                  VerticalAlignment="Center" Width="1040" TextBlock.Foreground="Black">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="110" />
+                                    <ColumnDefinition Width="30" />
+                                    <ColumnDefinition Width="770" />
+                                    <ColumnDefinition Width="130" />
+                                </Grid.ColumnDefinitions>
+                                <CheckBox x:Name="BitsEventCheckBox" Content="Bits" Height="30" Grid.Column="0"
+                                          VerticalAlignment="Center" />
+                                <Button Style="{StaticResource MaterialDesignIconButton}"
+                                        Width="20" Height="20" Grid.Column="1"
+                                        ToolTipService.InitialShowDelay="0"
+                                        ToolTipService.Placement="Bottom"
+                                        ToolTipService.HorizontalOffset="-10"
+                                        Click="HelpButton_Click" VerticalAlignment="Center" HorizontalAlignment="Left">
+                                    <Button.ToolTip>
+                                        <ToolTip Content="誰かがビッツ（チアー）を投げてくれた時に送信するメッセージ" />
+                                    </Button.ToolTip>
+                                    <materialDesign:PackIcon Kind="HelpCircleOutline" Width="16" Height="16"
+                                                             Foreground="Gray" />
+                                </Button>
+                                <TextBox x:Name="BitsEventTextBox" TextWrapping="Wrap" Height="30" Grid.Column="2"
+                                         VerticalAlignment="Center"
+                                         Text="{}{bitsSendUserName}, thanks {bitsAmount} bits." />
+                                <Button x:Name="BitsTestButton" Content="Test Send" Grid.Column="3"
+                                        VerticalAlignment="Center"
+                                        Width="120" Height="30" Click="BitsTestButton_Click"
+                                        HorizontalAlignment="Right" />
+                            </Grid>
+                            <Grid x:Name="GiftGrid" HorizontalAlignment="Left" Height="30" Canvas.Left="0"
+                                  Canvas.Top="140"
+                                  VerticalAlignment="Center" Width="1040" TextBlock.Foreground="Black">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="110" />
+                                    <ColumnDefinition Width="30" />
+                                    <ColumnDefinition Width="770" />
+                                    <ColumnDefinition Width="130" />
+                                </Grid.ColumnDefinitions>
+                                <CheckBox x:Name="GiftEventCheckBox" Content="Gift" Height="30" Grid.Column="0"
+                                          VerticalAlignment="Center" />
+                                <Button Style="{StaticResource MaterialDesignIconButton}"
+                                        Width="20" Height="20" Grid.Column="1"
+                                        ToolTipService.InitialShowDelay="0"
+                                        ToolTipService.Placement="Bottom"
+                                        ToolTipService.HorizontalOffset="-10"
+                                        Click="HelpButton_Click" VerticalAlignment="Center" HorizontalAlignment="Left">
+                                    <Button.ToolTip>
+                                        <ToolTip Content="誰かがサブスクギフトを贈ってくれた時に送信するメッセージ" />
+                                    </Button.ToolTip>
+                                    <materialDesign:PackIcon Kind="HelpCircleOutline" Width="16" Height="16"
+                                                             Foreground="Gray" />
+                                </Button>
+                                <TextBox x:Name="GiftEventTextBox" TextWrapping="Wrap" Height="30" Grid.Column="2"
+                                         VerticalAlignment="Center"
+                                         Text="{}{giftedUserName}, thanks gift present." />
+                                <Button x:Name="GiftTestButton" Content="Test Send" Grid.Column="3"
+                                        VerticalAlignment="Center"
+                                        Width="120" Height="30" Click="GiftTestButton_Click"
+                                        HorizontalAlignment="Right" />
+                            </Grid>
+                            <Grid x:Name="ChannelPointGrid" HorizontalAlignment="Left" Height="30" Canvas.Left="0"
+                                  Canvas.Top="175" VerticalAlignment="Center" Width="1040" TextBlock.Foreground="Black">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="110" />
+                                    <ColumnDefinition Width="30" />
+                                    <ColumnDefinition Width="770" />
+                                    <ColumnDefinition Width="130" />
+                                </Grid.ColumnDefinitions>
+                                <CheckBox x:Name="ChannelPointEventCheckBox" Content="ChannelPoint" Height="30"
+                                          Grid.Column="0"
+                                          VerticalAlignment="Center" />
+                                <Button Style="{StaticResource MaterialDesignIconButton}"
+                                        Width="20" Height="20" Grid.Column="1"
+                                        ToolTipService.InitialShowDelay="0"
+                                        ToolTipService.Placement="Bottom"
+                                        ToolTipService.HorizontalOffset="-10"
+                                        Click="HelpButton_Click" VerticalAlignment="Center" HorizontalAlignment="Left">
+                                    <Button.ToolTip>
+                                        <ToolTip Content="誰かがチャンネルポイントを使用した時に送信するメッセージ" />
+                                    </Button.ToolTip>
+                                    <materialDesign:PackIcon Kind="HelpCircleOutline" Width="16" Height="16"
+                                                             Foreground="Gray" />
+                                </Button>
+                                <TextBox x:Name="ChannelPointEventTextBox" TextWrapping="Wrap" Height="30"
+                                         Grid.Column="2"
+                                         VerticalAlignment="Center"
+                                         Text="{}{channel Point UserName} used the {channel Point Title} with {cost} channel points" />
+                                <Button x:Name="ChannelPointTestButton" Content="Test Send" Grid.Column="3"
+                                        VerticalAlignment="Center"
+                                        Width="120" Height="30" Click="ChannelPointTestButton_Click"
+                                        HorizontalAlignment="Right" />
+                            </Grid>
+                        </Canvas>
+                    </GroupBox>
+
+                    <GroupBox x:Name="ReplaceWordsDescriptionGroupBox" HorizontalAlignment="Left" Height="230"
+                              Canvas.Left="10" Canvas.Top="275" VerticalAlignment="Top" Width="1065">
+                        <GroupBox.Header>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="Replace Words Description" />
+                                <Button Style="{StaticResource MaterialDesignIconButton}"
+                                        Width="20" Height="20" Margin="5,0,0,0"
+                                        ToolTipService.InitialShowDelay="0"
+                                        ToolTipService.Placement="Bottom"
+                                        ToolTipService.HorizontalOffset="-10"
+                                        Click="HelpButton_Click">
+                                    <Button.ToolTip>
+                                        <ToolTip Content="メッセージ内の特定の単語を置き換えるための設定説明" />
+                                    </Button.ToolTip>
+                                    <materialDesign:PackIcon Kind="HelpCircleOutline" Width="16" Height="16"
+                                                             Foreground="White" />
+                                </Button>
+                            </StackPanel>
+                        </GroupBox.Header>
+                        <RichTextBox x:Name="ReplaceNotificationRichTextBox" Height="180"
+                                     Width="1040" HorizontalScrollBarVisibility="Disabled" HorizontalAlignment="Left"
+                                     VerticalAlignment="Top" Padding="0,0,0,0" VerticalScrollBarVisibility="Visible"
+                                     OpacityMask="Black" Background="{DynamicResource AttentionToActionBrush}"
+                                     IsReadOnly="True" Foreground="Black">
+                            <FlowDocument>
+                                <Paragraph>
+                                    <Run
+                                        Text="・Follow&#xA;{followedName} -&gt; When followed by a user, replace the userName.&#xA;{followerChannelUrl} -&gt; When twitch events, replace event userChannel.&#xA;&#xA;----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------&#xA;・Raid&#xA;{raiderName} -&gt; When raid by a user, replace the userName.&#xA;{raiderChannelUrl} -&gt; When raid by a user, replace the channelUrl.&#xA;&#xA;----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------&#xA;・Subscription&#xA;{subscriberName} -&gt; When subscription by a user, replace the userName.&#xA;{totalSubscriptionMonth} -&gt; When subscription by a user, replace total subscription count.&#xA;&#xA;----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------&#xA;・Bits&#xA;{bitsAmount} -&gt; When throw bits by a user, replace the bits amount.&#xA;{bitsSendUserName} -&gt; When throw bits by a user, replace the userName.&#xA;&#xA;----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------&#xA;・Gift&#xA;{giftedUserName} -&gt; When throw gifted by a user, replace the userName.&#xA;&#xA;----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------&#xA;・ChannelPoint&#xA;{channelPointCost} -&gt; When use channelPoint, replace the number of channelPoints used.&#xA;{channelPointTitle} -&gt; When use channelPoint, replace the channelPoint title.&#xA;{channelPointUserName} -&gt; When use channelPoint, replace userName with channelPoint.&#xA;" />
+                                </Paragraph>
+                            </FlowDocument>
+                        </RichTextBox>
+                    </GroupBox>
+                </Canvas>
+            </TabItem>
+            <TabItem x:Name="AutoBotSettingsTabItem" Header="Auto Bot Settings">
+                <Canvas x:Name="AutoBotSettingsCanvas" Background="#FFE5E5E5">
+                    <TabControl x:Name="AutoBotSettingsTabControl" Height="513" HorizontalAlignment="Left"
+                                VerticalAlignment="Center" Width="1100">
+                        <TabItem x:Name="AutoBotTranslateTabItem" Header="Translate">
+                            <Canvas x:Name="AutoBotTranslateCanvas" Background="#FFE5E5E5">
+                                <GroupBox x:Name="DeepLGroupBox" HorizontalAlignment="Center" Height="120"
+                                          Canvas.Left="10" Canvas.Top="10" VerticalAlignment="Top" Width="1065">
+                                    <GroupBox.Header>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="DeepL" />
+                                            <Button Style="{StaticResource MaterialDesignIconButton}"
+                                                    Width="20" Height="20" Margin="5,0,0,0"
+                                                    ToolTipService.InitialShowDelay="0"
+                                                    ToolTipService.Placement="Bottom"
+                                                    ToolTipService.HorizontalOffset="-10"
+                                                    Click="HelpButton_Click">
+                                                <Button.ToolTip>
+                                                    <ToolTip Content="DeepL翻訳APIの設定" />
+                                                </Button.ToolTip>
+                                                <materialDesign:PackIcon Kind="HelpCircleOutline" Width="16"
+                                                                         Height="16" Foreground="White" />
+                                            </Button>
+                                        </StackPanel>
+                                    </GroupBox.Header>
+                                    <Canvas x:Name="DeepLCanvas" TextBlock.Foreground="Black">
+                                        <StackPanel Orientation="Horizontal" Canvas.Left="1" Canvas.Top="10">
+                                            <Label x:Name="DeepLApiKeyLabel" Content="DeepL API Key"
+                                                   HorizontalAlignment="Left"
+                                                   VerticalAlignment="Center" Height="30" Width="97" />
+                                            <Button Style="{StaticResource MaterialDesignIconButton}"
+                                                    Width="20" Height="20" Margin="-5,0,0,0"
+                                                    ToolTipService.InitialShowDelay="0"
+                                                    ToolTipService.Placement="Bottom"
+                                                    ToolTipService.HorizontalOffset="-10"
+                                                    Click="HelpButton_Click">
+                                                <Button.ToolTip>
+                                                    <ToolTip Content="DeepL APIを使用するための認証キー" />
+                                                </Button.ToolTip>
+                                                <materialDesign:PackIcon Kind="HelpCircleOutline" Width="16"
+                                                                         Height="16" Foreground="Gray" />
+                                            </Button>
+                                        </StackPanel>
+                                        <PasswordBox x:Name="DeepLApiKeyPasswordBox" HorizontalAlignment="Left"
+                                                     VerticalAlignment="Center" Width="805" Height="30"
+                                                     Canvas.Left="115"
+                                                     Canvas.Top="10" />
+                                        <Label x:Name="DeepLCautionLabel"
+                                               Content="※Enter a Key for either DeepL API Free or Pro"
+                                               HorizontalAlignment="Left" VerticalAlignment="Top" Width="349"
+                                               Foreground="Red"
+                                               Canvas.Left="0" Canvas.Top="42" />
+                                        <Button x:Name="DeepLSiteGoButton" Content="DeepL Site"
+                                                HorizontalAlignment="Left"
+                                                VerticalAlignment="Center" Height="30" Width="105" Canvas.Left="940"
+                                                Canvas.Top="10" Click="DeepLSiteGoButton_Click" />
+                                    </Canvas>
+                                </GroupBox>
+                                <GroupBox x:Name="GameGroupBox" HorizontalAlignment="Center" Height="317"
+                                          Canvas.Left="10" Canvas.Top="140" VerticalAlignment="Top" Width="1065">
+                                    <GroupBox.Header>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="Game" />
+                                            <Button Style="{StaticResource MaterialDesignIconButton}"
+                                                    Width="20" Height="20" Margin="5,0,0,0"
+                                                    ToolTipService.InitialShowDelay="0"
+                                                    ToolTipService.Placement="Bottom"
+                                                    ToolTipService.HorizontalOffset="-10"
+                                                    Click="HelpButton_Click">
+                                                <Button.ToolTip>
+                                                    <ToolTip Content="ゲームごとのチャット変換パターン設定" />
+                                                </Button.ToolTip>
+                                                <materialDesign:PackIcon Kind="HelpCircleOutline" Width="16"
+                                                                         Height="16" Foreground="White" />
+                                            </Button>
+                                        </StackPanel>
+                                    </GroupBox.Header>
+                                    <DockPanel Margin="5">
+                                        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,0">
+                                            <ComboBox x:Name="GameSelectComboBox" Width="150" Height="30"
+                                                      Foreground="Black"
+                                                      SelectionChanged="GameSelectComboBox_SelectionChanged">
+                                                <ComboBoxItem Content="Beat Saber" IsSelected="True" />
+                                            </ComboBox>
+                                            <Button x:Name="GameResetButton" Content="初期化" Width="80" Height="30"
+                                                    Margin="10,0,0,0" Click="GameResetButton_Click" />
+                                        </StackPanel>
+                                        <DataGrid x:Name="BeatSaberBsrDataGrid"
+                                                  AutoGenerateColumns="False"
+                                                  CanUserAddRows="False"
+                                                  CanUserDeleteRows="False"
+                                                  IsReadOnly="True"
+                                                  TextBlock.Foreground="Black">
+                                            <DataGrid.Columns>
+                                                <DataGridTextColumn Header="正規表現パターン" Binding="{Binding Key}" Width="*" />
+                                                <DataGridTextColumn Header="変換後テキスト" Binding="{Binding Value}"
+                                                                    Width="*" />
+                                            </DataGrid.Columns>
+                                        </DataGrid>
+                                    </DockPanel>
+                                </GroupBox>
+                            </Canvas>
+                        </TabItem>
+                        <TabItem x:Name="AutoBotTimerTabItem" Header="Timer">
+                            <Canvas x:Name="AutoBotTimerCanvas" Background="#FFE5E5E5">
+                                <GroupBox x:Name="CycleNotificationGroupBox" Height="194"
+                                          Canvas.Left="10" Width="1065" HorizontalAlignment="Center"
+                                          VerticalAlignment="Center" Canvas.Top="10">
+                                    <GroupBox.Header>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="Cycle Notifications" />
+                                            <Button Style="{StaticResource MaterialDesignIconButton}"
+                                                    Width="20" Height="20" Margin="5,0,0,0"
+                                                    ToolTipService.InitialShowDelay="0"
+                                                    ToolTipService.Placement="Bottom"
+                                                    ToolTipService.HorizontalOffset="-10"
+                                                    Click="HelpButton_Click">
+                                                <Button.ToolTip>
+                                                    <ToolTip Content="定期的に自動でチャットに送信するメッセージの設定" />
+                                                </Button.ToolTip>
+                                                <materialDesign:PackIcon Kind="HelpCircleOutline" Width="16"
+                                                                         Height="16" Foreground="White" />
+                                            </Button>
+                                        </StackPanel>
+                                    </GroupBox.Header>
+                                    <Canvas x:Name="CycleNotificationCanvas" TextBlock.Foreground="Black">
+                                        <Grid x:Name="CycleTimer1Grid" HorizontalAlignment="Left" Height="30"
+                                              Canvas.Left="10" Canvas.Top="0" VerticalAlignment="Center" Width="1027">
+                                            <CheckBox x:Name="CycleTimer1CheckBox" Content="CycleTimer1"
+                                                      HorizontalAlignment="Left" VerticalAlignment="Center" Height="30"
+                                                      Width="90" />
+                                            <Slider x:Name="CycleTimer1Slider" Width="120" Maximum="120" Minimum="15"
+                                                    Value="15" TickPlacement="TopLeft" Ticks="15,30,45,60,90,120"
+                                                    AutoToolTipPlacement="TopLeft" IsSnapToTickEnabled="True"
+                                                    HorizontalAlignment="Left" VerticalAlignment="Center"
+                                                    Margin="95,0,0,0"
+                                                    ManipulationStarted="CycleTimerSlider_ManipulationStarted"
+                                                    ManipulationDelta="CycleTimerSlider_ManipulationDelta" />
+                                            <Label x:Name="CycleTimer1Label" Content="min/time"
+                                                   HorizontalAlignment="Left"
+                                                   VerticalAlignment="Center" Width="60" Margin="220,0,0,0" Height="30" />
+                                            <TextBox x:Name="CycleTimer1TextBox" TextWrapping="Wrap" Width="742"
+                                                     HorizontalAlignment="Left" VerticalAlignment="Center"
+                                                     Margin="285,0,0,0" Height="30" />
+                                        </Grid>
+                                        <Grid x:Name="CycleTimer2Grid" HorizontalAlignment="Left" Height="30"
+                                              Canvas.Left="10" Canvas.Top="38" VerticalAlignment="Center" Width="1027">
+                                            <CheckBox x:Name="CycleTimer2CheckBox" Content="CycleTimer2"
+                                                      HorizontalAlignment="Left" VerticalAlignment="Center" Height="30"
+                                                      Width="90" />
+                                            <Slider x:Name="CycleTimer2Slider" Width="120" Maximum="120" Minimum="15"
+                                                    Value="15" TickPlacement="TopLeft" Ticks="15,30,45,60,90,120"
+                                                    AutoToolTipPlacement="TopLeft" IsSnapToTickEnabled="True"
+                                                    HorizontalAlignment="Left" VerticalAlignment="Center"
+                                                    Margin="95,0,0,0"
+                                                    Grid.ColumnSpan="2" Grid.Column="0" />
+                                            <Label x:Name="CycleTimer2Label" Content="min/time"
+                                                   HorizontalAlignment="Left"
+                                                   VerticalAlignment="Center" Width="60" Margin="220,0,0,0" Height="30"
+                                                   Grid.Column="1" />
+                                            <TextBox x:Name="CycleTimer2TextBox" TextWrapping="Wrap" Width="742"
+                                                     HorizontalAlignment="Left" VerticalAlignment="Center"
+                                                     Margin="285,0,0,0" Height="30" Grid.Column="1" />
+                                        </Grid>
+                                        <Grid x:Name="CycleTimer3Grid" HorizontalAlignment="Left" Height="30"
+                                              Canvas.Left="10" Canvas.Top="76" VerticalAlignment="Center" Width="1027">
+                                            <CheckBox x:Name="CycleTimer3CheckBox" Content="CycleTimer3"
+                                                      HorizontalAlignment="Left" VerticalAlignment="Center" Height="30"
+                                                      Width="90" />
+                                            <Slider x:Name="CycleTimer3Slider" Width="120" Maximum="120" Minimum="15"
+                                                    Value="15" TickPlacement="TopLeft" Ticks="15,30,45,60,90,120"
+                                                    AutoToolTipPlacement="TopLeft" IsSnapToTickEnabled="True"
+                                                    HorizontalAlignment="Left" VerticalAlignment="Center"
+                                                    Margin="95,0,0,0" />
+                                            <Label x:Name="CycleTimer3Label" Content="min/time"
+                                                   HorizontalAlignment="Left"
+                                                   VerticalAlignment="Center" Width="60" Margin="220,0,0,0" Height="30" />
+                                            <TextBox x:Name="CycleTimer3TextBox" TextWrapping="Wrap" Width="742"
+                                                     HorizontalAlignment="Left" VerticalAlignment="Center"
+                                                     Margin="285,0,0,0" Height="30" />
+                                        </Grid>
+                                        <Grid x:Name="CycleTimer4Grid" HorizontalAlignment="Left" Height="30"
+                                              Canvas.Left="10" Canvas.Top="114" VerticalAlignment="Center" Width="1027">
+                                            <CheckBox x:Name="CycleTimer4CheckBox" Content="CycleTimer4"
+                                                      HorizontalAlignment="Left" VerticalAlignment="Center" Height="30"
+                                                      Width="90" />
+                                            <Slider x:Name="CycleTimer4Slider" Width="120" Maximum="120" Minimum="15"
+                                                    Value="15" TickPlacement="TopLeft" Ticks="15,30,45,60,90,120"
+                                                    AutoToolTipPlacement="TopLeft" IsSnapToTickEnabled="True"
+                                                    HorizontalAlignment="Left" VerticalAlignment="Center"
+                                                    Margin="95,0,0,0" />
+                                            <Label x:Name="CycleTimer4Label" Content="min/time"
+                                                   HorizontalAlignment="Left"
+                                                   VerticalAlignment="Center" Width="60" Margin="220,0,0,0" Height="29" />
+                                            <TextBox x:Name="CycleTimer4TextBox" TextWrapping="Wrap" Width="742"
+                                                     HorizontalAlignment="Left" VerticalAlignment="Center"
+                                                     Margin="285,0,0,0" Height="30" />
+                                        </Grid>
+                                    </Canvas>
+                                </GroupBox>
+                                <GroupBox x:Name="FixedNotificationGroupBox" Height="194"
+                                          Canvas.Left="10" Canvas.Top="213" Width="1065" HorizontalAlignment="Center"
+                                          VerticalAlignment="Top">
+                                    <GroupBox.Header>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="Fixed Notifications" />
+                                            <Button Style="{StaticResource MaterialDesignIconButton}"
+                                                    Width="20" Height="20" Margin="5,0,0,0"
+                                                    ToolTipService.InitialShowDelay="0"
+                                                    ToolTipService.Placement="Bottom"
+                                                    ToolTipService.HorizontalOffset="-10"
+                                                    Click="HelpButton_Click">
+                                                <Button.ToolTip>
+                                                    <ToolTip Content="指定した日時に自動でチャットに送信するメッセージの設定" />
+                                                </Button.ToolTip>
+                                                <materialDesign:PackIcon Kind="HelpCircleOutline" Width="16"
+                                                                         Height="16" Foreground="White" />
+                                            </Button>
+                                        </StackPanel>
+                                    </GroupBox.Header>
+                                    <Canvas x:Name="FixedNotificationCanvas" TextBlock.Foreground="Black">
+                                        <Grid x:Name="FixedTimer1Grid" HorizontalAlignment="Left" Height="30"
+                                              Canvas.Left="10" Canvas.Top="0" VerticalAlignment="Center" Width="1027">
+                                            <CheckBox x:Name="FixedTimer1CheckBox" Content="FixedTimer1"
+                                                      HorizontalAlignment="Left" VerticalAlignment="Center" Height="30" />
+                                            <DatePicker x:Name="FixedTimer1DatePicker" DisplayDate="2023-04-08"
+                                                        Margin="91,0,844,0" Height="30" />
+                                            <materialDesign:TimePicker x:Name="FixedTimer1TimePicker"
+                                                                       HorizontalAlignment="Left" Margin="188,5,0,0"
+                                                                       Width="92" Is24Hours="True"
+                                                                       SelectedTimeFormat="Long"
+                                                                       VerticalAlignment="Top"
+                                                                       WithSeconds="True" />
+                                            <TextBox x:Name="FixedTimer1TextBox" TextWrapping="Wrap" Width="742"
+                                                     HorizontalAlignment="Left" VerticalAlignment="Center"
+                                                     Margin="285,0,0,0" Height="30" />
+                                        </Grid>
+                                        <Grid x:Name="FixedTimer2Grid" HorizontalAlignment="Left" Height="30"
+                                              Canvas.Left="10" Canvas.Top="38" VerticalAlignment="Center" Width="1027">
+                                            <CheckBox x:Name="FixedTimer2CheckBox" Content="FixedTimer2"
+                                                      HorizontalAlignment="Left" VerticalAlignment="Center" Height="30" />
+                                            <DatePicker x:Name="FixedTimer2DatePicker" DisplayDate="2023-04-08"
+                                                        Margin="91,0,846,0" Height="30" />
+                                            <materialDesign:TimePicker x:Name="FixedTimer2TimePicker"
+                                                                       HorizontalAlignment="Left" Margin="188,5,0,0"
+                                                                       Width="92" Is24Hours="True"
+                                                                       SelectedTimeFormat="Long"
+                                                                       VerticalAlignment="Top"
+                                                                       WithSeconds="True" />
+                                            <TextBox x:Name="FixedTimer2TextBox" TextWrapping="Wrap" Width="742"
+                                                     HorizontalAlignment="Left" VerticalAlignment="Center"
+                                                     Margin="285,0,0,0" Height="30" />
+                                        </Grid>
+                                        <Grid x:Name="FixedTimer3Grid" HorizontalAlignment="Left" Height="30"
+                                              Canvas.Left="10" Canvas.Top="76" VerticalAlignment="Center" Width="1027">
+                                            <CheckBox x:Name="FixedTimer3CheckBox" Content="FixedTimer3"
+                                                      HorizontalAlignment="Left" VerticalAlignment="Center" Height="30" />
+                                            <DatePicker x:Name="FixedTimer3DatePicker" DisplayDate="2023-04-08"
+                                                        Margin="91,0,846,0" Height="30" />
+                                            <materialDesign:TimePicker x:Name="FixedTimer3TimePicker"
+                                                                       HorizontalAlignment="Left" Margin="188,5,0,0"
+                                                                       Width="92" Is24Hours="True"
+                                                                       SelectedTimeFormat="Long"
+                                                                       VerticalAlignment="Top"
+                                                                       WithSeconds="True" />
+                                            <TextBox x:Name="FixedTimer3TextBox" TextWrapping="Wrap" Width="742"
+                                                     HorizontalAlignment="Left" VerticalAlignment="Center"
+                                                     Margin="285,0,0,0" Height="30" />
+                                        </Grid>
+                                        <Grid x:Name="FixedTimer4Grid" HorizontalAlignment="Left" Height="30"
+                                              Canvas.Left="10" Canvas.Top="114" VerticalAlignment="Center" Width="1027">
+                                            <CheckBox x:Name="FixedTimer4CheckBox" Content="FixedTimer4"
+                                                      HorizontalAlignment="Left" VerticalAlignment="Center" Height="30" />
+                                            <DatePicker x:Name="FixedTimer4DatePicker" DisplayDate="2023-04-08"
+                                                        Margin="91,0,846,0" Height="30" />
+                                            <materialDesign:TimePicker x:Name="FixedTimer4TimePicker"
+                                                                       HorizontalAlignment="Left" Margin="188,5,0,0"
+                                                                       Width="92" Is24Hours="True"
+                                                                       SelectedTimeFormat="Long"
+                                                                       VerticalAlignment="Top"
+                                                                       WithSeconds="True" />
+                                            <TextBox x:Name="FixedTimer4TextBox" TextWrapping="Wrap" Width="742"
+                                                     HorizontalAlignment="Left" VerticalAlignment="Center"
+                                                     Margin="285,0,0,0" Height="30" />
+                                        </Grid>
+                                    </Canvas>
+                                </GroupBox>
+                            </Canvas>
+                        </TabItem>
+                    </TabControl>
+                </Canvas>
+            </TabItem>
+            <TabItem x:Name="WindowsSettingsTabItem" Header="Windows Settings">
+                <Canvas x:Name="WindowsSettingsCanvas" Background="#FFE5E5E5">
+                    <GroupBox x:Name="WindowsControlGroupBox" HorizontalAlignment="Left" Height="220"
+                              Canvas.Left="10" Canvas.Top="10" VerticalAlignment="Top" Width="1065">
+                        <GroupBox.Header>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="Windows Control" />
+                                <Button Style="{StaticResource MaterialDesignIconButton}"
+                                        Width="20" Height="20" Margin="5,0,0,0"
+                                        ToolTipService.InitialShowDelay="0"
+                                        ToolTipService.Placement="Bottom"
+                                        ToolTipService.HorizontalOffset="-10"
+                                        Click="HelpButton_Click">
+                                    <Button.ToolTip>
+                                        <ToolTip Content="チャットウィンドウやレイドリストウィンドウの表示管理" />
+                                    </Button.ToolTip>
+                                    <materialDesign:PackIcon Kind="HelpCircleOutline" Width="16" Height="16"
+                                                             Foreground="White" />
+                                </Button>
+                            </StackPanel>
+                        </GroupBox.Header>
+                        <Grid x:Name="WindowsControlGrid" Margin="10" TextBlock.Foreground="Black">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="510" />
+                                <ColumnDefinition Width="510" />
+                            </Grid.ColumnDefinitions>
+                            <GroupBox x:Name="ChatWindowGroupBox" Grid.Column="0" Margin="5" Height="130"
                                       VerticalAlignment="Top">
                                 <GroupBox.Header>
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="Fixed Notifications" />
-                                        <Button Style="{StaticResource MaterialDesignIconButton}" 
-                                                Width="20" Height="20" Margin="5,0,0,0"
-                                                ToolTipService.InitialShowDelay="0"
-                                                ToolTipService.Placement="Bottom"
-                                                ToolTipService.HorizontalOffset="-10"
-                                                Click="HelpButton_Click">
-                                            <Button.ToolTip>
-                                                <ToolTip Content="指定した日時に自動でチャットに送信するメッセージの設定" />
-                                            </Button.ToolTip>
-                                            <materialDesign:PackIcon Kind="HelpCircleOutline" Width="16" Height="16" Foreground="White" />
-                                        </Button>
-                                    </StackPanel>
+                                    <TextBlock Text="Chat Window" />
                                 </GroupBox.Header>
-                                <Canvas x:Name="FixedNotificationCanvas" TextBlock.Foreground="Black">
-                                    <Grid x:Name="FixedTimer1Grid" HorizontalAlignment="Left" Height="30"
-                                          Canvas.Left="10" Canvas.Top="0" VerticalAlignment="Center" Width="1027">
-                                        <CheckBox x:Name="FixedTimer1CheckBox" Content="FixedTimer1"
-                                                  HorizontalAlignment="Left" VerticalAlignment="Center" Height="30" />
-                                        <DatePicker x:Name="FixedTimer1DatePicker" DisplayDate="2023-04-08"
-                                                    Margin="91,0,844,0" Height="30" />
-                                        <materialDesign:TimePicker x:Name="FixedTimer1TimePicker"
-                                                                   HorizontalAlignment="Left" Margin="188,5,0,0"
-                                                                   Width="92" Is24Hours="True"
-                                                                   SelectedTimeFormat="Long" VerticalAlignment="Top"
-                                                                   WithSeconds="True" />
-                                        <TextBox x:Name="FixedTimer1TextBox" TextWrapping="Wrap" Width="742"
-                                                 HorizontalAlignment="Left" VerticalAlignment="Center"
-                                                 Margin="285,0,0,0" Height="30" />
-                                    </Grid>
-                                    <Grid x:Name="FixedTimer2Grid" HorizontalAlignment="Left" Height="30"
-                                          Canvas.Left="10" Canvas.Top="38" VerticalAlignment="Center" Width="1027">
-                                        <CheckBox x:Name="FixedTimer2CheckBox" Content="FixedTimer2"
-                                                  HorizontalAlignment="Left" VerticalAlignment="Center" Height="30" />
-                                        <DatePicker x:Name="FixedTimer2DatePicker" DisplayDate="2023-04-08"
-                                                    Margin="91,0,846,0" Height="30" />
-                                        <materialDesign:TimePicker x:Name="FixedTimer2TimePicker"
-                                                                   HorizontalAlignment="Left" Margin="188,5,0,0"
-                                                                   Width="92" Is24Hours="True"
-                                                                   SelectedTimeFormat="Long" VerticalAlignment="Top"
-                                                                   WithSeconds="True" />
-                                        <TextBox x:Name="FixedTimer2TextBox" TextWrapping="Wrap" Width="742"
-                                                 HorizontalAlignment="Left" VerticalAlignment="Center"
-                                                 Margin="285,0,0,0" Height="30" />
-                                    </Grid>
-                                    <Grid x:Name="FixedTimer3Grid" HorizontalAlignment="Left" Height="30"
-                                          Canvas.Left="10" Canvas.Top="76" VerticalAlignment="Center" Width="1027">
-                                        <CheckBox x:Name="FixedTimer3CheckBox" Content="FixedTimer3"
-                                                  HorizontalAlignment="Left" VerticalAlignment="Center" Height="30" />
-                                        <DatePicker x:Name="FixedTimer3DatePicker" DisplayDate="2023-04-08"
-                                                    Margin="91,0,846,0" Height="30" />
-                                        <materialDesign:TimePicker x:Name="FixedTimer3TimePicker"
-                                                                   HorizontalAlignment="Left" Margin="188,5,0,0"
-                                                                   Width="92" Is24Hours="True"
-                                                                   SelectedTimeFormat="Long" VerticalAlignment="Top"
-                                                                   WithSeconds="True" />
-                                        <TextBox x:Name="FixedTimer3TextBox" TextWrapping="Wrap" Width="742"
-                                                 HorizontalAlignment="Left" VerticalAlignment="Center"
-                                                 Margin="285,0,0,0" Height="30" />
-                                    </Grid>
-                                    <Grid x:Name="FixedTimer4Grid" HorizontalAlignment="Left" Height="30"
-                                          Canvas.Left="10" Canvas.Top="114" VerticalAlignment="Center" Width="1027">
-                                        <CheckBox x:Name="FixedTimer4CheckBox" Content="FixedTimer4"
-                                                  HorizontalAlignment="Left" VerticalAlignment="Center" Height="30" />
-                                        <DatePicker x:Name="FixedTimer4DatePicker" DisplayDate="2023-04-08"
-                                                    Margin="91,0,846,0" Height="30" />
-                                        <materialDesign:TimePicker x:Name="FixedTimer4TimePicker"
-                                                                   HorizontalAlignment="Left" Margin="188,5,0,0"
-                                                                   Width="92" Is24Hours="True"
-                                                                   SelectedTimeFormat="Long" VerticalAlignment="Top"
-                                                                   WithSeconds="True" />
-                                        <TextBox x:Name="FixedTimer4TextBox" TextWrapping="Wrap" Width="742"
-                                                 HorizontalAlignment="Left" VerticalAlignment="Center"
-                                                 Margin="285,0,0,0" Height="30" />
-                                    </Grid>
-                                </Canvas>
+                                <StackPanel VerticalAlignment="Center" TextBlock.Foreground="Black">
+                                    <TextBlock Text="Display and send Twitch chat messages in real-time."
+                                               HorizontalAlignment="Center" Margin="0,0,0,10" TextWrapping="Wrap" />
+                                    <Button x:Name="OpenChatWindowButton" Content="Open Chat Window" Height="34"
+                                            Width="200"
+                                            HorizontalAlignment="Center" Click="OpenChatWindowButton_Click" />
+                                </StackPanel>
                             </GroupBox>
-                        </Canvas>
-                    </TabItem>
-                </TabControl>
-            </Canvas>
-        </TabItem>
-        <TabItem x:Name="WindowsSettingsTabItem" Header="Windows Settings">
-            <Canvas x:Name="WindowsSettingsCanvas" Background="#FFE5E5E5">
-                <GroupBox x:Name="WindowsControlGroupBox" HorizontalAlignment="Left" Height="220"
-                          Canvas.Left="10" Canvas.Top="10" VerticalAlignment="Top" Width="1065">
-                    <GroupBox.Header>
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="Windows Control" />
-                            <Button Style="{StaticResource MaterialDesignIconButton}" 
-                                    Width="20" Height="20" Margin="5,0,0,0"
-                                    ToolTipService.InitialShowDelay="0"
-                                    ToolTipService.Placement="Bottom"
-                                    ToolTipService.HorizontalOffset="-10"
-                                    Click="HelpButton_Click">
-                                <Button.ToolTip>
-                                    <ToolTip Content="チャットウィンドウやレイドリストウィンドウの表示管理" />
-                                </Button.ToolTip>
-                                <materialDesign:PackIcon Kind="HelpCircleOutline" Width="16" Height="16" Foreground="White" />
-                            </Button>
-                        </StackPanel>
-                    </GroupBox.Header>
-                    <Grid x:Name="WindowsControlGrid" Margin="10" TextBlock.Foreground="Black">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="510" />
-                            <ColumnDefinition Width="510" />
-                        </Grid.ColumnDefinitions>
-                        <GroupBox x:Name="ChatWindowGroupBox" Grid.Column="0" Margin="5" Height="130" VerticalAlignment="Top">
-                            <GroupBox.Header>
-                                <TextBlock Text="Chat Window" />
-                            </GroupBox.Header>
-                            <StackPanel VerticalAlignment="Center" TextBlock.Foreground="Black">
-                                <TextBlock Text="Display and send Twitch chat messages in real-time." 
-                                           HorizontalAlignment="Center" Margin="0,0,0,10" TextWrapping="Wrap" />
-                                <Button x:Name="OpenChatWindowButton" Content="Open Chat Window" Height="34" Width="200"
-                                        HorizontalAlignment="Center" Click="OpenChatWindowButton_Click" />
-                            </StackPanel>
-                        </GroupBox>
-                        <GroupBox x:Name="RaidListWindowGroupBox" Grid.Column="1" Margin="5" Height="130" VerticalAlignment="Top">
-                            <GroupBox.Header>
-                                <TextBlock Text="Raid List Window" />
-                            </GroupBox.Header>
-                            <StackPanel VerticalAlignment="Center" TextBlock.Foreground="Black">
-                                <TextBlock Text="View active streamers and perform raids easily." 
-                                           HorizontalAlignment="Center" Margin="0,0,0,10" TextWrapping="Wrap" />
-                                <Button x:Name="OpenRaidListWindowButton" Content="Open Raid List Window" Height="34" Width="200"
-                                        HorizontalAlignment="Center" Click="OpenRaidListWindowButton_Click" />
-                            </StackPanel>
-                        </GroupBox>
-                    </Grid>
-                </GroupBox>
-            </Canvas>
-        </TabItem>
-    </TabControl>
+                            <GroupBox x:Name="RaidListWindowGroupBox" Grid.Column="1" Margin="5" Height="130"
+                                      VerticalAlignment="Top">
+                                <GroupBox.Header>
+                                    <TextBlock Text="Raid List Window" />
+                                </GroupBox.Header>
+                                <StackPanel VerticalAlignment="Center" TextBlock.Foreground="Black">
+                                    <TextBlock Text="View active streamers and perform raids easily."
+                                               HorizontalAlignment="Center" Margin="0,0,0,10" TextWrapping="Wrap" />
+                                    <Button x:Name="OpenRaidListWindowButton" Content="Open Raid List Window"
+                                            Height="34" Width="200"
+                                            HorizontalAlignment="Center" Click="OpenRaidListWindowButton_Click" />
+                                </StackPanel>
+                            </GroupBox>
+                        </Grid>
+                    </GroupBox>
+                </Canvas>
+            </TabItem>
+        </TabControl>
         <Grid x:Name="LoadingOverlay" Visibility="Visible" Background="#80000000">
             <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}" Value="0" IsIndeterminate="True" Width="50" Height="50" Foreground="White" />
-                <TextBlock x:Name="LoadingTextBlock" Text="Loading secrets.json..." Foreground="White" Margin="0,10,0,0" FontSize="16" />
+                <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}" Value="0"
+                             IsIndeterminate="True" Width="50" Height="50" Foreground="White" />
+                <TextBlock x:Name="LoadingTextBlock" Text="Loading secrets.json..." Foreground="White"
+                           Margin="0,10,0,0" FontSize="16" />
             </StackPanel>
         </Grid>
     </Grid>

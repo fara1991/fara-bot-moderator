@@ -1,6 +1,6 @@
 ﻿; Inno Setup Script for FaraBotModerator
 #define MyAppName "FaraBotModerator"
-#define MyAppVersion "1.0.1"
+#define MyAppVersion "1.0.2"
 #define MyAppPublisher "Fara"
 #define MyAppExeName "FaraBotModerator.exe"
 
@@ -39,7 +39,7 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 
 [Files]
 Source: "..\bin\Release\net8.0-windows10.0.22621.0\publish\win-x64\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "..\secrets.json"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\Resources\secrets.json"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\Manual.md"; DestDir: "{app}"; Flags: ignoreversion
 Source: "WebView2RuntimeInstaller.exe"; DestDir: "{tmp}"; Flags: deleteafterinstall
 

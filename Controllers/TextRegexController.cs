@@ -13,10 +13,32 @@ namespace FaraBotModerator.Controllers;
 /// <summary>
 /// 正規表現を用いたテキスト変換（主にBeatSaber関連）を管理するクラス
 /// </summary>
-internal static class TextRegexController
+public static class TextRegexController
 {
     private static readonly string BeatSaberDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ChatSetting", "BeatSaber");
     private static readonly string BeatSaberFile = Path.Combine(BeatSaberDirectory, "bsr.json");
+
+    /// <summary>
+    /// BeatSaber用設定ファイルのモデルを読み込んで返します。ファイルが存在しない場合はデフォルトで作成します。
+    /// </summary>
+    public static TextRegexModel LoadBsrChatModel()
+    {
+        if (!Directory.Exists(BeatSaberDirectory)) Directory.CreateDirectory(BeatSaberDirectory);
+        if (!File.Exists(BeatSaberFile)) CreateBsrChatFile();
+
+        using var file = File.OpenText(BeatSaberFile);
+        var jsonData = file.ReadToEnd();
+        return JsonSerializer.Deserialize<TextRegexModel>(jsonData) ?? new TextRegexModel();
+    }
+
+    /// <summary>
+    /// BeatSaber用設定ファイルをデフォルト値にリセットします。
+    /// </summary>
+    public static void ResetBsrChatModel()
+    {
+        if (File.Exists(BeatSaberFile)) File.Delete(BeatSaberFile);
+        CreateBsrChatFile();
+    }
 
     /// <summary>
     /// BeatSaberのリクエスト形式などのテキストを、設定された正規表現に基づいて読み上げ用テキストに変換します。

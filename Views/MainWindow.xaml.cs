@@ -157,7 +157,10 @@ public partial class MainWindow : INotifyPropertyChanged
         
         // DeepL
         DeepLApiKeyPasswordBox.Password = secretKeys.DeepL.ApiKey;
-        
+
+        // Beat Saber
+        BeatSaberBsrDataGrid.ItemsSource = TextRegexController.LoadBsrChatModel().BeatSaberChat;
+
         // BouyomiChan
         BouyomiChanConnectCheckBox.IsChecked = secretKeys.BouyomiChan.Checked;
 
@@ -928,7 +931,7 @@ public partial class MainWindow : INotifyPropertyChanged
     private void DeepLSiteGoButton_Click(object sender, RoutedEventArgs e)
     {
         MenuTabControl.SelectedIndex = 0;
-        FaraBotModeratorWebView.Source = new Uri("https://www.deepl.com/ja/account/summary");
+        FaraBotModeratorWebView.Source = new Uri("https://www.deepl.com/ja/your-account/keys");
     }
 
     /// <summary>
@@ -974,6 +977,21 @@ public partial class MainWindow : INotifyPropertyChanged
         {
             toolTip.IsOpen = true;
         }
+    }
+
+    private void GameSelectComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (BeatSaberBsrDataGrid is null) return;
+        BeatSaberBsrDataGrid.ItemsSource = TextRegexController.LoadBsrChatModel().BeatSaberChat;
+    }
+
+    private void GameResetButton_Click(object sender, RoutedEventArgs e)
+    {
+        var result = MessageBox.Show("設定を初期値に戻しますか？", "確認", MessageBoxButton.OKCancel, MessageBoxImage.Warning);
+        if (result != MessageBoxResult.OK) return;
+
+        TextRegexController.ResetBsrChatModel();
+        BeatSaberBsrDataGrid.ItemsSource = TextRegexController.LoadBsrChatModel().BeatSaberChat;
     }
 
     private void FollowTestButton_Click(object sender, RoutedEventArgs e)

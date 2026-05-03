@@ -35,6 +35,9 @@
         <None Remove="document\**"/>
         <Page Remove="document\**"/>
         <Resource Include="Resources\app.ico" />
+        <None Update="Resources\secrets.json">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
     </ItemGroup>
 
     <ItemGroup>
@@ -69,9 +72,6 @@
         <None Update="properties\Settings.settings">
             <Generator>SettingsSingleFileGenerator</Generator>
             <LastGenOutput>Settings.Designer.cs</LastGenOutput>
-        </None>
-        <None Update="secrets.json">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
     </ItemGroup>
 

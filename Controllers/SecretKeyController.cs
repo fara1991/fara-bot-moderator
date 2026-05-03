@@ -13,7 +13,8 @@ namespace FaraBotModerator.Controllers;
 /// </summary>
 public static class SecretKeyController
 {
-    private static readonly string SecretFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "secrets.json");
+    private static readonly string SecretDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources");
+    private static readonly string SecretFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "secrets.json");
 
     /// <summary>
     /// 設定ファイルから設定情報を読み込みます。ファイルが存在しない場合は新規作成します。
@@ -59,6 +60,7 @@ public static class SecretKeyController
     /// </summary>
     private static void CreateKeys()
     {
+        if (!Directory.Exists(SecretDirectory)) Directory.CreateDirectory(SecretDirectory);
         var secretKeys = new SecretKeyModel
         {
             Twitch = new TwitchSecretKeyModel
