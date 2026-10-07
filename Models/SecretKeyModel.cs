@@ -1,4 +1,5 @@
-﻿using System.Text.Json.Serialization;
+﻿using System;
+using System.Text.Json.Serialization;
 
 namespace FaraBotModerator.Models;
 
@@ -56,10 +57,17 @@ public class SecretKeyModel
 public class BeatSaberModel
 {
     /// <summary>
-    /// BeatSaberのUserDataディレクトリパス
+    /// BeatSaberのUserDataディレクトリパス。%USERPROFILE% 等の環境変数を使用可能。
+    /// 例: %USERPROFILE%\BSManager\BSInstances\1.29.1\UserData
     /// </summary>
     [JsonPropertyName("userDataPath")]
     public string UserDataPath { get; init; } = "";
+
+    /// <summary>
+    /// UserDataPath 内の環境変数を展開した実際のパス。
+    /// </summary>
+    [JsonIgnore]
+    public string ResolvedUserDataPath => Environment.ExpandEnvironmentVariables(UserDataPath);
 }
 
 /// <summary>

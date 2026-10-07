@@ -130,6 +130,10 @@ public static class SecretKeyController
                 Timer2 = new FixedTimerModel { Checked = false, DatetimeString = "2023/1/1 00:00:00", Message = "" },
                 Timer3 = new FixedTimerModel { Checked = false, DatetimeString = "2023/1/1 00:00:00", Message = "" },
                 Timer4 = new FixedTimerModel { Checked = false, DatetimeString = "2023/1/1 00:00:00", Message = "" }
+            },
+            BeatSaber = new BeatSaberModel
+            {
+                UserDataPath = @"%USERPROFILE%\BSManager\BSInstances\1.29.1\UserData"
             }
         };
 

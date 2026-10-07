@@ -70,6 +70,7 @@ jobs:
 
       - name: Create secrets.json
         run: |
+          New-Item -ItemType Directory -Path "Resources" -Force | Out-Null
           @'
           {
             "twitch": {
@@ -100,11 +101,46 @@ jobs:
             },
             "beatSaber": { "userDataPath": "" }
           }
-          '@ | Out-File -FilePath secrets.json -Encoding UTF8
+          '@ | Out-File -FilePath "Resources\secrets.json" -Encoding UTF8
+
+      - name: Sign executable (self-signed)
+        if: ${{ secrets.CERTIFICATE_PFX != '' }}
+        run: |
+          # 証明書をデコードして一時ファイルに保存
+          $certBytes = [System.Convert]::FromBase64String("${{ secrets.CERTIFICATE_PFX }}")
+          $certPath = "$env:TEMP\cert.pfx"
+          [System.IO.File]::WriteAllBytes($certPath, $certBytes)
+
+          # signtool のパスを検索
+          $signtool = Get-ChildItem -Path "C:\Program Files (x86)\Windows Kits\10\bin" -Recurse -Filter "signtool.exe" |
+            Where-Object { $_.FullName -match "x64" } | Select-Object -First 1 -ExpandProperty FullName
+          if (-not $signtool) { Write-Host "signtool.exe not found, skipping signing."; exit 0 }
+
+          $exePath = "bin\Release\net8.0-windows10.0.22621.0\publish\win-x64\FaraBotModerator.exe"
+          & $signtool sign /f $certPath /p "${{ secrets.CERTIFICATE_PASSWORD }}" `
+            /tr http://timestamp.digicert.com /td sha256 /fd sha256 $exePath
+          Write-Host "Signing completed."
+        shell: pwsh
 
       - name: Build and Package
         run: |
           ./build_release.ps1
+        shell: pwsh
+
+      - name: Sign installer (self-signed)
+        if: ${{ secrets.CERTIFICATE_PFX != '' }}
+        run: |
+          $certBytes = [System.Convert]::FromBase64String("${{ secrets.CERTIFICATE_PFX }}")
+          $certPath = "$env:TEMP\cert.pfx"
+          [System.IO.File]::WriteAllBytes($certPath, $certBytes)
+
+          $signtool = Get-ChildItem -Path "C:\Program Files (x86)\Windows Kits\10\bin" -Recurse -Filter "signtool.exe" |
+            Where-Object { $_.FullName -match "x64" } | Select-Object -First 1 -ExpandProperty FullName
+          if (-not $signtool) { Write-Host "signtool.exe not found, skipping signing."; exit 0 }
+
+          & $signtool sign /f $certPath /p "${{ secrets.CERTIFICATE_PASSWORD }}" `
+            /tr http://timestamp.digicert.com /td sha256 /fd sha256 "Releases\FaraBotModerator_Setup.exe"
+          Write-Host "Installer signing completed."
         shell: pwsh
 
       - name: Create Release

@@ -32,7 +32,7 @@ public class UniqueChannelPointController
     /// <returns>処理結果のメッセージ（ボットがチャットに送信するためのもの）</returns>
     public string Exec(string userName, string channelPointTitle)
     {
-        if (channelPointTitle == "Random Tailor") return ExecRandomTailor(userName, _secretKeys.BeatSaber.UserDataPath);
+        if (channelPointTitle == "Random Tailor") return ExecRandomTailor(userName, _secretKeys.BeatSaber.ResolvedUserDataPath);
 
         return "";
     }
