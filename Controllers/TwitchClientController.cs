@@ -30,6 +30,7 @@ public class TwitchClientController
     private TwitchClient? _twitchClient;
     private readonly UniqueChannelPointController _uniqueChannelPointController;
     private readonly TwitchTranslationController _twitchTranslationController;
+    private readonly PokemonDamageController _pokemonDamageController = new();
     private string _twitchUserName = "";
     private string _twitchUserDisplayName = "";
 
@@ -415,6 +416,12 @@ public class TwitchClientController
             var userName = e.ChatMessage.Username;
             var displayName = e.ChatMessage.DisplayName;
             var sourceMessage = e.ChatMessage.Message;
+            if (PokemonDamageController.IsCommand(sourceMessage))
+            {
+                await SendPokemonDamageAsync(userName, sourceMessage, e.ChatMessage.UserId);
+                return;
+            }
+
             await SendMessageTranslationAsync(userName, displayName, sourceMessage, false, e.ChatMessage.UserId);
         }
         catch (Exception ex)
@@ -422,6 +429,18 @@ public class TwitchClientController
             LogController.OutputLog(e.ChatMessage.Message);
             LogController.OutputLog($"<Error> {ex.Message}");
         }
+    }
+
+    /// <summary>
+    /// 「!dmg」コマンドのダメージ計算結果をチャットに送信します。
+    /// </summary>
+    private async Task SendPokemonDamageAsync(string userName, string sourceMessage, string userId)
+    {
+        var prefix = $"[{Settings.Default.BotName}] ";
+        // Twitch の 1 メッセージ 500 文字制限に収める
+        var reply = await _pokemonDamageController.HandleAsync(sourceMessage, userName, 500 - prefix.Length);
+        if (string.IsNullOrEmpty(reply)) return;
+        SendMessage(userName, prefix + reply, userId);
     }
 
     /// <summary>
