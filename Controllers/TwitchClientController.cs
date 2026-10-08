@@ -30,7 +30,7 @@ public class TwitchClientController
     private TwitchClient? _twitchClient;
     private readonly UniqueChannelPointController _uniqueChannelPointController;
     private readonly TwitchTranslationController _twitchTranslationController;
-    private readonly PokemonDamageController _pokemonDamageController = new();
+    private readonly PokemonCommandController _pokemonCommandController;
     private string _twitchUserName = "";
     private string _twitchUserDisplayName = "";
 
@@ -55,6 +55,7 @@ public class TwitchClientController
         _twitchApiController = twitchApiController;
         _twitchTranslationController = new TwitchTranslationController(_secretKeys.DeepL.ApiKey);
         _uniqueChannelPointController = new UniqueChannelPointController(_secretKeys);
+        _pokemonCommandController = new PokemonCommandController(_secretKeys.Pokemon);
     }
 
     /// <summary>
@@ -416,9 +417,10 @@ public class TwitchClientController
             var userName = e.ChatMessage.Username;
             var displayName = e.ChatMessage.DisplayName;
             var sourceMessage = e.ChatMessage.Message;
-            if (PokemonDamageController.IsCommand(sourceMessage))
+            if (await _pokemonCommandController.IsCommandAsync(sourceMessage))
             {
-                await SendPokemonDamageAsync(userName, sourceMessage, e.ChatMessage.UserId);
+                await SendPokemonCommandAsync(userName, sourceMessage, e.ChatMessage.UserId,
+                    e.ChatMessage.IsBroadcaster);
                 return;
             }
 
@@ -432,13 +434,15 @@ public class TwitchClientController
     }
 
     /// <summary>
-    /// 「!dmg」コマンドのダメージ計算結果をチャットに送信します。
+    /// ポケモンコマンド（!poke 系）の実行結果をチャットに送信します。
     /// </summary>
-    private async Task SendPokemonDamageAsync(string userName, string sourceMessage, string userId)
+    private async Task SendPokemonCommandAsync(string userName, string sourceMessage, string userId,
+        bool isBroadcaster)
     {
         var prefix = $"[{Settings.Default.BotName}] ";
         // Twitch の 1 メッセージ 500 文字制限に収める
-        var reply = await _pokemonDamageController.HandleAsync(sourceMessage, userName, 500 - prefix.Length);
+        var reply = await _pokemonCommandController.HandleAsync(sourceMessage, userName, userId, isBroadcaster,
+            480 - prefix.Length);
         if (string.IsNullOrEmpty(reply)) return;
         SendMessage(userName, prefix + reply, userId);
     }

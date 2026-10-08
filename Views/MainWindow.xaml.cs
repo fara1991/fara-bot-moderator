@@ -607,6 +607,7 @@ public partial class MainWindow : INotifyPropertyChanged
                 ? FixedTimer4TimePicker.SelectedTime.Value.ToLongTimeString()
                 : "00:00:00");
 
+        var savedSecretKeys = SecretKeyController.LoadKeys();
         var secretKeys = new SecretKeyModel
         {
             Twitch = new TwitchSecretKeyModel
@@ -718,7 +719,9 @@ public partial class MainWindow : INotifyPropertyChanged
                 }
             },
             // Preserve existing BeatSaber settings (no UI, edited via secrets.json)
-            BeatSaber = SecretKeyController.LoadKeys().BeatSaber
+            BeatSaber = savedSecretKeys.BeatSaber,
+            // Preserve existing Pokemon settings (no UI, edited via secrets.json)
+            Pokemon = savedSecretKeys.Pokemon
         };
 
         SecretKeyController.SaveKeys(secretKeys);
