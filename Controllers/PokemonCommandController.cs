@@ -29,8 +29,11 @@ public class PokemonCommandController
         "dmg", "damage", "calc", "ev", "diff", "speed", "spd"
     };
 
+    private const string CommandPrefix = "!poke";
+
     private static readonly char[] Separators = { ' ', '　', '\t', ',', '、' };
 
+    private readonly DataCatalog _catalog;
     private readonly PokeCommand _command;
     private readonly ConcurrentDictionary<string, DateTime> _lastExecutedAt = new();
     // 登録データ（RosterRepository）はスレッドセーフではないため、コマンドは 1 件ずつ処理する
@@ -48,24 +51,28 @@ public class PokemonCommandController
         var source = new CachingDataSource(new HttpDataSource(HttpClient, DataUrl),
             Path.Combine(appDirectory, "pokemon-data"), TimeSpan.FromDays(1));
         var roster = new RosterRepository(new FileRosterStore(Path.Combine(appDirectory, "pokemon-roster.json")));
-        _command = new PokeCommand(new DataCatalog(source), roster);
+        _catalog = new DataCatalog(source);
+        _command = new PokeCommand(_catalog, roster);
     }
 
     /// <summary>
     /// メッセージがポケモンコマンドかどうかを判定します。
-    /// データの取得に失敗した場合はコマンドではないものとして扱います。
+    /// データの取得に失敗した場合はコマンドではないものとして扱い、次回のコマンドで取り直します。
     /// </summary>
     /// <param name="message">チャットメッセージ</param>
     /// <returns>ポケモンコマンドの場合は true</returns>
     public async Task<bool> IsCommandAsync(string message)
     {
-        if (!message.TrimStart().StartsWith('!')) return false;
+        // 接頭辞はすべて「!poke」で始まるため、それ以外のメッセージではデータの取得（初回は HTTP）を行わない
+        if (!message.TrimStart().StartsWith(CommandPrefix, StringComparison.OrdinalIgnoreCase)) return false;
         try
         {
             return await _command.MatchAsync(message) is not null;
         }
         catch (Exception ex)
         {
+            // DataCatalog は失敗した読み込みタスクもキャッシュするため、破棄して次回取り直す
+            _catalog.Invalidate();
             LogController.OutputLog($"<Error> Pokemon data: {ex.Message}");
             return false;
         }
@@ -84,19 +91,20 @@ public class PokemonCommandController
     public async Task<string?> HandleAsync(string message, string userName, bool isBroadcaster, bool isModerator,
         int maxLength)
     {
-        if (IsCooldownTarget(message))
-        {
-            var now = DateTime.UtcNow;
-            if (_lastExecutedAt.TryGetValue(userName, out var last) && now - last < UserCooldown) return null;
-            _lastExecutedAt[userName] = now;
-        }
-
         // 登録・削除・使用チーム変更は配信者本人とモデレーターのみ（視聴者は閲覧・計算系のみ）
         var canEdit = isBroadcaster || isModerator;
 
         await _executeLock.WaitAsync();
         try
         {
+            // クールダウンの確認と記録はロック内で行い、同一ユーザーの同時投稿がすり抜けないようにする
+            if (IsCooldownTarget(message))
+            {
+                var now = DateTime.UtcNow;
+                if (_lastExecutedAt.TryGetValue(userName, out var last) && now - last < UserCooldown) return null;
+                _lastExecutedAt[userName] = now;
+            }
+
             var result = await _command.ExecuteAsync(message, new PokeCommandOptions
             {
                 Format = BattleFormat.Singles,
