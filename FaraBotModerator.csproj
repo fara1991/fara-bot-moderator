@@ -62,7 +62,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <!-- ポケモンのダメージ計算（!dmg）。git submodule: external/fara-pokemon-assistance -->
+        <!-- ポケモンの !poke 系コマンド。git submodule: external/fara-pokemon-assistance -->
         <ProjectReference Include="external\fara-pokemon-assistance\src\FaraPokemonAssistance.Core\FaraPokemonAssistance.Core.csproj"/>
     </ItemGroup>
 

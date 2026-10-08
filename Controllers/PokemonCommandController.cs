@@ -2,11 +2,9 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
-using FaraBotModerator.Models;
 using FaraPokemonAssistance.Core.Data;
 using FaraPokemonAssistance.Core.Models;
 using FaraPokemonAssistance.Core.Roster;
@@ -34,7 +32,6 @@ public class PokemonCommandController
     private static readonly char[] Separators = { ' ', '　', '\t', ',', '、' };
 
     private readonly PokeCommand _command;
-    private readonly HashSet<string> _owners;
     private readonly ConcurrentDictionary<string, DateTime> _lastExecutedAt = new();
     // 登録データ（RosterRepository）はスレッドセーフではないため、コマンドは 1 件ずつ処理する
     private readonly SemaphoreSlim _executeLock = new(1, 1);
@@ -44,8 +41,7 @@ public class PokemonCommandController
     /// データは GitHub Pages の CSV を使い、ローカルに 1 日キャッシュします。
     /// 登録したポケモン・チームは %LOCALAPPDATA%\FaraBotModerator\pokemon-roster.json に保存します。
     /// </summary>
-    /// <param name="pokemonSettings">ポケモンコマンドの設定</param>
-    public PokemonCommandController(PokemonModel pokemonSettings)
+    public PokemonCommandController()
     {
         var appDirectory = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "FaraBotModerator");
@@ -53,9 +49,6 @@ public class PokemonCommandController
             Path.Combine(appDirectory, "pokemon-data"), TimeSpan.FromDays(1));
         var roster = new RosterRepository(new FileRosterStore(Path.Combine(appDirectory, "pokemon-roster.json")));
         _command = new PokeCommand(new DataCatalog(source), roster);
-        _owners = new HashSet<string>(
-            pokemonSettings.Owners.Select(owner => owner.Trim()).Where(owner => owner != ""),
-            StringComparer.OrdinalIgnoreCase);
     }
 
     /// <summary>
@@ -84,11 +77,11 @@ public class PokemonCommandController
     /// </summary>
     /// <param name="message">チャットメッセージ</param>
     /// <param name="userName">発言したユーザーのログイン名</param>
-    /// <param name="userId">発言したユーザーの ID</param>
     /// <param name="isBroadcaster">配信者本人かどうか</param>
+    /// <param name="isModerator">モデレーターかどうか</param>
     /// <param name="maxLength">返信の最大長</param>
     /// <returns>返信メッセージ。返信しない場合は null</returns>
-    public async Task<string?> HandleAsync(string message, string userName, string userId, bool isBroadcaster,
+    public async Task<string?> HandleAsync(string message, string userName, bool isBroadcaster, bool isModerator,
         int maxLength)
     {
         if (IsCooldownTarget(message))
@@ -98,8 +91,8 @@ public class PokemonCommandController
             _lastExecutedAt[userName] = now;
         }
 
-        // 登録・削除・使用チーム変更は配信者本人と Owner のみ（モデレーターや視聴者には開放しない）
-        var canEdit = isBroadcaster || _owners.Contains(userId) || _owners.Contains(userName);
+        // 登録・削除・使用チーム変更は配信者本人とモデレーターのみ（視聴者は閲覧・計算系のみ）
+        var canEdit = isBroadcaster || isModerator;
 
         await _executeLock.WaitAsync();
         try

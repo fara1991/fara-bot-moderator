@@ -268,7 +268,7 @@ DeepL APIを使用した自動翻訳機能の設定です。
 
 `!poke cmd ls` で使えるコマンドの一覧が返ります。
 
-#### 登録（配信者・Owner のみ）
+#### 登録（配信者・モデレーターのみ）
 
 | コマンド | 内容 |
 |---|---|
@@ -302,13 +302,7 @@ DeepL APIを使用した自動翻訳機能の設定です。
 
 #### 注意
 
-- **登録・削除・使用チームの変更（`add` / `rm` / `use team`）は配信者本人と Owner のみ**行えます。モデレーターや視聴者が実行すると「…は配信者のみ行えます」と返ります
-- Owner は `Resources\secrets.json` の `pokemon.owners` に Twitch のユーザー ID（またはログイン名）を並べて設定します。空の場合は配信者本人のみです
-
-  ```json
-  "pokemon": { "owners": ["123456789", "friend_login_name"] }
-  ```
-
+- **登録・削除・使用チームの変更（`add` / `rm` / `use team`）は配信者本人とモデレーターのみ**行えます。視聴者が実行すると「…は配信者のみ行えます」と返ります（閲覧・計算系は誰でも使えます）
 - 計算系（`dmg` / `calc` / `diff`）は同じユーザーの連続実行を5秒間無視します（登録系には掛かりません）
 - 登録データは `%LOCALAPPDATA%\FaraBotModerator\pokemon-roster.json` に保存されます（`secrets.json` とは別ファイル）
 - 計算ロジック: [fara-pokemon-assistance](https://github.com/fara1991/fara-pokemon-assistance)（ブラウザ版: https://fara1991.github.io/fara-pokemon-assistance/command ）

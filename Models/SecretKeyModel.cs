@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
 namespace FaraBotModerator.Models;
 
@@ -49,25 +48,6 @@ public class SecretKeyModel
     /// </summary>
     [JsonPropertyName("beatSaber")]
     public BeatSaberModel BeatSaber { get; init; } = new();
-
-    /// <summary>
-    /// ポケモンコマンド（!poke 系）関連の設定
-    /// </summary>
-    [JsonPropertyName("pokemon")]
-    public PokemonModel Pokemon { get; init; } = new();
-}
-
-/// <summary>
-/// ポケモンコマンド（!poke 系）の設定を保持するモデル
-/// </summary>
-public class PokemonModel
-{
-    /// <summary>
-    /// 登録・削除・使用チーム変更を許可するユーザー（Twitch のユーザー ID またはログイン名）。
-    /// 空の場合は配信者本人のみ
-    /// </summary>
-    [JsonPropertyName("owners")]
-    public List<string> Owners { get; init; } = new();
 }
 
 /// <summary>

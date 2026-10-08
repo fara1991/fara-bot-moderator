@@ -55,7 +55,7 @@ public class TwitchClientController
         _twitchApiController = twitchApiController;
         _twitchTranslationController = new TwitchTranslationController(_secretKeys.DeepL.ApiKey);
         _uniqueChannelPointController = new UniqueChannelPointController(_secretKeys);
-        _pokemonCommandController = new PokemonCommandController(_secretKeys.Pokemon);
+        _pokemonCommandController = new PokemonCommandController();
     }
 
     /// <summary>
@@ -420,7 +420,7 @@ public class TwitchClientController
             if (await _pokemonCommandController.IsCommandAsync(sourceMessage))
             {
                 await SendPokemonCommandAsync(userName, sourceMessage, e.ChatMessage.UserId,
-                    e.ChatMessage.IsBroadcaster);
+                    e.ChatMessage.IsBroadcaster, e.ChatMessage.IsModerator);
                 return;
             }
 
@@ -437,11 +437,11 @@ public class TwitchClientController
     /// ポケモンコマンド（!poke 系）の実行結果をチャットに送信します。
     /// </summary>
     private async Task SendPokemonCommandAsync(string userName, string sourceMessage, string userId,
-        bool isBroadcaster)
+        bool isBroadcaster, bool isModerator)
     {
         var prefix = $"[{Settings.Default.BotName}] ";
         // Twitch の 1 メッセージ 500 文字制限に収める
-        var reply = await _pokemonCommandController.HandleAsync(sourceMessage, userName, userId, isBroadcaster,
+        var reply = await _pokemonCommandController.HandleAsync(sourceMessage, userName, isBroadcaster, isModerator,
             480 - prefix.Length);
         if (string.IsNullOrEmpty(reply)) return;
         SendMessage(userName, prefix + reply, userId);
