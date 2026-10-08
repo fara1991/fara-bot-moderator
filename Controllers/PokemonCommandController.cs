@@ -33,7 +33,6 @@ public class PokemonCommandController
 
     private static readonly char[] Separators = { ' ', '　', '\t', ',', '、' };
 
-    private readonly DataCatalog _catalog;
     private readonly PokeCommand _command;
     private readonly ConcurrentDictionary<string, DateTime> _lastExecutedAt = new();
     // 登録データ（RosterRepository）はスレッドセーフではないため、コマンドは 1 件ずつ処理する
@@ -41,7 +40,7 @@ public class PokemonCommandController
 
     /// <summary>
     /// PokemonCommandController のコンストラクタ
-    /// データは GitHub Pages の CSV を使い、ローカルに 1 日キャッシュします。
+    /// データは GitHub Pages の CSV を使い、ローカルに 1 日キャッシュします（起動中も 1 日ごとに読み直します）。
     /// 登録したポケモン・チームは %LOCALAPPDATA%\FaraBotModerator\pokemon-roster.json に保存します。
     /// </summary>
     public PokemonCommandController()
@@ -51,8 +50,7 @@ public class PokemonCommandController
         var source = new CachingDataSource(new HttpDataSource(HttpClient, DataUrl),
             Path.Combine(appDirectory, "pokemon-data"), TimeSpan.FromDays(1));
         var roster = new RosterRepository(new FileRosterStore(Path.Combine(appDirectory, "pokemon-roster.json")));
-        _catalog = new DataCatalog(source);
-        _command = new PokeCommand(_catalog, roster);
+        _command = new PokeCommand(new DataCatalog(source, TimeSpan.FromDays(1)), roster);
     }
 
     /// <summary>
@@ -71,8 +69,6 @@ public class PokemonCommandController
         }
         catch (Exception ex)
         {
-            // DataCatalog は失敗した読み込みタスクもキャッシュするため、破棄して次回取り直す
-            _catalog.Invalidate();
             LogController.OutputLog($"<Error> Pokemon data: {ex.Message}");
             return false;
         }
