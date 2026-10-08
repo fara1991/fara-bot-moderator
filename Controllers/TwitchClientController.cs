@@ -30,6 +30,7 @@ public class TwitchClientController
     private TwitchClient? _twitchClient;
     private readonly UniqueChannelPointController _uniqueChannelPointController;
     private readonly TwitchTranslationController _twitchTranslationController;
+    private readonly PokemonCommandController _pokemonCommandController;
     private string _twitchUserName = "";
     private string _twitchUserDisplayName = "";
 
@@ -54,6 +55,7 @@ public class TwitchClientController
         _twitchApiController = twitchApiController;
         _twitchTranslationController = new TwitchTranslationController(_secretKeys.DeepL.ApiKey);
         _uniqueChannelPointController = new UniqueChannelPointController(_secretKeys);
+        _pokemonCommandController = new PokemonCommandController();
     }
 
     /// <summary>
@@ -415,6 +417,13 @@ public class TwitchClientController
             var userName = e.ChatMessage.Username;
             var displayName = e.ChatMessage.DisplayName;
             var sourceMessage = e.ChatMessage.Message;
+            if (await _pokemonCommandController.IsCommandAsync(sourceMessage))
+            {
+                await SendPokemonCommandAsync(userName, sourceMessage, e.ChatMessage.UserId,
+                    e.ChatMessage.IsBroadcaster, e.ChatMessage.IsModerator);
+                return;
+            }
+
             await SendMessageTranslationAsync(userName, displayName, sourceMessage, false, e.ChatMessage.UserId);
         }
         catch (Exception ex)
@@ -422,6 +431,20 @@ public class TwitchClientController
             LogController.OutputLog(e.ChatMessage.Message);
             LogController.OutputLog($"<Error> {ex.Message}");
         }
+    }
+
+    /// <summary>
+    /// ポケモンコマンド（!poke 系）の実行結果をチャットに送信します。
+    /// </summary>
+    private async Task SendPokemonCommandAsync(string userName, string sourceMessage, string userId,
+        bool isBroadcaster, bool isModerator)
+    {
+        var prefix = $"[{Settings.Default.BotName}] ";
+        // Twitch の 1 メッセージ 500 文字制限に収める
+        var reply = await _pokemonCommandController.HandleAsync(sourceMessage, userName, isBroadcaster, isModerator,
+            480 - prefix.Length);
+        if (string.IsNullOrEmpty(reply)) return;
+        SendMessage(userName, prefix + reply, userId);
     }
 
     /// <summary>
