@@ -87,6 +87,28 @@
                             <Button x:Name="TwitchDisconnectButton" Content="Disconnect" Height="30" Width="105"
                                     HorizontalAlignment="Left" Canvas.Left="420" Canvas.Top="361"
                                     VerticalAlignment="Center" Click="TwitchDisconnectButton_Click" />
+                            <StackPanel Orientation="Horizontal" Canvas.Top="400">
+                                <Label x:Name="PokemonBattleFormatLabel" Content="Pokemon Format"
+                                       VerticalAlignment="Center" Height="25" />
+                                <Button Style="{StaticResource MaterialDesignIconButton}"
+                                        Width="20" Height="20" Margin="-8,0,0,0"
+                                        ToolTipService.InitialShowDelay="0"
+                                        ToolTipService.Placement="Bottom"
+                                        ToolTipService.HorizontalOffset="-10"
+                                        Click="HelpButton_Click">
+                                    <Button.ToolTip>
+                                        <ToolTip Content="!poke 系コマンドのダメージ計算に使う対戦形式（接続中でも切り替え可能）" />
+                                    </Button.ToolTip>
+                                    <materialDesign:PackIcon Kind="HelpCircleOutline" Width="16" Height="16"
+                                                             Foreground="Gray" />
+                                </Button>
+                                <ComboBox x:Name="PokemonBattleFormatComboBox" Width="120" Height="30"
+                                          Margin="10,0,0,0" VerticalAlignment="Center"
+                                          SelectionChanged="PokemonBattleFormatComboBox_SelectionChanged">
+                                    <ComboBoxItem Content="Singles" IsSelected="True" />
+                                    <ComboBoxItem Content="Doubles" />
+                                </ComboBox>
+                            </StackPanel>
                             <GroupBox x:Name="TwitchClientGroupBox" HorizontalAlignment="Center"
                                       Height="120" VerticalAlignment="Top" Width="533">
                                 <GroupBox.Header>

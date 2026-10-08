@@ -101,7 +101,8 @@ jobs:
               "timer3": { "checked": false, "datetime": "2023/1/1 00:00:00", "message": "" },
               "timer4": { "checked": false, "datetime": "2023/1/1 00:00:00", "message": "" }
             },
-            "beatSaber": { "userDataPath": "" }
+            "beatSaber": { "userDataPath": "" },
+            "pokemon": { "battleFormat": "Singles" }
           }
           '@ | Out-File -FilePath "Resources\secrets.json" -Encoding UTF8
 

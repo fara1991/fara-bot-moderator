@@ -14,6 +14,7 @@ using FaraBotModerator.Controllers;
 using FaraBotModerator.Models;
 using FaraBotModerator.Properties;
 using Microsoft.Web.WebView2.Core;
+using BattleFormat = FaraPokemonAssistance.Core.Models.BattleFormat;
 
 namespace FaraBotModerator.Views;
 
@@ -163,6 +164,10 @@ public partial class MainWindow : INotifyPropertyChanged
 
         // BouyomiChan
         BouyomiChanConnectCheckBox.IsChecked = secretKeys.BouyomiChan.Checked;
+
+        // Pokemon
+        PokemonBattleFormatComboBox.SelectedIndex =
+            PokemonCommandController.ParseFormat(secretKeys.Pokemon.BattleFormat) == BattleFormat.Doubles ? 1 : 0;
 
         // Events
         SetEventValue(FollowEventCheckBox, FollowEventTextBox, secretKeys.Event.Follow);
@@ -718,7 +723,11 @@ public partial class MainWindow : INotifyPropertyChanged
                 }
             },
             // Preserve existing BeatSaber settings (no UI, edited via secrets.json)
-            BeatSaber = SecretKeyController.LoadKeys().BeatSaber
+            BeatSaber = SecretKeyController.LoadKeys().BeatSaber,
+            Pokemon = new PokemonModel
+            {
+                BattleFormat = SelectedPokemonBattleFormat()
+            }
         };
 
         SecretKeyController.SaveKeys(secretKeys);
@@ -977,6 +986,24 @@ public partial class MainWindow : INotifyPropertyChanged
         {
             toolTip.IsOpen = true;
         }
+    }
+
+    /// <summary>
+    /// ポケモンの対戦形式コンボボックスで選択中の値（"Singles" / "Doubles"）を返します。
+    /// </summary>
+    private string SelectedPokemonBattleFormat()
+    {
+        return (PokemonBattleFormatComboBox.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "Singles";
+    }
+
+    /// <summary>
+    /// ポケモンの対戦形式を切り替えたとき、接続中であれば即座に反映します。
+    /// </summary>
+    private void PokemonBattleFormatComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        // XAML 読み込み中（IsSelected の初期化）にも呼ばれるため、未接続なら何もしない
+        if (_twitchClientController is null) return;
+        _twitchClientController.SetPokemonBattleFormat(SelectedPokemonBattleFormat());
     }
 
     private void GameSelectComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
