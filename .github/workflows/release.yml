@@ -14,9 +14,6 @@ on:
 jobs:
   build:
     runs-on: windows-latest
-    env:
-      # ステップの if では secrets を参照できないため、env 経由で署名の有無を判定する
-      CERTIFICATE_PFX: ${{ secrets.CERTIFICATE_PFX }}
 
     steps:
       - name: Checkout
@@ -109,44 +106,52 @@ jobs:
           }
           '@ | Out-File -FilePath "Resources\secrets.json" -Encoding UTF8
 
-      - name: Sign executable (self-signed)
-        if: ${{ env.CERTIFICATE_PFX != '' }}
+      # ステップの if では secrets を参照できないため、証明書の有無をこのステップの出力で判定する
+      # (証明書を他のステップの環境に漏らさないよう、ジョブレベルの env には置かない)
+      - name: Check signing certificate
+        id: cert
+        env:
+          CERTIFICATE_PFX: ${{ secrets.CERTIFICATE_PFX }}
         run: |
-          # 証明書をデコードして一時ファイルに保存
-          $certBytes = [System.Convert]::FromBase64String("${{ secrets.CERTIFICATE_PFX }}")
-          $certPath = "$env:TEMP\cert.pfx"
-          [System.IO.File]::WriteAllBytes($certPath, $certBytes)
-
-          # signtool のパスを検索
-          $signtool = Get-ChildItem -Path "C:\Program Files (x86)\Windows Kits\10\bin" -Recurse -Filter "signtool.exe" |
-            Where-Object { $_.FullName -match "x64" } | Select-Object -First 1 -ExpandProperty FullName
-          if (-not $signtool) { Write-Host "signtool.exe not found, skipping signing."; exit 0 }
-
-          $exePath = "bin\Release\net8.0-windows10.0.22621.0\publish\win-x64\FaraBotModerator.exe"
-          & $signtool sign /f $certPath /p "${{ secrets.CERTIFICATE_PASSWORD }}" `
-            /tr http://timestamp.digicert.com /td sha256 /fd sha256 $exePath
-          Write-Host "Signing completed."
+          $hasCert = if ($env:CERTIFICATE_PFX) { "true" } else { "false" }
+          echo "HAS_CERT=$hasCert" >> $env:GITHUB_OUTPUT
         shell: pwsh
 
-      - name: Build and Package
+      - name: Locate signtool
+        if: steps.cert.outputs.HAS_CERT == 'true'
         run: |
-          ./build_release.ps1
+          $signtool = Get-ChildItem -Path "C:\Program Files (x86)\Windows Kits\10\bin" -Recurse -Filter "signtool.exe" |
+            Where-Object { $_.FullName -match "\\x64\\" } | Select-Object -First 1 -ExpandProperty FullName
+          if (-not $signtool) { throw "signtool.exe not found." }
+          echo "SIGNTOOL=$signtool" >> $env:GITHUB_ENV
+        shell: pwsh
+
+      - name: Publish
+        run: |
+          ./build_release.ps1 -PublishOnly
+        shell: pwsh
+
+      - name: Sign executable (self-signed)
+        if: steps.cert.outputs.HAS_CERT == 'true'
+        env:
+          CERTIFICATE_PFX: ${{ secrets.CERTIFICATE_PFX }}
+          CERTIFICATE_PASSWORD: ${{ secrets.CERTIFICATE_PASSWORD }}
+        run: |
+          ./.github/scripts/sign.ps1 -Path "bin\Release\net8.0-windows10.0.22621.0\publish\win-x64\FaraBotModerator.exe"
+        shell: pwsh
+
+      - name: Package
+        run: |
+          ./build_release.ps1 -PackageOnly
         shell: pwsh
 
       - name: Sign installer (self-signed)
-        if: ${{ env.CERTIFICATE_PFX != '' }}
+        if: steps.cert.outputs.HAS_CERT == 'true'
+        env:
+          CERTIFICATE_PFX: ${{ secrets.CERTIFICATE_PFX }}
+          CERTIFICATE_PASSWORD: ${{ secrets.CERTIFICATE_PASSWORD }}
         run: |
-          $certBytes = [System.Convert]::FromBase64String("${{ secrets.CERTIFICATE_PFX }}")
-          $certPath = "$env:TEMP\cert.pfx"
-          [System.IO.File]::WriteAllBytes($certPath, $certBytes)
-
-          $signtool = Get-ChildItem -Path "C:\Program Files (x86)\Windows Kits\10\bin" -Recurse -Filter "signtool.exe" |
-            Where-Object { $_.FullName -match "x64" } | Select-Object -First 1 -ExpandProperty FullName
-          if (-not $signtool) { Write-Host "signtool.exe not found, skipping signing."; exit 0 }
-
-          & $signtool sign /f $certPath /p "${{ secrets.CERTIFICATE_PASSWORD }}" `
-            /tr http://timestamp.digicert.com /td sha256 /fd sha256 "Releases\FaraBotModerator_Setup.exe"
-          Write-Host "Installer signing completed."
+          ./.github/scripts/sign.ps1 -Path "Releases\FaraBotModerator_Setup.exe"
         shell: pwsh
 
       - name: Create Release

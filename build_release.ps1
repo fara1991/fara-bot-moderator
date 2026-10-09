@@ -1,20 +1,33 @@
 ﻿# FaraBotModerator Build & Package Script
+# -PublishOnly: dotnet publish のみ実行 / -PackageOnly: インストーラー作成のみ実行
+# (CI で publish とパッケージングの間に exe へ署名するために分割できるようにしている)
+param(
+    [switch]$PublishOnly,
+    [switch]$PackageOnly
+)
 
 Write-Host "Starting Build Process..." -ForegroundColor Cyan
 
 $projectName = "FaraBotModerator"
 $publishDir = "bin\Release\net8.0-windows10.0.22621.0\publish\win-x64"
 
-# 1. Clean and Publish
-Write-Host "Step 1: Publishing as a single-file executable..." -ForegroundColor Yellow
-dotnet publish $projectName.csproj -c Release /p:PublishProfile=FolderProfile
+if (-not $PackageOnly) {
+    # 1. Clean and Publish
+    Write-Host "Step 1: Publishing as a single-file executable..." -ForegroundColor Yellow
+    dotnet publish $projectName.csproj -c Release /p:PublishProfile=FolderProfile
 
-if ($LASTEXITCODE -ne 0) {
-    Write-Host "Publish failed!" -ForegroundColor Red
-    exit $LASTEXITCODE
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Publish failed!" -ForegroundColor Red
+        exit $LASTEXITCODE
+    }
+
+    Write-Host "Publish completed. Files are in: $publishDir" -ForegroundColor Green
 }
 
-Write-Host "Publish completed. Files are in: $publishDir" -ForegroundColor Green
+if ($PublishOnly) {
+    Write-Host "Done!" -ForegroundColor Cyan
+    exit 0
+}
 
 # 2. Compile Inno Setup (if ISCC is available)
 $releaseDir = "Releases"
