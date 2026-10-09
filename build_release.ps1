@@ -14,7 +14,7 @@ $publishDir = "bin\Release\net8.0-windows10.0.22621.0\publish\win-x64"
 if (-not $PackageOnly) {
     # 1. Clean and Publish
     Write-Host "Step 1: Publishing as a single-file executable..." -ForegroundColor Yellow
-    dotnet publish $projectName.csproj -c Release /p:PublishProfile=FolderProfile
+    dotnet publish "$projectName.csproj" -c Release /p:PublishProfile=FolderProfile
 
     if ($LASTEXITCODE -ne 0) {
         Write-Host "Publish failed!" -ForegroundColor Red
