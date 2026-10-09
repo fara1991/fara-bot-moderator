@@ -14,6 +14,9 @@ on:
 jobs:
   build:
     runs-on: windows-latest
+    env:
+      # ステップの if では secrets を参照できないため、env 経由で署名の有無を判定する
+      CERTIFICATE_PFX: ${{ secrets.CERTIFICATE_PFX }}
 
     steps:
       - name: Checkout
@@ -107,7 +110,7 @@ jobs:
           '@ | Out-File -FilePath "Resources\secrets.json" -Encoding UTF8
 
       - name: Sign executable (self-signed)
-        if: ${{ secrets.CERTIFICATE_PFX != '' }}
+        if: ${{ env.CERTIFICATE_PFX != '' }}
         run: |
           # 証明書をデコードして一時ファイルに保存
           $certBytes = [System.Convert]::FromBase64String("${{ secrets.CERTIFICATE_PFX }}")
@@ -131,7 +134,7 @@ jobs:
         shell: pwsh
 
       - name: Sign installer (self-signed)
-        if: ${{ secrets.CERTIFICATE_PFX != '' }}
+        if: ${{ env.CERTIFICATE_PFX != '' }}
         run: |
           $certBytes = [System.Convert]::FromBase64String("${{ secrets.CERTIFICATE_PFX }}")
           $certPath = "$env:TEMP\cert.pfx"
