@@ -17,7 +17,7 @@ namespace FaraBotModerator.Controllers;
 /// </summary>
 public class PokemonCommandController
 {
-    private const string DataUrl = "https://fara1991.github.io/fara-pokemon-assistance/data/";
+    private const string DataUrl = "https://pokemon.fara-labs.com/data/";
     private static readonly TimeSpan UserCooldown = TimeSpan.FromSeconds(5);
     private static readonly HttpClient HttpClient = new() { Timeout = TimeSpan.FromSeconds(30) };
 
