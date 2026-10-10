@@ -307,8 +307,9 @@ DeepL APIを使用した自動翻訳機能の設定です。
 
 - **登録・削除・使用チームの変更（`add` / `rm` / `use team` / `unuse team`）は配信者本人とモデレーターのみ**行えます。視聴者が実行すると「…は配信者・モデレーターのみ行えます」と返ります（閲覧・計算系は誰でも使えます）
 - 計算系（`dmg` / `calc` / `diff`）は同じユーザーの連続実行を5秒間無視します（登録系には掛かりません）
+- ダメージ計算の対戦形式（シングル / ダブル）はメイン画面の「Pokemon Format」で切り替えます（接続中でもすぐ反映され、`secrets.json` の `pokemon.battleFormat` に保存されます）
 - 登録データは `%LOCALAPPDATA%\FaraBotModerator\pokemon-roster.json` に保存されます（`secrets.json` とは別ファイル）
-- 計算ロジック: [fara-pokemon-assistance](https://github.com/fara1991/fara-pokemon-assistance)（ブラウザ版: https://fara1991.github.io/fara-pokemon-assistance/command ）
+- 計算ロジック: [fara-pokemon-assistance](https://github.com/fara1991/fara-pokemon-assistance)（ブラウザ版: https://pokemon.fara-labs.com/command ）
 
 ---
 

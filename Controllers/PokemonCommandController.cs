@@ -17,9 +17,9 @@ namespace FaraBotModerator.Controllers;
 /// </summary>
 public class PokemonCommandController
 {
-    private const string DataUrl = "https://fara1991.github.io/fara-pokemon-assistance/data/";
+    private const string DataUrl = "https://pokemon.fara-labs.com/data/";
     private static readonly TimeSpan UserCooldown = TimeSpan.FromSeconds(5);
-    private static readonly HttpClient HttpClient = new() { Timeout = TimeSpan.FromSeconds(30) };
+    private static readonly HttpClient HttpClient = CreateHttpClient();
 
     /// <summary>
     /// 連投対策のクールダウンを掛けるサブコマンド（計算系）
@@ -28,6 +28,17 @@ public class PokemonCommandController
     {
         "dmg", "damage", "calc", "ev", "diff", "speed", "spd"
     };
+
+    /// <summary>
+    /// データ取得用の HttpClient を作成します。
+    /// User-Agent が無いと Cloudflare のブラウザ整合性チェックで拒否されることがあるため、明示的に付けます。
+    /// </summary>
+    private static HttpClient CreateHttpClient()
+    {
+        var client = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
+        client.DefaultRequestHeaders.UserAgent.ParseAdd("FaraBotModerator (+https://github.com/fara1991/fara-bot-moderator)");
+        return client;
+    }
 
     private const string CommandPrefix = "!poke";
 
@@ -39,12 +50,19 @@ public class PokemonCommandController
     private readonly SemaphoreSlim _executeLock = new(1, 1);
 
     /// <summary>
+    /// ダメージ計算に使う対戦形式。接続中でも切り替えられます。
+    /// </summary>
+    public BattleFormat Format { get; set; }
+
+    /// <summary>
     /// PokemonCommandController のコンストラクタ
     /// データは GitHub Pages の CSV を使い、ローカルに 1 日キャッシュします（起動中も 1 日ごとに読み直します）。
     /// 登録したポケモン・チームは %LOCALAPPDATA%\FaraBotModerator\pokemon-roster.json に保存します。
     /// </summary>
-    public PokemonCommandController()
+    /// <param name="format">ダメージ計算に使う対戦形式</param>
+    public PokemonCommandController(BattleFormat format)
     {
+        Format = format;
         var appDirectory = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "FaraBotModerator");
         var source = new CachingDataSource(new HttpDataSource(HttpClient, DataUrl),
@@ -54,39 +72,31 @@ public class PokemonCommandController
     }
 
     /// <summary>
-    /// メッセージがポケモンコマンドかどうかを判定します。
-    /// データの取得に失敗した場合はコマンドではないものとして扱い、次回のコマンドで取り直します。
+    /// 設定ファイルの文字列を対戦形式に変換します。不正な値はシングルとして扱います。
     /// </summary>
-    /// <param name="message">チャットメッセージ</param>
-    /// <returns>ポケモンコマンドの場合は true</returns>
-    public async Task<bool> IsCommandAsync(string message)
+    /// <param name="value">"Singles" または "Doubles"</param>
+    /// <returns>対戦形式</returns>
+    public static BattleFormat ParseFormat(string? value)
     {
-        // 接頭辞はすべて「!poke」で始まるため、それ以外のメッセージではデータの取得（初回は HTTP）を行わない
-        if (!message.TrimStart().StartsWith(CommandPrefix, StringComparison.OrdinalIgnoreCase)) return false;
-        try
-        {
-            return await _command.MatchAsync(message) is not null;
-        }
-        catch (Exception ex)
-        {
-            LogController.OutputLog($"<Error> Pokemon data: {ex.Message}");
-            return false;
-        }
+        return Enum.TryParse<BattleFormat>(value, true, out var format) ? format : BattleFormat.Singles;
     }
 
     /// <summary>
-    /// ポケモンコマンドを実行し、チャットに返す 1 行を返します。
-    /// 計算系コマンドで同一ユーザーのクールダウン中は null を返します。
+    /// ポケモンコマンドであれば実行し、チャットに返す 1 行を返します。判定と実行は 1 回の照合で行います。
+    /// データの取得に失敗した場合はコマンドではないものとして扱い、次回のコマンドで取り直します。
     /// </summary>
     /// <param name="message">チャットメッセージ</param>
     /// <param name="userName">発言したユーザーのログイン名</param>
     /// <param name="isBroadcaster">配信者本人かどうか</param>
     /// <param name="isModerator">モデレーターかどうか</param>
     /// <param name="maxLength">返信の最大長</param>
-    /// <returns>返信メッセージ。返信しない場合は null</returns>
-    public async Task<string?> HandleAsync(string message, string userName, bool isBroadcaster, bool isModerator,
-        int maxLength)
+    /// <returns>Handled: ポケモンコマンドとして処理したか。Reply: 返信メッセージ（計算系コマンドのクールダウン中は null）</returns>
+    public async Task<(bool Handled, string? Reply)> HandleAsync(string message, string userName, bool isBroadcaster,
+        bool isModerator, int maxLength)
     {
+        // 接頭辞はすべて「!poke」で始まるため、それ以外のメッセージではデータの取得（初回は HTTP）を行わない
+        if (!message.TrimStart().StartsWith(CommandPrefix, StringComparison.OrdinalIgnoreCase)) return (false, null);
+
         // 登録・削除・使用チーム変更は配信者本人とモデレーターのみ（視聴者は閲覧・計算系のみ）
         var canEdit = isBroadcaster || isModerator;
 
@@ -97,17 +107,23 @@ public class PokemonCommandController
             if (IsCooldownTarget(message))
             {
                 var now = DateTime.UtcNow;
-                if (_lastExecutedAt.TryGetValue(userName, out var last) && now - last < UserCooldown) return null;
+                if (_lastExecutedAt.TryGetValue(userName, out var last) && now - last < UserCooldown)
+                    return (true, null);
                 _lastExecutedAt[userName] = now;
             }
 
-            var result = await _command.ExecuteAsync(message, new PokeCommandOptions
+            var result = await _command.TryExecuteAsync(message, new PokeCommandOptions
             {
-                Format = BattleFormat.Singles,
+                Format = Format,
                 AllowMutations = canEdit,
                 MaxLength = maxLength
             });
-            return result.Message;
+            return result is null ? (false, null) : (true, result.Message);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            LogController.OutputLog($"<Error> Pokemon data: {ex.Message}");
+            return (false, null);
         }
         finally
         {

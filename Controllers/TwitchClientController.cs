@@ -55,7 +55,8 @@ public class TwitchClientController
         _twitchApiController = twitchApiController;
         _twitchTranslationController = new TwitchTranslationController(_secretKeys.DeepL.ApiKey);
         _uniqueChannelPointController = new UniqueChannelPointController(_secretKeys);
-        _pokemonCommandController = new PokemonCommandController();
+        _pokemonCommandController =
+            new PokemonCommandController(PokemonCommandController.ParseFormat(_secretKeys.Pokemon.BattleFormat));
     }
 
     /// <summary>
@@ -417,12 +418,9 @@ public class TwitchClientController
             var userName = e.ChatMessage.Username;
             var displayName = e.ChatMessage.DisplayName;
             var sourceMessage = e.ChatMessage.Message;
-            if (await _pokemonCommandController.IsCommandAsync(sourceMessage))
-            {
-                await SendPokemonCommandAsync(userName, sourceMessage, e.ChatMessage.UserId,
-                    e.ChatMessage.IsBroadcaster, e.ChatMessage.IsModerator);
+            if (await TrySendPokemonCommandAsync(userName, sourceMessage, e.ChatMessage.UserId,
+                    e.ChatMessage.IsBroadcaster, e.ChatMessage.IsModerator))
                 return;
-            }
 
             await SendMessageTranslationAsync(userName, displayName, sourceMessage, false, e.ChatMessage.UserId);
         }
@@ -434,17 +432,28 @@ public class TwitchClientController
     }
 
     /// <summary>
-    /// ポケモンコマンド（!poke 系）の実行結果をチャットに送信します。
+    /// ポケモンコマンド（!poke 系）であれば実行し、結果をチャットに送信します。
     /// </summary>
-    private async Task SendPokemonCommandAsync(string userName, string sourceMessage, string userId,
+    /// <returns>ポケモンコマンドとして処理した場合は true</returns>
+    private async Task<bool> TrySendPokemonCommandAsync(string userName, string sourceMessage, string userId,
         bool isBroadcaster, bool isModerator)
     {
         var prefix = $"[{Settings.Default.BotName}] ";
         // Twitch の 1 メッセージ 500 文字制限に収める
-        var reply = await _pokemonCommandController.HandleAsync(sourceMessage, userName, isBroadcaster, isModerator,
-            480 - prefix.Length);
-        if (string.IsNullOrEmpty(reply)) return;
-        SendMessage(userName, prefix + reply, userId);
+        var (handled, reply) = await _pokemonCommandController.HandleAsync(sourceMessage, userName, isBroadcaster,
+            isModerator, 480 - prefix.Length);
+        if (!handled) return false;
+        if (!string.IsNullOrEmpty(reply)) SendMessage(userName, prefix + reply, userId);
+        return true;
+    }
+
+    /// <summary>
+    /// ポケモンのダメージ計算に使う対戦形式（"Singles" / "Doubles"）を切り替えます。
+    /// </summary>
+    /// <param name="format">対戦形式の文字列</param>
+    public void SetPokemonBattleFormat(string format)
+    {
+        _pokemonCommandController.Format = PokemonCommandController.ParseFormat(format);
     }
 
     /// <summary>
