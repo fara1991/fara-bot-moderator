@@ -19,7 +19,7 @@ public class PokemonCommandController
 {
     private const string DataUrl = "https://pokemon.fara-labs.com/data/";
     private static readonly TimeSpan UserCooldown = TimeSpan.FromSeconds(5);
-    private static readonly HttpClient HttpClient = new() { Timeout = TimeSpan.FromSeconds(30) };
+    private static readonly HttpClient HttpClient = CreateHttpClient();
 
     /// <summary>
     /// 連投対策のクールダウンを掛けるサブコマンド（計算系）
@@ -28,6 +28,17 @@ public class PokemonCommandController
     {
         "dmg", "damage", "calc", "ev", "diff", "speed", "spd"
     };
+
+    /// <summary>
+    /// データ取得用の HttpClient を作成します。
+    /// User-Agent が無いと Cloudflare のブラウザ整合性チェックで拒否されることがあるため、明示的に付けます。
+    /// </summary>
+    private static HttpClient CreateHttpClient()
+    {
+        var client = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
+        client.DefaultRequestHeaders.UserAgent.ParseAdd("FaraBotModerator (+https://github.com/fara1991/fara-bot-moderator)");
+        return client;
+    }
 
     private const string CommandPrefix = "!poke";
 
