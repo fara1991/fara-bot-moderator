@@ -309,7 +309,8 @@ DeepL APIを使用した自動翻訳機能の設定です。
 - 計算系（`dmg` / `calc` / `diff`）は同じユーザーの連続実行を5秒間無視します（登録系には掛かりません）
 - ダメージ計算の対戦形式（シングル / ダブル）はメイン画面の「Pokemon Format」で切り替えます（接続中でもすぐ反映され、`secrets.json` の `pokemon.battleFormat` に保存されます）
 - 登録データは `%LOCALAPPDATA%\FaraBotModerator\pokemon-roster.json` に保存されます（`secrets.json` とは別ファイル）
-- 計算ロジック: [fara-pokemon-assistance](https://github.com/fara1991/fara-pokemon-assistance)（ブラウザ版: https://pokemon.fara-labs.com/command ）
+- 計算ロジック: [fara-pokemon-battle-assistant](https://github.com/fara1991/fara-pokemon-battle-assistant)（ブラウザ版: https://pokemon.fara-labs.com/command ）
+- ポケモンのデータは https://pokemon.fara-labs.com/data/ から取得し、取得できないときは https://pokemon-dev.fara-labs.com/data/ を使います（1 日キャッシュ）
 
 ---
 
