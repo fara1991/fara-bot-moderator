@@ -5,10 +5,10 @@ using System.IO;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
-using FaraPokemonAssistance.Core.Data;
-using FaraPokemonAssistance.Core.Models;
-using FaraPokemonAssistance.Core.Roster;
-using FaraPokemonAssistance.Core.Text;
+using FaraPokemonBattleAssistant.Core.Data;
+using FaraPokemonBattleAssistant.Core.Models;
+using FaraPokemonBattleAssistant.Core.Roster;
+using FaraPokemonBattleAssistant.Core.Text;
 
 namespace FaraBotModerator.Controllers;
 
