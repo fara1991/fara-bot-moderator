@@ -134,8 +134,9 @@ public class PokemonCommandController
     }
 
     /// <summary>
-    /// ポケモンコマンドであれば実行し、チャットに返す 1 行を返します。判定と実行は 1 回の照合で行います。
-    /// データの取得に失敗した場合はコマンドではないものとして扱い、次回のコマンドで取り直します。
+    /// ポケモンコマンドであれば実行し、チャットに返す 1 行を返します。
+    /// コマンドかどうかを先に判定し、コマンドでないメッセージ（「!pokedex ...」など）にはクールダウンを掛けません。
+    /// データの取得に失敗した場合はコマンドではないものとして扱い（翻訳などの通常の処理に回す）、次回のコマンドで取り直します。
     /// </summary>
     /// <param name="message">チャットメッセージ</param>
     /// <param name="userName">発言したユーザーのログイン名</param>
@@ -155,8 +156,14 @@ public class PokemonCommandController
         await _executeLock.WaitAsync();
         try
         {
+            // 「!pokedex ...」のように「!poke」で始まるだけのメッセージはコマンドではないので、
+            // クールダウンより先に（実行はせずに）コマンドかどうかを判定する。照合ではデータセット一覧だけを読む
+            var command = _command;
+            var match = await command.MatchAsync(message);
+            if (match is null) return (false, null);
+
             // クールダウンの確認と記録はロック内で行い、同一ユーザーの同時投稿がすり抜けないようにする
-            if (IsCooldownTarget(message))
+            if (IsCooldownTarget(match.Value.Arguments))
             {
                 var now = DateTime.UtcNow;
                 if (_lastExecutedAt.TryGetValue(userName, out var last) && now - last < UserCooldown)
@@ -164,7 +171,7 @@ public class PokemonCommandController
                 _lastExecutedAt[userName] = now;
             }
 
-            var result = await _command.TryExecuteAsync(message, new PokeCommandOptions
+            var result = await command.TryExecuteAsync(message, new PokeCommandOptions
             {
                 Format = Format,
                 AllowMutations = canEdit,
@@ -184,12 +191,13 @@ public class PokemonCommandController
     }
 
     /// <summary>
-    /// 「!pokech dmg ...」のように 2 語目が計算系サブコマンドかどうかを判定します。
+    /// 「!pokech dmg ...」のように、接頭辞の後の 1 語目が計算系サブコマンドかどうかを判定します。
     /// </summary>
-    private static bool IsCooldownTarget(string message)
+    /// <param name="arguments">接頭辞を除いた残り（「dmg ...」）</param>
+    private static bool IsCooldownTarget(string arguments)
     {
-        var tokens = message.Split(Separators, 3, StringSplitOptions.RemoveEmptyEntries);
-        return tokens.Length >= 2 && CooldownSubCommands.Contains(tokens[1]);
+        var tokens = arguments.Split(Separators, 2, StringSplitOptions.RemoveEmptyEntries);
+        return tokens.Length >= 1 && CooldownSubCommands.Contains(tokens[0]);
     }
 }
 
