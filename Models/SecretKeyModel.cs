@@ -67,6 +67,12 @@ public class PokemonModel
     /// </summary>
     [JsonPropertyName("battleFormat")]
     public string BattleFormat { get; init; } = "Singles";
+
+    /// <summary>
+    /// ポケモンのデータの取得元（"Production" または "Develop"）
+    /// </summary>
+    [JsonPropertyName("dataSource")]
+    public string DataSource { get; init; } = "Production";
 }
 
 /// <summary>

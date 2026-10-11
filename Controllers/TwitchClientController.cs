@@ -56,7 +56,8 @@ public class TwitchClientController
         _twitchTranslationController = new TwitchTranslationController(_secretKeys.DeepL.ApiKey);
         _uniqueChannelPointController = new UniqueChannelPointController(_secretKeys);
         _pokemonCommandController =
-            new PokemonCommandController(PokemonCommandController.ParseFormat(_secretKeys.Pokemon.BattleFormat));
+            new PokemonCommandController(PokemonCommandController.ParseFormat(_secretKeys.Pokemon.BattleFormat),
+                PokemonCommandController.ParseDataSource(_secretKeys.Pokemon.DataSource));
     }
 
     /// <summary>
@@ -454,6 +455,15 @@ public class TwitchClientController
     public void SetPokemonBattleFormat(string format)
     {
         _pokemonCommandController.Format = PokemonCommandController.ParseFormat(format);
+    }
+
+    /// <summary>
+    /// ポケモンのデータの取得元（"Production" / "Develop"）を切り替えます。
+    /// </summary>
+    /// <param name="dataSource">取得元の文字列</param>
+    public void SetPokemonDataSource(string dataSource)
+    {
+        _pokemonCommandController.DataSource = PokemonCommandController.ParseDataSource(dataSource);
     }
 
     /// <summary>

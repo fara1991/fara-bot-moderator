@@ -108,6 +108,26 @@
                                     <ComboBoxItem Content="Singles" IsSelected="True" />
                                     <ComboBoxItem Content="Doubles" />
                                 </ComboBox>
+                                <Label x:Name="PokemonDataSourceLabel" Content="Pokemon Data" Margin="20,0,0,0"
+                                       VerticalAlignment="Center" Height="25" />
+                                <Button Style="{StaticResource MaterialDesignIconButton}"
+                                        Width="20" Height="20" Margin="-8,0,0,0"
+                                        ToolTipService.InitialShowDelay="0"
+                                        ToolTipService.Placement="Bottom"
+                                        ToolTipService.HorizontalOffset="-10"
+                                        Click="HelpButton_Click">
+                                    <Button.ToolTip>
+                                        <ToolTip Content="!poke 系コマンドのデータの取得元。Production: pokemon.fara-labs.com、Develop: pokemon-dev.fara-labs.com（接続中でも切り替え可能）" />
+                                    </Button.ToolTip>
+                                    <materialDesign:PackIcon Kind="HelpCircleOutline" Width="16" Height="16"
+                                                             Foreground="Gray" />
+                                </Button>
+                                <ComboBox x:Name="PokemonDataSourceComboBox" Width="120" Height="30"
+                                          Margin="10,0,0,0" VerticalAlignment="Center"
+                                          SelectionChanged="PokemonDataSourceComboBox_SelectionChanged">
+                                    <ComboBoxItem Content="Production" IsSelected="True" />
+                                    <ComboBoxItem Content="Develop" />
+                                </ComboBox>
                             </StackPanel>
                             <GroupBox x:Name="TwitchClientGroupBox" HorizontalAlignment="Center"
                                       Height="120" VerticalAlignment="Top" Width="533">
