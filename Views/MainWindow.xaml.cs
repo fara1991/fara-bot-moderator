@@ -14,7 +14,7 @@ using FaraBotModerator.Controllers;
 using FaraBotModerator.Models;
 using FaraBotModerator.Properties;
 using Microsoft.Web.WebView2.Core;
-using BattleFormat = FaraPokemonAssistance.Core.Models.BattleFormat;
+using BattleFormat = FaraPokemonBattleAssistant.Core.Models.BattleFormat;
 
 namespace FaraBotModerator.Views;
 

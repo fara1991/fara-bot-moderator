@@ -51,7 +51,7 @@ git submodule update --init
 - `FaraBotModerator`: アプリ本体 (WPF)
 - `Installer`: Inno Setup用スクリプトおよび関連ファイル
 - `Resources`: アイコンや画像リソース
-- `external/fara-pokemon-assistance`: `!poke` 系コマンドの計算ライブラリ（git submodule。`FaraPokemonAssistance.Core` を参照）
+- `external/fara-pokemon-battle-assistant`: `!poke` 系コマンドの計算ライブラリ（git submodule。`FaraPokemonBattleAssistant.Core` を参照）
 
 ## ライセンス
 本プロジェクトは開発中のプロトタイプです。
