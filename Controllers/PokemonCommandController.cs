@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,7 +18,15 @@ namespace FaraBotModerator.Controllers;
 /// </summary>
 public class PokemonCommandController
 {
-    private const string DataUrl = "https://pokemon.fara-labs.com/data/";
+    /// <summary>
+    /// ポケモンのデータ（CSV）の取得元。上から順に試し、取得できなかったら次を使います。
+    /// pokemon-dev は Cloudflare Access で保護されているため、/data/ を Access の対象外（Bypass）にしておく必要があります。
+    /// </summary>
+    private static readonly string[] DataUrls =
+    {
+        "https://pokemon.fara-labs.com/data/",
+        "https://pokemon-dev.fara-labs.com/data/"
+    };
     private static readonly TimeSpan UserCooldown = TimeSpan.FromSeconds(5);
     private static readonly HttpClient HttpClient = CreateHttpClient();
 
@@ -32,10 +41,11 @@ public class PokemonCommandController
     /// <summary>
     /// データ取得用の HttpClient を作成します。
     /// User-Agent が無いと Cloudflare のブラウザ整合性チェックで拒否されることがあるため、明示的に付けます。
+    /// リダイレクトは追わないので、Cloudflare Access のログイン画面への転送は失敗として扱われ、次の取得元を試します。
     /// </summary>
     private static HttpClient CreateHttpClient()
     {
-        var client = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
+        var client = new HttpClient(new HttpClientHandler { AllowAutoRedirect = false }) { Timeout = TimeSpan.FromSeconds(30) };
         client.DefaultRequestHeaders.UserAgent.ParseAdd("FaraBotModerator (+https://github.com/fara1991/fara-bot-moderator)");
         return client;
     }
@@ -56,7 +66,7 @@ public class PokemonCommandController
 
     /// <summary>
     /// PokemonCommandController のコンストラクタ
-    /// データは GitHub Pages の CSV を使い、ローカルに 1 日キャッシュします（起動中も 1 日ごとに読み直します）。
+    /// データは Cloudflare に公開した CSV（本番、取得できなければ開発用）を使い、ローカルに 1 日キャッシュします（起動中も 1 日ごとに読み直します）。
     /// 登録したポケモン・チームは %LOCALAPPDATA%\FaraBotModerator\pokemon-roster.json に保存します。
     /// </summary>
     /// <param name="format">ダメージ計算に使う対戦形式</param>
@@ -65,7 +75,8 @@ public class PokemonCommandController
         Format = format;
         var appDirectory = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "FaraBotModerator");
-        var source = new CachingDataSource(new HttpDataSource(HttpClient, DataUrl),
+        var source = new CachingDataSource(
+            new FallbackDataSource(DataUrls.Select(url => (IDataSource)new HttpDataSource(HttpClient, url))),
             Path.Combine(appDirectory, "pokemon-data"), TimeSpan.FromDays(1));
         var roster = new RosterRepository(new FileRosterStore(Path.Combine(appDirectory, "pokemon-roster.json")));
         _command = new PokeCommand(new DataCatalog(source, TimeSpan.FromDays(1)), roster);
