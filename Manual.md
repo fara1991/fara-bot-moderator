@@ -310,7 +310,7 @@ DeepL APIを使用した自動翻訳機能の設定です。
 - ダメージ計算の対戦形式（シングル / ダブル）はメイン画面の「Pokemon Format」で切り替えます（接続中でもすぐ反映され、`secrets.json` の `pokemon.battleFormat` に保存されます）
 - 登録データは `%LOCALAPPDATA%\FaraBotModerator\pokemon-roster.json` に保存されます（`secrets.json` とは別ファイル）
 - 計算ロジック: [fara-pokemon-battle-assistant](https://github.com/fara1991/fara-pokemon-battle-assistant)（ブラウザ版: https://pokemon.fara-labs.com/command ）
-- ポケモンのデータは https://pokemon.fara-labs.com/data/ から取得し、取得できないときは https://pokemon-dev.fara-labs.com/data/ を使います（1 日キャッシュ）
+- ポケモンのデータの取得元はメイン画面の「Pokemon Data」で切り替えます（Production: https://pokemon.fara-labs.com/data/ 、Develop: https://pokemon-dev.fara-labs.com/data/ 。接続中でもすぐ反映され、`secrets.json` の `pokemon.dataSource` に保存されます。1 日キャッシュ）
 
 ---
 

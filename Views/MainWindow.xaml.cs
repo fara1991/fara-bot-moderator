@@ -168,6 +168,8 @@ public partial class MainWindow : INotifyPropertyChanged
         // Pokemon
         PokemonBattleFormatComboBox.SelectedIndex =
             PokemonCommandController.ParseFormat(secretKeys.Pokemon.BattleFormat) == BattleFormat.Doubles ? 1 : 0;
+        PokemonDataSourceComboBox.SelectedIndex =
+            PokemonCommandController.ParseDataSource(secretKeys.Pokemon.DataSource) == PokemonDataSource.Develop ? 1 : 0;
 
         // Events
         SetEventValue(FollowEventCheckBox, FollowEventTextBox, secretKeys.Event.Follow);
@@ -726,7 +728,8 @@ public partial class MainWindow : INotifyPropertyChanged
             BeatSaber = SecretKeyController.LoadKeys().BeatSaber,
             Pokemon = new PokemonModel
             {
-                BattleFormat = SelectedPokemonBattleFormat()
+                BattleFormat = SelectedPokemonBattleFormat(),
+                DataSource = SelectedPokemonDataSource()
             }
         };
 
@@ -1004,6 +1007,24 @@ public partial class MainWindow : INotifyPropertyChanged
         // XAML 読み込み中（IsSelected の初期化）にも呼ばれるため、未接続なら何もしない
         if (_twitchClientController is null) return;
         _twitchClientController.SetPokemonBattleFormat(SelectedPokemonBattleFormat());
+    }
+
+    /// <summary>
+    /// ポケモンのデータの取得元コンボボックスで選択中の値（"Production" / "Develop"）を返します。
+    /// </summary>
+    private string SelectedPokemonDataSource()
+    {
+        return (PokemonDataSourceComboBox.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "Production";
+    }
+
+    /// <summary>
+    /// ポケモンのデータの取得元を切り替えたとき、接続中であれば即座に反映します。
+    /// </summary>
+    private void PokemonDataSourceComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        // XAML 読み込み中（IsSelected の初期化）にも呼ばれるため、未接続なら何もしない
+        if (_twitchClientController is null) return;
+        _twitchClientController.SetPokemonDataSource(SelectedPokemonDataSource());
     }
 
     private void GameSelectComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)

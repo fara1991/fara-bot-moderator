@@ -2,7 +2,6 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -19,14 +18,15 @@ namespace FaraBotModerator.Controllers;
 public class PokemonCommandController
 {
     /// <summary>
-    /// ポケモンのデータ（CSV）の取得元。上から順に試し、取得できなかったら次を使います。
+    /// 本番のポケモンのデータ（CSV）の URL
+    /// </summary>
+    private const string ProductionDataUrl = "https://pokemon.fara-labs.com/data/";
+
+    /// <summary>
+    /// 開発用のポケモンのデータ（CSV）の URL。
     /// pokemon-dev は Cloudflare Access で保護されているため、/data/ を Access の対象外（Bypass）にしておく必要があります。
     /// </summary>
-    private static readonly string[] DataUrls =
-    {
-        "https://pokemon.fara-labs.com/data/",
-        "https://pokemon-dev.fara-labs.com/data/"
-    };
+    private const string DevelopDataUrl = "https://pokemon-dev.fara-labs.com/data/";
     private static readonly TimeSpan UserCooldown = TimeSpan.FromSeconds(5);
     private static readonly HttpClient HttpClient = CreateHttpClient();
 
@@ -41,7 +41,7 @@ public class PokemonCommandController
     /// <summary>
     /// データ取得用の HttpClient を作成します。
     /// User-Agent が無いと Cloudflare のブラウザ整合性チェックで拒否されることがあるため、明示的に付けます。
-    /// リダイレクトは追わないので、Cloudflare Access のログイン画面への転送は失敗として扱われ、次の取得元を試します。
+    /// リダイレクトは追わないので、Cloudflare Access のログイン画面への転送は（HTML をデータとして読まずに）失敗として扱われます。
     /// </summary>
     private static HttpClient CreateHttpClient()
     {
@@ -54,7 +54,10 @@ public class PokemonCommandController
 
     private static readonly char[] Separators = { ' ', '　', '\t', ',', '、' };
 
-    private readonly PokeCommand _command;
+    private readonly string _appDirectory;
+    private readonly RosterRepository _roster;
+    private volatile PokeCommand _command;
+    private PokemonDataSource _dataSource;
     private readonly ConcurrentDictionary<string, DateTime> _lastExecutedAt = new();
     // 登録データ（RosterRepository）はスレッドセーフではないため、コマンドは 1 件ずつ処理する
     private readonly SemaphoreSlim _executeLock = new(1, 1);
@@ -66,20 +69,58 @@ public class PokemonCommandController
 
     /// <summary>
     /// PokemonCommandController のコンストラクタ
-    /// データは Cloudflare に公開した CSV（本番、取得できなければ開発用）を使い、ローカルに 1 日キャッシュします（起動中も 1 日ごとに読み直します）。
+    /// データは Cloudflare に公開した CSV（本番か開発用のどちらか）を使い、ローカルに 1 日キャッシュします（起動中も 1 日ごとに読み直します）。
     /// 登録したポケモン・チームは %LOCALAPPDATA%\FaraBotModerator\pokemon-roster.json に保存します。
     /// </summary>
     /// <param name="format">ダメージ計算に使う対戦形式</param>
-    public PokemonCommandController(BattleFormat format)
+    /// <param name="dataSource">データの取得元</param>
+    public PokemonCommandController(BattleFormat format, PokemonDataSource dataSource)
     {
         Format = format;
-        var appDirectory = Path.Combine(
+        _appDirectory = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "FaraBotModerator");
-        var source = new CachingDataSource(
-            new FallbackDataSource(DataUrls.Select(url => (IDataSource)new HttpDataSource(HttpClient, url))),
-            Path.Combine(appDirectory, "pokemon-data"), TimeSpan.FromDays(1));
-        var roster = new RosterRepository(new FileRosterStore(Path.Combine(appDirectory, "pokemon-roster.json")));
-        _command = new PokeCommand(new DataCatalog(source, TimeSpan.FromDays(1)), roster);
+        _roster = new RosterRepository(new FileRosterStore(Path.Combine(_appDirectory, "pokemon-roster.json")));
+        _dataSource = dataSource;
+        _command = CreateCommand(dataSource);
+    }
+
+    /// <summary>
+    /// データの取得元。接続中でも切り替えられ、次のコマンドから切り替え先のデータを使います。
+    /// </summary>
+    public PokemonDataSource DataSource
+    {
+        get => _dataSource;
+        set
+        {
+            if (_dataSource == value) return;
+            _dataSource = value;
+            _command = CreateCommand(value);
+        }
+    }
+
+    /// <summary>
+    /// 指定した取得元のデータを使うコマンドを作成します。キャッシュは取得元ごとに別のフォルダに保存します。
+    /// </summary>
+    /// <param name="dataSource">データの取得元</param>
+    /// <returns>ポケモンコマンド</returns>
+    private PokeCommand CreateCommand(PokemonDataSource dataSource)
+    {
+        var (url, cacheFolder) = dataSource == PokemonDataSource.Develop
+            ? (DevelopDataUrl, "pokemon-data-dev")
+            : (ProductionDataUrl, "pokemon-data");
+        var source = new CachingDataSource(new HttpDataSource(HttpClient, url),
+            Path.Combine(_appDirectory, cacheFolder), TimeSpan.FromDays(1));
+        return new PokeCommand(new DataCatalog(source, TimeSpan.FromDays(1)), _roster);
+    }
+
+    /// <summary>
+    /// 設定ファイルの文字列をデータの取得元に変換します。不正な値は本番として扱います。
+    /// </summary>
+    /// <param name="value">"Production" または "Develop"</param>
+    /// <returns>データの取得元</returns>
+    public static PokemonDataSource ParseDataSource(string? value)
+    {
+        return Enum.TryParse<PokemonDataSource>(value, true, out var source) ? source : PokemonDataSource.Production;
     }
 
     /// <summary>
@@ -150,4 +191,20 @@ public class PokemonCommandController
         var tokens = message.Split(Separators, 3, StringSplitOptions.RemoveEmptyEntries);
         return tokens.Length >= 2 && CooldownSubCommands.Contains(tokens[1]);
     }
+}
+
+/// <summary>
+/// ポケモンのデータの取得元
+/// </summary>
+public enum PokemonDataSource
+{
+    /// <summary>
+    /// 本番（https://pokemon.fara-labs.com/data/）
+    /// </summary>
+    Production,
+
+    /// <summary>
+    /// 開発用（https://pokemon-dev.fara-labs.com/data/）
+    /// </summary>
+    Develop
 }
