@@ -667,8 +667,50 @@
                                                             <ComboBoxItem Content="開発用（pokemon-dev.fara-labs.com）" Tag="Develop" />
                                                         </ComboBox>
                                                     </StackPanel>
+                                                    <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                                                        <Label x:Name="PokemonSyncKeyLabel" Content="同期キー"
+                                                               VerticalAlignment="Center" Height="25" Width="115" />
+                                                        <Button Style="{StaticResource MaterialDesignIconButton}"
+                                                                Width="20" Height="20" Margin="-5,0,0,0"
+                                                                ToolTipService.InitialShowDelay="0"
+                                                                ToolTipService.Placement="Bottom"
+                                                                ToolTipService.HorizontalOffset="-10"
+                                                                Click="HelpButton_Click">
+                                                            <Button.ToolTip>
+                                                                <ToolTip Content="登録したポケモン・チームをサイト（データの取得元と同じサイト）のクラウドに保存し、サイトの「登録ポケモン・チーム」ページと共有するためのキー。登録データはこの PC には保存しません。キーはパスワードと同じ扱いなので、配信画面に映さないでください" />
+                                                            </Button.ToolTip>
+                                                            <materialDesign:PackIcon Kind="HelpCircleOutline" Width="16" Height="16"
+                                                                                     Foreground="Gray" />
+                                                        </Button>
+                                                        <Grid Width="330" Height="30" Margin="10,0,0,0" VerticalAlignment="Center">
+                                                            <PasswordBox x:Name="PokemonSyncKeyPasswordBox" Foreground="Black"
+                                                                         VerticalAlignment="Center" />
+                                                            <TextBox x:Name="PokemonSyncKeyTextBox" Foreground="Black" Visibility="Collapsed"
+                                                                     VerticalAlignment="Center" />
+                                                        </Grid>
+                                                        <Button x:Name="PokemonSyncKeyShowButton" Content="表示" Width="70" Height="30"
+                                                                Margin="10,0,0,0" Click="PokemonSyncKeyShowButton_Click" />
+                                                        <Button x:Name="PokemonSyncKeyCopyButton" Content="コピー" Width="80" Height="30"
+                                                                Margin="10,0,0,0" Click="PokemonSyncKeyCopyButton_Click" />
+                                                        <TextBlock x:Name="PokemonSyncStatusTextBlock" Margin="10,0,0,0" VerticalAlignment="Center"
+                                                                   Foreground="Gray" TextWrapping="Wrap" MaxWidth="330" />
+                                                    </StackPanel>
+                                                    <StackPanel Orientation="Horizontal" Margin="135,6,0,0">
+                                                        <Button x:Name="PokemonSyncKeyIssueButton" Content="同期キーを発行" Width="130" Height="30"
+                                                                Margin="10,0,0,0" Click="PokemonSyncKeyIssueButton_Click"
+                                                                ToolTip="新しい同期キーを作ります（クラウドの置き場は空から始まります）。発行したキーをサイトの「同期キーを入力して参加」に貼り付けると、サイトと共有できます" />
+                                                        <Button x:Name="PokemonSyncKeyJoinButton" Content="キーを入力して参加" Width="160" Height="30"
+                                                                Margin="10,0,0,0" Click="PokemonSyncKeyJoinButton_Click"
+                                                                ToolTip="サイトで作った同期キーを左の欄に貼り付けてから押すと、そのキーのクラウドの登録データを使います" />
+                                                        <Button x:Name="PokemonSyncKeyRotateButton" Content="キーを作り直す" Width="130" Height="30"
+                                                                Margin="10,0,0,0" Click="PokemonSyncKeyRotateButton_Click"
+                                                                ToolTip="キーが漏れたときに。登録データを新しいキーに移し、古いキーは使えなくします（サイトでも新しいキーを入力し直してください）" />
+                                                        <Button x:Name="PokemonSyncKeyStopButton" Content="同期をやめる" Width="120" Height="30"
+                                                                Margin="10,0,0,0" Click="PokemonSyncKeyStopButton_Click"
+                                                                ToolTip="このボットでキーを使うのをやめます（クラウドのデータは残ります）" />
+                                                    </StackPanel>
                                                     <TextBlock Margin="5,10,0,0" Foreground="Gray" TextWrapping="Wrap"
-                                                               Text="!poke 系コマンド（ダメージ計算・素早さ比較・登録）の設定です。どちらも接続中に切り替えてもすぐ反映されます。" />
+                                                               Text="!poke 系コマンドの設定です（接続中に変えてもすぐ反映）。同期キーが無いと登録系のコマンドは使えません（計算は使えます）。" />
                                                 </StackPanel>
                                                 <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,14,0,6">
                                                     <Label Content="登録データ" FontWeight="Bold" VerticalAlignment="Center" Width="115" />
@@ -679,7 +721,7 @@
                                                             ToolTipService.HorizontalOffset="-10"
                                                             Click="HelpButton_Click">
                                                         <Button.ToolTip>
-                                                            <ToolTip Content="チャットの !poke add / add team / use team で登録したポケモンとチーム（この PC の %LOCALAPPDATA%\FaraBotModerator\pokemon-roster.json）。ここでは見るだけで、登録・削除はチャットのコマンドで行います" />
+                                                            <ToolTip Content="チャットの !poke add / add team / use team やサイトの「登録ポケモン・チーム」ページで登録したポケモンとチーム（同期キーでクラウドから読み込みます）。ここでは見るだけで、登録・削除はチャットのコマンドかサイトで行います" />
                                                         </Button.ToolTip>
                                                         <materialDesign:PackIcon Kind="HelpCircleOutline" Width="16" Height="16"
                                                                                  Foreground="Gray" />
@@ -689,8 +731,9 @@
                                                               SelectionChanged="PokemonRosterGameComboBox_SelectionChanged" />
                                                     <Button x:Name="PokemonRosterReloadButton" Content="再読み込み" Width="100" Height="30"
                                                             Margin="10,0,0,0" Click="PokemonRosterReloadButton_Click" />
-                                                    <Button x:Name="PokemonRosterOpenFolderButton" Content="保存先を開く" Width="120" Height="30"
-                                                            Margin="10,0,0,0" Click="PokemonRosterOpenFolderButton_Click" />
+                                                    <Button x:Name="PokemonRosterOpenSiteButton" Content="サイトで開く" Width="120" Height="30"
+                                                            Margin="10,0,0,0" Click="PokemonRosterOpenSiteButton_Click"
+                                                            ToolTip="データの取得元のサイトの「登録ポケモン・チーム」ページをブラウザで開きます（サイトでも同じ同期キーを入力すると編集できます）" />
                                                     <TextBlock x:Name="PokemonRosterStatusTextBlock" Margin="10,0,0,0" VerticalAlignment="Center"
                                                                Foreground="Gray" TextWrapping="Wrap" MaxWidth="370" />
                                                 </StackPanel>

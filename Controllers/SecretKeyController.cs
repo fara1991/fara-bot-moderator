@@ -138,7 +138,8 @@ public static class SecretKeyController
             Pokemon = new PokemonModel
             {
                 BattleFormat = "Singles",
-                DataSource = "Production"
+                DataSource = "Production",
+                SyncKey = ""
             }
         };
 

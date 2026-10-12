@@ -17,6 +17,8 @@ using FaraBotModerator.Models;
 using FaraBotModerator.Properties;
 using Microsoft.Web.WebView2.Core;
 using BattleFormat = FaraPokemonBattleAssistant.Core.Models.BattleFormat;
+using RemoteRosterStore = FaraPokemonBattleAssistant.Core.Roster.RemoteRosterStore;
+using RosterUnavailableException = FaraPokemonBattleAssistant.Core.Roster.RosterUnavailableException;
 
 namespace FaraBotModerator.Views;
 
@@ -58,6 +60,12 @@ public partial class MainWindow : INotifyPropertyChanged
     /// <summary>
     /// </summary>
     private TwitchEventSubController? _twitchEventSubController;
+
+    /// <summary>
+    /// 使用中のポケモンの登録データの同期キー（空なら未設定）。入力欄の文字ではなく、発行・参加で確定した値を保存します。
+    /// 同期キーはパスワードと同じ扱いで、ログや画面のメッセージには出しません。
+    /// </summary>
+    private string _pokemonSyncKey = "";
 
     /// <summary>
     /// </summary>
@@ -172,6 +180,9 @@ public partial class MainWindow : INotifyPropertyChanged
             PokemonCommandController.ParseFormat(secretKeys.Pokemon.BattleFormat) == BattleFormat.Doubles ? 1 : 0;
         PokemonDataSourceComboBox.SelectedIndex =
             PokemonCommandController.ParseDataSource(secretKeys.Pokemon.DataSource) == PokemonDataSource.Develop ? 1 : 0;
+        _pokemonSyncKey = RemoteRosterStore.IsValidKey(secretKeys.Pokemon.SyncKey) ? secretKeys.Pokemon.SyncKey : "";
+        SetPokemonSyncKeyInput(_pokemonSyncKey);
+        UpdatePokemonSyncKeyButtons();
 
         // Events
         SetEventValue(FollowEventCheckBox, FollowEventTextBox, secretKeys.Event.Follow);
@@ -731,7 +742,8 @@ public partial class MainWindow : INotifyPropertyChanged
             Pokemon = new PokemonModel
             {
                 BattleFormat = SelectedPokemonBattleFormat(),
-                DataSource = SelectedPokemonDataSource()
+                DataSource = SelectedPokemonDataSource(),
+                SyncKey = _pokemonSyncKey
             }
         };
 
@@ -1020,13 +1032,211 @@ public partial class MainWindow : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// ポケモンのデータの取得元を切り替えたとき、接続中であれば即座に反映します。
+    /// ポケモンのデータの取得元を切り替えたとき、接続中であれば即座に反映します（登録データのクラウドも同じサイトに切り替わります）。
     /// </summary>
     private void PokemonDataSourceComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         // XAML 読み込み中（IsSelected の初期化）にも呼ばれるため、未接続なら何もしない
         if (_twitchClientController is null) return;
         _twitchClientController.SetPokemonDataSource(SelectedPokemonDataSource());
+        if (IsPokemonGameSelected()) _ = LoadPokemonRosterAsync();
+    }
+
+    /// <summary>
+    /// 選択中のデータの取得元を返します。
+    /// </summary>
+    private PokemonDataSource SelectedPokemonDataSourceValue()
+    {
+        return PokemonCommandController.ParseDataSource(SelectedPokemonDataSource());
+    }
+
+    /// <summary>
+    /// 同期キーの入力欄（表示中なら TextBox、隠しているなら PasswordBox）の文字を返します。
+    /// </summary>
+    private string EnteredPokemonSyncKey()
+    {
+        return (PokemonSyncKeyTextBox.Visibility == Visibility.Visible
+            ? PokemonSyncKeyTextBox.Text
+            : PokemonSyncKeyPasswordBox.Password).Trim();
+    }
+
+    /// <summary>
+    /// 同期キーの入力欄に値を入れます。
+    /// </summary>
+    private void SetPokemonSyncKeyInput(string key)
+    {
+        PokemonSyncKeyPasswordBox.Password = key;
+        PokemonSyncKeyTextBox.Text = key;
+    }
+
+    /// <summary>
+    /// 同期キーの有無に合わせてボタンを有効・無効にします。
+    /// </summary>
+    /// <param name="busy">クラウドと通信中か（通信中はすべて無効）</param>
+    private void UpdatePokemonSyncKeyButtons(bool busy = false)
+    {
+        var hasKey = RemoteRosterStore.IsValidKey(_pokemonSyncKey);
+        PokemonSyncKeyIssueButton.IsEnabled = !busy;
+        PokemonSyncKeyJoinButton.IsEnabled = !busy;
+        PokemonSyncKeyRotateButton.IsEnabled = !busy && hasKey;
+        PokemonSyncKeyStopButton.IsEnabled = !busy && hasKey;
+        PokemonSyncKeyCopyButton.IsEnabled = hasKey;
+    }
+
+    /// <summary>
+    /// 同期キーを確定します。すぐに設定ファイルへ保存し、接続中のコマンドにも反映して、登録データを読み直します。
+    /// </summary>
+    /// <param name="key">同期キー（空なら同期をやめる）</param>
+    private async Task ApplyPokemonSyncKeyAsync(string key)
+    {
+        _pokemonSyncKey = key;
+        SetPokemonSyncKeyInput(key);
+        // キーを作り直したあとは古いキーが使えないため、終了を待たずに保存する
+        SaveSecretValue();
+        _twitchClientController?.SetPokemonSyncKey(key);
+        UpdatePokemonSyncKeyButtons();
+        await LoadPokemonRosterAsync();
+    }
+
+    /// <summary>
+    /// 同期キーの表示・非表示を切り替えます（配信画面に映さないよう、ふだんは隠しておきます）。
+    /// </summary>
+    private void PokemonSyncKeyShowButton_Click(object sender, RoutedEventArgs e)
+    {
+        var show = PokemonSyncKeyTextBox.Visibility != Visibility.Visible;
+        if (show) PokemonSyncKeyTextBox.Text = PokemonSyncKeyPasswordBox.Password;
+        else PokemonSyncKeyPasswordBox.Password = PokemonSyncKeyTextBox.Text;
+        PokemonSyncKeyTextBox.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
+        PokemonSyncKeyPasswordBox.Visibility = show ? Visibility.Collapsed : Visibility.Visible;
+        PokemonSyncKeyShowButton.Content = show ? "隠す" : "表示";
+    }
+
+    /// <summary>
+    /// 使用中の同期キーをクリップボードにコピーします（サイトの「同期キーを入力して参加」に貼り付ける用）。
+    /// </summary>
+    private void PokemonSyncKeyCopyButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (!RemoteRosterStore.IsValidKey(_pokemonSyncKey)) return;
+        try
+        {
+            Clipboard.SetText(_pokemonSyncKey);
+            PokemonSyncStatusTextBlock.Text = "同期キーをコピーしました";
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"コピーできませんでした: {ex.Message}", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    /// <summary>
+    /// 新しい同期キーを発行します（クラウドの置き場は空から始まります）。
+    /// </summary>
+    private async void PokemonSyncKeyIssueButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (RemoteRosterStore.IsValidKey(_pokemonSyncKey) &&
+            MessageBox.Show("今の同期キーの代わりに新しい同期キーを発行します。\n今のキーの登録データは新しいキーに引き継がれません（引き継ぐときは「キーを作り直す」を使います）。\n\n続けますか？",
+                "確認", MessageBoxButton.OKCancel, MessageBoxImage.Warning) != MessageBoxResult.OK)
+            return;
+
+        UpdatePokemonSyncKeyButtons(busy: true);
+        PokemonSyncStatusTextBlock.Text = "発行中…";
+        try
+        {
+            var key = await PokemonSyncKeyController.IssueAsync(SelectedPokemonDataSourceValue());
+            await ApplyPokemonSyncKeyAsync(key);
+            MessageBox.Show("同期キーを発行しました。\n\nサイトの「登録ポケモン・チーム」ページで「同期キーを入力して参加」を押し、このキーを貼り付けると、サイトと登録データを共有できます（「コピー」でコピーできます）。\n\n同期キーはパスワードと同じ扱いです。配信画面に映さないでください。",
+                "同期キー", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+        catch (RosterUnavailableException ex)
+        {
+            PokemonSyncStatusTextBlock.Text = "発行できませんでした";
+            MessageBox.Show($"同期キーを発行できませんでした: {ex.Message}", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        finally
+        {
+            UpdatePokemonSyncKeyButtons();
+        }
+    }
+
+    /// <summary>
+    /// 入力欄に貼り付けた同期キー（サイトで作ったもの）で参加します。クラウドから読めることを確かめてから使います。
+    /// </summary>
+    private async void PokemonSyncKeyJoinButton_Click(object sender, RoutedEventArgs e)
+    {
+        var key = EnteredPokemonSyncKey();
+        if (!RemoteRosterStore.IsValidKey(key))
+        {
+            MessageBox.Show("同期キーの形式が正しくありません（43 文字の英数字・-・_）。\nサイトの「登録ポケモン・チーム」ページでコピーした同期キーを左の欄に貼り付けてから押してください。",
+                "同期キー", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        UpdatePokemonSyncKeyButtons(busy: true);
+        PokemonSyncStatusTextBlock.Text = "確認中…";
+        try
+        {
+            var state = await PokemonSyncKeyController.LoadAsync(SelectedPokemonDataSourceValue(), key);
+            await ApplyPokemonSyncKeyAsync(key);
+            var (pokemon, teams) = PokemonSyncKeyController.Count(state);
+            if (pokemon == 0 && teams == 0)
+                MessageBox.Show("同期キーを設定しました。クラウドにはまだ登録がありません（キーの打ち間違いや、データの取得元が本番・開発用で違っていないか確認してください）。",
+                    "同期キー", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+        catch (RosterUnavailableException ex)
+        {
+            PokemonSyncStatusTextBlock.Text = RemoteRosterStore.IsValidKey(_pokemonSyncKey) ? "参加できませんでした（今のキーのまま）" : "参加できませんでした";
+            MessageBox.Show($"この同期キーでは参加できませんでした: {ex.Message}", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        finally
+        {
+            UpdatePokemonSyncKeyButtons();
+        }
+    }
+
+    /// <summary>
+    /// 同期キーを作り直します。登録データを新しいキーに移し、古いキーは使えなくします。
+    /// </summary>
+    private async void PokemonSyncKeyRotateButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (!RemoteRosterStore.IsValidKey(_pokemonSyncKey)) return;
+        if (MessageBox.Show("同期キーを作り直します。\n登録データは新しいキーに移り、今のキーは使えなくなります。\nサイトや他の PC でも、新しいキーを入力し直す必要があります。\n\n続けますか？",
+                "確認", MessageBoxButton.OKCancel, MessageBoxImage.Warning) != MessageBoxResult.OK)
+            return;
+
+        UpdatePokemonSyncKeyButtons(busy: true);
+        PokemonSyncStatusTextBlock.Text = "作り直し中…";
+        try
+        {
+            var (key, oldKeyDeleted) = await PokemonSyncKeyController.RotateAsync(SelectedPokemonDataSourceValue(), _pokemonSyncKey);
+            await ApplyPokemonSyncKeyAsync(key);
+            MessageBox.Show(
+                (oldKeyDeleted
+                    ? "同期キーを作り直しました。古いキーは使えなくなりました。"
+                    : "同期キーを作り直しました（登録データは新しいキーに移りましたが、古いキーの置き場を消せませんでした。古いキーは使わないでください）。") +
+                "\n\nサイトの「登録ポケモン・チーム」ページで「同期キーを入力して参加」を押し、新しいキーを貼り付けてください（「コピー」でコピーできます）。",
+                "同期キー", MessageBoxButton.OK, oldKeyDeleted ? MessageBoxImage.Information : MessageBoxImage.Warning);
+        }
+        catch (RosterUnavailableException ex)
+        {
+            PokemonSyncStatusTextBlock.Text = "作り直せませんでした（今のキーのまま）";
+            MessageBox.Show($"同期キーを作り直せませんでした（今のキーのままです）: {ex.Message}", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        finally
+        {
+            UpdatePokemonSyncKeyButtons();
+        }
+    }
+
+    /// <summary>
+    /// このボットで同期キーを使うのをやめます（クラウドのデータは残ります）。
+    /// </summary>
+    private async void PokemonSyncKeyStopButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (!RemoteRosterStore.IsValidKey(_pokemonSyncKey)) return;
+        if (MessageBox.Show("このボットで同期キーを使うのをやめます。\nクラウドの登録データは残り、サイトはそのまま使えます。同期をやめると、チャットの登録系のコマンド（!poke add など）は使えなくなります。\n\n続けますか？",
+                "確認", MessageBoxButton.OKCancel, MessageBoxImage.Warning) != MessageBoxResult.OK)
+            return;
+        await ApplyPokemonSyncKeyAsync("");
     }
 
     /// <summary>
@@ -1058,25 +1268,37 @@ public partial class MainWindow : INotifyPropertyChanged
     private async Task LoadPokemonRosterAsync()
     {
         var selectedKey = (PokemonRosterGameComboBox.SelectedItem as RosterGameView)?.Key;
+        if (!RemoteRosterStore.IsValidKey(_pokemonSyncKey))
+        {
+            PokemonRosterGameComboBox.ItemsSource = null;
+            ShowPokemonRoster(null);
+            PokemonSyncStatusTextBlock.Text = "未設定";
+            PokemonRosterStatusTextBlock.Text = "同期キーが設定されていません（上の「同期キー」で発行するか、サイトで作ったキーを入力して参加してください）";
+            return;
+        }
+
         PokemonRosterReloadButton.IsEnabled = false;
         PokemonRosterStatusTextBlock.Text = "読み込み中…";
         try
         {
-            var games = await PokemonRosterViewer.LoadAsync(
-                PokemonCommandController.ParseDataSource(SelectedPokemonDataSource()));
+            var games = await PokemonRosterViewer.LoadAsync(SelectedPokemonDataSourceValue(), _pokemonSyncKey);
+            PokemonSyncStatusTextBlock.Text =
+                $"クラウドに接続済み（登録 {games.Sum(g => g.Pokemon.Count)} 体・チーム {games.Sum(g => g.Teams.Count)}）";
             PokemonRosterGameComboBox.ItemsSource = games;
             PokemonRosterGameComboBox.SelectedItem =
                 games.FirstOrDefault(g => g.Key == selectedKey) ?? games.FirstOrDefault();
             if (games.Count == 0) ShowPokemonRoster(null);
             PokemonRosterStatusTextBlock.Text = games.Count == 0
-                ? "まだ登録がありません（チャットの !poke add で登録します）"
+                ? "まだ登録がありません（チャットの !poke add かサイトで登録します）"
                 : games.All(g => g.NamesResolved)
                     ? $"{DateTime.Now:HH:mm:ss} に読み込み"
                     : $"{DateTime.Now:HH:mm:ss} に読み込み。データを取得できなかったため、特性・持ち物は ID で表示しています（データの取得元を確認）";
         }
         catch (Exception ex)
         {
+            PokemonRosterGameComboBox.ItemsSource = null;
             ShowPokemonRoster(null);
+            PokemonSyncStatusTextBlock.Text = "クラウドから読み込めません";
             PokemonRosterStatusTextBlock.Text = $"読み込めませんでした: {ex.Message}";
         }
         finally
@@ -1106,12 +1328,11 @@ public partial class MainWindow : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// 登録データの保存先フォルダーをエクスプローラーで開きます。
+    /// データの取得元のサイトの「登録ポケモン・チーム」ページをブラウザで開きます。
     /// </summary>
-    private void PokemonRosterOpenFolderButton_Click(object sender, RoutedEventArgs e)
+    private void PokemonRosterOpenSiteButton_Click(object sender, RoutedEventArgs e)
     {
-        Directory.CreateDirectory(PokemonCommandController.AppDirectory);
-        Process.Start(new ProcessStartInfo("explorer.exe", $"\"{PokemonCommandController.AppDirectory}\"")
+        Process.Start(new ProcessStartInfo(PokemonSyncKeyController.RosterPageUrl(SelectedPokemonDataSourceValue()))
         {
             UseShellExecute = true
         });
