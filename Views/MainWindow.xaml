@@ -567,8 +567,12 @@
                                                 Canvas.Top="10" Click="DeepLSiteGoButton_Click" />
                                     </Canvas>
                                 </GroupBox>
-                                <GroupBox x:Name="GameGroupBox" HorizontalAlignment="Center" Height="317"
-                                          Canvas.Left="10" Canvas.Top="140" VerticalAlignment="Top" Width="1065">
+                            </Canvas>
+                        </TabItem>
+                        <TabItem x:Name="AutoBotGameTabItem" Header="Game">
+                            <Canvas x:Name="AutoBotGameCanvas" Background="#FFE5E5E5">
+                                <GroupBox x:Name="GameGroupBox" HorizontalAlignment="Center" Height="447"
+                                          Canvas.Left="10" Canvas.Top="10" VerticalAlignment="Top" Width="1065">
                                     <GroupBox.Header>
                                         <StackPanel Orientation="Horizontal">
                                             <TextBlock Text="Game" />
