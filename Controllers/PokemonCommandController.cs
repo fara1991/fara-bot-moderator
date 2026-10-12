@@ -43,9 +43,9 @@ public class PokemonCommandController
     };
 
     /// <summary>
-    /// 同期キーが無いときに登録系のコマンドで返すメッセージ
+    /// アクセスキーが無いときに登録系のコマンドで返すメッセージ
     /// </summary>
-    public const string MissingSyncKeyMessage = "同期キーが設定されていません（Auto Bot Settings > Game で設定してください）";
+    public const string MissingSyncKeyMessage = "アクセスキーが設定されていません（Auto Bot Settings > Game で設定してください）";
 
     /// <summary>
     /// 計算系コマンドで使用チームを読むときの待ち時間。クラウドに届かなくても計算は返すため、長くは待たない
@@ -91,11 +91,11 @@ public class PokemonCommandController
     /// <summary>
     /// PokemonCommandController のコンストラクタ
     /// データは Cloudflare に公開した CSV（本番か開発用のどちらか）を使い、ローカルに 1 日キャッシュします（起動中も 1 日ごとに読み直します）。
-    /// 登録したポケモン・チームは同期キーで取得元のサイトのクラウドに読み書きします（この PC には保存しません）。
+    /// 登録したポケモン・チームはアクセスキーで取得元のサイトのクラウドに読み書きします（この PC には保存しません）。
     /// </summary>
     /// <param name="format">ダメージ計算に使う対戦形式</param>
     /// <param name="dataSource">データの取得元（登録データのクラウドも同じサイト）</param>
-    /// <param name="syncKey">登録データの同期キー（空なら登録系のコマンドは使えません）</param>
+    /// <param name="syncKey">登録データのアクセスキー（空なら登録系のコマンドは使えません）</param>
     public PokemonCommandController(BattleFormat format, PokemonDataSource dataSource, string syncKey)
     {
         Format = format;
@@ -119,7 +119,7 @@ public class PokemonCommandController
     }
 
     /// <summary>
-    /// 登録データの同期キー。接続中でも切り替えられ、次のコマンドから切り替え先のキーを使います。
+    /// 登録データのアクセスキー。接続中でも切り替えられ、次のコマンドから切り替え先のキーを使います。
     /// </summary>
     public string SyncKey
     {
@@ -133,10 +133,10 @@ public class PokemonCommandController
     }
 
     /// <summary>
-    /// 指定した取得元・同期キーを使うコマンドを作成します。
+    /// 指定した取得元・アクセスキーを使うコマンドを作成します。
     /// </summary>
     /// <param name="dataSource">データの取得元</param>
-    /// <param name="syncKey">同期キー</param>
+    /// <param name="syncKey">アクセスキー</param>
     /// <returns>登録・閲覧系のコマンドと計算系のコマンド（データは共有）</returns>
     private static (PokeCommand Command, PokeCommand CalcCommand) CreateCommands(PokemonDataSource dataSource, string syncKey)
     {
@@ -171,11 +171,11 @@ public class PokemonCommandController
     }
 
     /// <summary>
-    /// 登録データの保存先を作成します。同期キーが無い（形式が違う）ときは、読み書きのたびに
-    /// 「同期キーが設定されていません」の <see cref="RosterUnavailableException"/> を投げる保存先を返します。
+    /// 登録データの保存先を作成します。アクセスキーが無い（形式が違う）ときは、読み書きのたびに
+    /// 「アクセスキーが設定されていません」の <see cref="RosterUnavailableException"/> を投げる保存先を返します。
     /// </summary>
     /// <param name="dataSource">データの取得元（同じサイトのクラウドを使う）</param>
-    /// <param name="syncKey">同期キー</param>
+    /// <param name="syncKey">アクセスキー</param>
     public static IRosterStore CreateRosterStore(PokemonDataSource dataSource, string? syncKey)
     {
         return RemoteRosterStore.IsValidKey(syncKey)
@@ -274,8 +274,8 @@ public class PokemonCommandController
     }
 
     /// <summary>
-    /// 同期キーが無いときの登録データの保存先。読み書きのたびに「同期キーが設定されていません」を投げます
-    /// （PokeCommand が「失敗しました: 同期キーが設定されていません（…）」としてチャットに返します）。
+    /// アクセスキーが無いときの登録データの保存先。読み書きのたびに「アクセスキーが設定されていません」を投げます
+    /// （PokeCommand が「失敗しました: アクセスキーが設定されていません（…）」としてチャットに返します）。
     /// </summary>
     private sealed class MissingSyncKeyRosterStore : IRosterStore
     {
@@ -290,7 +290,7 @@ public class PokemonCommandController
     }
 
     /// <summary>
-    /// 計算系コマンド用の登録データの保存先。使用チームを読めない（同期キーが無い・クラウドに届かない）ときは
+    /// 計算系コマンド用の登録データの保存先。使用チームを読めない（アクセスキーが無い・クラウドに届かない）ときは
     /// 登録なしとして扱い、計算は使用チームなしで続けます。計算系は登録データを書き換えません。
     /// </summary>
     private sealed class BestEffortRosterStore(IRosterStore inner, TimeSpan timeout) : IRosterStore
@@ -307,7 +307,7 @@ public class PokemonCommandController
             }
             catch (RosterUnavailableException ex)
             {
-                // メッセージに同期キーは含まれない
+                // メッセージにアクセスキーは含まれない
                 if (ex.Message != MissingSyncKeyMessage)
                     LogController.OutputLog($"<Warning> Pokemon roster (計算は使用チームなしで続行): {ex.Message}");
                 return null;
