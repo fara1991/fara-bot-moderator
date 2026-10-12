@@ -6,8 +6,8 @@ using FaraPokemonBattleAssistant.Core.Roster;
 namespace FaraBotModerator.Controllers;
 
 /// <summary>
-/// 登録データ（ポケモン・チーム）をサイトと共有する同期キーの発行・参加・作り直しを行います。
-/// 同期キーはパスワードと同じ扱いで、ログ・チャット・画面のメッセージには出しません。
+/// 登録データ（ポケモン・チーム）をサイトと共有するアクセスキーの発行・入力の確認・作り直しを行います。
+/// アクセスキーはパスワードと同じ扱いで、ログ・チャット・画面のメッセージには出しません。
 /// </summary>
 public static class PokemonSyncKeyController
 {
@@ -21,11 +21,11 @@ public static class PokemonSyncKeyController
     }
 
     /// <summary>
-    /// 新しい同期キーを作り、クラウドにつながるか確かめます（新しいキーの置き場は空です）。
+    /// 新しいアクセスキーを作り、クラウドにつながるか確かめます（新しいキーの置き場は空です）。
     /// </summary>
     /// <param name="dataSource">データの取得元（同じサイトのクラウドを使う）</param>
     /// <param name="cancellationToken">キャンセルトークン</param>
-    /// <returns>新しい同期キー</returns>
+    /// <returns>新しいアクセスキー</returns>
     /// <exception cref="RosterUnavailableException">クラウドに届かない</exception>
     public static async Task<string> IssueAsync(PokemonDataSource dataSource, CancellationToken cancellationToken = default)
     {
@@ -35,10 +35,10 @@ public static class PokemonSyncKeyController
     }
 
     /// <summary>
-    /// 同期キーでクラウドの登録データを読みます（キーが使えるかの確認を兼ねる）。
+    /// アクセスキーでクラウドの登録データを読みます（キーが使えるかの確認を兼ねる）。
     /// </summary>
     /// <param name="dataSource">データの取得元</param>
-    /// <param name="syncKey">同期キー（<see cref="RemoteRosterStore.IsValidKey"/> を満たすもの）</param>
+    /// <param name="syncKey">アクセスキー（<see cref="RemoteRosterStore.IsValidKey"/> を満たすもの）</param>
     /// <param name="cancellationToken">キャンセルトークン</param>
     /// <returns>登録データ（クラウドが空なら空の登録データ）</returns>
     /// <exception cref="RosterUnavailableException">キーが正しくない・作り直された・クラウドに届かない</exception>
@@ -49,13 +49,13 @@ public static class PokemonSyncKeyController
     }
 
     /// <summary>
-    /// 同期キーを作り直します。今のクラウドのデータを新しいキーの置き場に移し、古いキーの置き場を消します
+    /// アクセスキーを作り直します。今のクラウドのデータを新しいキーの置き場に移し、古いキーの置き場を消します
     /// （古いキーは使えなくなるので、サイトでも新しいキーを入力し直す必要があります）。
     /// </summary>
     /// <param name="dataSource">データの取得元</param>
-    /// <param name="oldKey">今の同期キー</param>
+    /// <param name="oldKey">今のアクセスキー</param>
     /// <param name="cancellationToken">キャンセルトークン</param>
-    /// <returns>NewKey: 新しい同期キー。OldKeyDeleted: 古いキーの置き場を消せたか（false でも新しいキーへの移動は済んでいる）</returns>
+    /// <returns>NewKey: 新しいアクセスキー。OldKeyDeleted: 古いキーの置き場を消せたか（false でも新しいキーへの移動は済んでいる）</returns>
     /// <exception cref="RosterUnavailableException">データを移せなかった（このときは古いキーのまま）</exception>
     public static async Task<(string NewKey, bool OldKeyDeleted)> RotateAsync(PokemonDataSource dataSource, string oldKey,
         CancellationToken cancellationToken = default)

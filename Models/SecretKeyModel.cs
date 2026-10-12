@@ -75,7 +75,7 @@ public class PokemonModel
     public string DataSource { get; init; } = "Production";
 
     /// <summary>
-    /// 登録データ（ポケモン・チーム）をサイトと共有する同期キー（43 文字）。空なら登録系のコマンドは使えません。
+    /// 登録データ（ポケモン・チーム）をサイトと共有するアクセスキー（43 文字）。空なら登録系のコマンドは使えません。
     /// パスワードと同じ扱いで、ログや画面のメッセージには出しません。
     /// </summary>
     [JsonPropertyName("syncKey")]

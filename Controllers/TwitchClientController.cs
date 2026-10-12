@@ -467,9 +467,9 @@ public class TwitchClientController
     }
 
     /// <summary>
-    /// ポケモンの登録データの同期キーを切り替えます（空にすると登録系のコマンドは使えなくなります）。
+    /// ポケモンの登録データのアクセスキーを切り替えます（空にすると登録系のコマンドは使えなくなります）。
     /// </summary>
-    /// <param name="syncKey">同期キー</param>
+    /// <param name="syncKey">アクセスキー</param>
     public void SetPokemonSyncKey(string syncKey)
     {
         _pokemonCommandController.SyncKey = syncKey;

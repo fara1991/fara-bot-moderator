@@ -15,14 +15,14 @@ namespace FaraBotModerator.Controllers;
 public static class PokemonRosterViewer
 {
     /// <summary>
-    /// 登録データを同期キーでクラウドから読み込み、ゲームごとにまとめます。特性・持ち物の名前は取得元のデータで引き、
+    /// 登録データをアクセスキーでクラウドから読み込み、ゲームごとにまとめます。特性・持ち物の名前は取得元のデータで引き、
     /// データを取得できないときは ID のまま表示します。
     /// </summary>
     /// <param name="dataSource">登録データのクラウドと、名前を引くデータの取得元</param>
-    /// <param name="syncKey">同期キー</param>
+    /// <param name="syncKey">アクセスキー</param>
     /// <param name="cancellationToken">キャンセルトークン</param>
     /// <returns>登録のあるゲームの一覧（登録が無ければ空）</returns>
-    /// <exception cref="RosterUnavailableException">同期キーが無い・クラウドから読めない</exception>
+    /// <exception cref="RosterUnavailableException">アクセスキーが無い・クラウドから読めない</exception>
     public static async Task<IReadOnlyList<RosterGameView>> LoadAsync(PokemonDataSource dataSource, string syncKey,
         CancellationToken cancellationToken = default)
     {
