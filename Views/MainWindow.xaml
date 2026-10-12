@@ -602,68 +602,127 @@
                                             <Button x:Name="GameResetButton" Content="初期化" Width="80" Height="30"
                                                     Margin="10,0,0,0" Click="GameResetButton_Click" />
                                         </StackPanel>
-                                        <!-- Game で Pokemon を選んだときの設定（Beat Saber のときは表の方を表示） -->
-                                        <StackPanel x:Name="PokemonSettingsPanel" DockPanel.Dock="Top" Visibility="Collapsed" Margin="0,10,0,0"
-                                                   TextBlock.Foreground="Black">
-                                            <StackPanel Orientation="Horizontal">
-                                                <Label x:Name="PokemonBattleFormatLabel" Content="対戦形式"
-                                                       VerticalAlignment="Center" Height="25" Width="115" />
-                                                <Button Style="{StaticResource MaterialDesignIconButton}"
-                                                        Width="20" Height="20" Margin="-5,0,0,0"
-                                                        ToolTipService.InitialShowDelay="0"
-                                                        ToolTipService.Placement="Bottom"
-                                                        ToolTipService.HorizontalOffset="-10"
-                                                        Click="HelpButton_Click">
-                                                    <Button.ToolTip>
-                                                        <ToolTip Content="!poke 系コマンドのダメージ計算に使う対戦形式。ダブルでは全体技の威力が 0.75 倍になります（接続中でも切り替え可能）" />
-                                                    </Button.ToolTip>
-                                                    <materialDesign:PackIcon Kind="HelpCircleOutline" Width="16" Height="16"
-                                                                             Foreground="Gray" />
-                                                </Button>
-                                                <ComboBox x:Name="PokemonBattleFormatComboBox" Width="120" Height="30"
-                                                          Margin="10,0,0,0" VerticalAlignment="Center" Foreground="Black"
-                                                          SelectionChanged="PokemonBattleFormatComboBox_SelectionChanged">
-                                                    <ComboBoxItem Content="シングル" Tag="Singles" IsSelected="True" />
-                                                    <ComboBoxItem Content="ダブル" Tag="Doubles" />
-                                                </ComboBox>
-                                            </StackPanel>
-                                            <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
-                                                <Label x:Name="PokemonDataSourceLabel" Content="データの取得元"
-                                                       VerticalAlignment="Center" Height="25" Width="115" />
-                                                <Button Style="{StaticResource MaterialDesignIconButton}"
-                                                        Width="20" Height="20" Margin="-5,0,0,0"
-                                                        ToolTipService.InitialShowDelay="0"
-                                                        ToolTipService.Placement="Bottom"
-                                                        ToolTipService.HorizontalOffset="-10"
-                                                        Click="HelpButton_Click">
-                                                    <Button.ToolTip>
-                                                        <ToolTip Content="ポケモン・技・持ち物などのデータをどのサイトから取得するか。ふだんは本番、公開前の確認には開発用を使います（接続中でも切り替え可能）" />
-                                                    </Button.ToolTip>
-                                                    <materialDesign:PackIcon Kind="HelpCircleOutline" Width="16" Height="16"
-                                                                             Foreground="Gray" />
-                                                </Button>
-                                                <ComboBox x:Name="PokemonDataSourceComboBox" Width="280" Height="30"
-                                                          Margin="10,0,0,0" VerticalAlignment="Center" Foreground="Black"
-                                                          SelectionChanged="PokemonDataSourceComboBox_SelectionChanged">
-                                                    <ComboBoxItem Content="本番（pokemon.fara-labs.com）" Tag="Production" IsSelected="True" />
-                                                    <ComboBoxItem Content="開発用（pokemon-dev.fara-labs.com）" Tag="Develop" />
-                                                </ComboBox>
-                                            </StackPanel>
-                                            <TextBlock Margin="5,10,0,0" Foreground="Gray" TextWrapping="Wrap"
-                                                       Text="!poke 系コマンド（ダメージ計算・素早さ比較・登録）の設定です。どちらも接続中に切り替えてもすぐ反映されます。" />
-                                        </StackPanel>
-                                        <DataGrid x:Name="BeatSaberBsrDataGrid"
-                                                  AutoGenerateColumns="False"
-                                                  CanUserAddRows="False"
-                                                  CanUserDeleteRows="False"
-                                                  IsReadOnly="True"
-                                                  TextBlock.Foreground="Black">
-                                            <DataGrid.Columns>
-                                                <DataGridTextColumn Header="正規表現パターン" Binding="{Binding Key}" Width="*" />
-                                                <DataGridTextColumn Header="変換後テキスト" Binding="{Binding Value}"
-                                                                    Width="*" />
-                                            </DataGrid.Columns>
-                                        </DataGrid>
+                                        <!-- Beat Saber を選んだときは変換パターンの表、ポケモンシリーズを選んだときは設定と登録データを表示する -->
+                                        <Grid>
+                                            <DataGrid x:Name="BeatSaberBsrDataGrid"
+                                                      AutoGenerateColumns="False"
+                                                      CanUserAddRows="False"
+                                                      CanUserDeleteRows="False"
+                                                      IsReadOnly="True"
+                                                      TextBlock.Foreground="Black">
+                                                <DataGrid.Columns>
+                                                    <DataGridTextColumn Header="正規表現パターン" Binding="{Binding Key}" Width="*" />
+                                                    <DataGridTextColumn Header="変換後テキスト" Binding="{Binding Value}"
+                                                                        Width="*" />
+                                                </DataGrid.Columns>
+                                            </DataGrid>
+                                            <Grid x:Name="PokemonSettingsPanel" Visibility="Collapsed" Margin="0,10,0,0" TextBlock.Foreground="Black">
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="*" />
+                                                </Grid.RowDefinitions>
+                                                <StackPanel Grid.Row="0">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <Label x:Name="PokemonBattleFormatLabel" Content="対戦形式"
+                                                               VerticalAlignment="Center" Height="25" Width="115" />
+                                                        <Button Style="{StaticResource MaterialDesignIconButton}"
+                                                                Width="20" Height="20" Margin="-5,0,0,0"
+                                                                ToolTipService.InitialShowDelay="0"
+                                                                ToolTipService.Placement="Bottom"
+                                                                ToolTipService.HorizontalOffset="-10"
+                                                                Click="HelpButton_Click">
+                                                            <Button.ToolTip>
+                                                                <ToolTip Content="!poke 系コマンドのダメージ計算に使う対戦形式。ダブルでは全体技の威力が 0.75 倍になります（接続中でも切り替え可能）" />
+                                                            </Button.ToolTip>
+                                                            <materialDesign:PackIcon Kind="HelpCircleOutline" Width="16" Height="16"
+                                                                                     Foreground="Gray" />
+                                                        </Button>
+                                                        <ComboBox x:Name="PokemonBattleFormatComboBox" Width="120" Height="30"
+                                                                  Margin="10,0,0,0" VerticalAlignment="Center" Foreground="Black"
+                                                                  SelectionChanged="PokemonBattleFormatComboBox_SelectionChanged">
+                                                            <ComboBoxItem Content="シングル" Tag="Singles" IsSelected="True" />
+                                                            <ComboBoxItem Content="ダブル" Tag="Doubles" />
+                                                        </ComboBox>
+                                                    </StackPanel>
+                                                    <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                                                        <Label x:Name="PokemonDataSourceLabel" Content="データの取得元"
+                                                               VerticalAlignment="Center" Height="25" Width="115" />
+                                                        <Button Style="{StaticResource MaterialDesignIconButton}"
+                                                                Width="20" Height="20" Margin="-5,0,0,0"
+                                                                ToolTipService.InitialShowDelay="0"
+                                                                ToolTipService.Placement="Bottom"
+                                                                ToolTipService.HorizontalOffset="-10"
+                                                                Click="HelpButton_Click">
+                                                            <Button.ToolTip>
+                                                                <ToolTip Content="ポケモン・技・持ち物などのデータをどのサイトから取得するか。ふだんは本番、公開前の確認には開発用を使います（接続中でも切り替え可能）" />
+                                                            </Button.ToolTip>
+                                                            <materialDesign:PackIcon Kind="HelpCircleOutline" Width="16" Height="16"
+                                                                                     Foreground="Gray" />
+                                                        </Button>
+                                                        <ComboBox x:Name="PokemonDataSourceComboBox" Width="280" Height="30"
+                                                                  Margin="10,0,0,0" VerticalAlignment="Center" Foreground="Black"
+                                                                  SelectionChanged="PokemonDataSourceComboBox_SelectionChanged">
+                                                            <ComboBoxItem Content="本番（pokemon.fara-labs.com）" Tag="Production" IsSelected="True" />
+                                                            <ComboBoxItem Content="開発用（pokemon-dev.fara-labs.com）" Tag="Develop" />
+                                                        </ComboBox>
+                                                    </StackPanel>
+                                                    <TextBlock Margin="5,10,0,0" Foreground="Gray" TextWrapping="Wrap"
+                                                               Text="!poke 系コマンド（ダメージ計算・素早さ比較・登録）の設定です。どちらも接続中に切り替えてもすぐ反映されます。" />
+                                                </StackPanel>
+                                                <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,14,0,6">
+                                                    <Label Content="登録データ" FontWeight="Bold" VerticalAlignment="Center" Width="115" />
+                                                    <Button Style="{StaticResource MaterialDesignIconButton}"
+                                                            Width="20" Height="20" Margin="-5,0,0,0"
+                                                            ToolTipService.InitialShowDelay="0"
+                                                            ToolTipService.Placement="Bottom"
+                                                            ToolTipService.HorizontalOffset="-10"
+                                                            Click="HelpButton_Click">
+                                                        <Button.ToolTip>
+                                                            <ToolTip Content="チャットの !poke add / add team / use team で登録したポケモンとチーム（この PC の %LOCALAPPDATA%\FaraBotModerator\pokemon-roster.json）。ここでは見るだけで、登録・削除はチャットのコマンドで行います" />
+                                                        </Button.ToolTip>
+                                                        <materialDesign:PackIcon Kind="HelpCircleOutline" Width="16" Height="16"
+                                                                                 Foreground="Gray" />
+                                                    </Button>
+                                                    <ComboBox x:Name="PokemonRosterGameComboBox" Width="280" Height="30" Margin="10,0,0,0"
+                                                              VerticalAlignment="Center" Foreground="Black" DisplayMemberPath="DisplayName"
+                                                              SelectionChanged="PokemonRosterGameComboBox_SelectionChanged" />
+                                                    <Button x:Name="PokemonRosterReloadButton" Content="再読み込み" Width="100" Height="30"
+                                                            Margin="10,0,0,0" Click="PokemonRosterReloadButton_Click" />
+                                                    <Button x:Name="PokemonRosterOpenFolderButton" Content="保存先を開く" Width="120" Height="30"
+                                                            Margin="10,0,0,0" Click="PokemonRosterOpenFolderButton_Click" />
+                                                    <TextBlock x:Name="PokemonRosterStatusTextBlock" Margin="10,0,0,0" VerticalAlignment="Center"
+                                                               Foreground="Gray" TextWrapping="Wrap" MaxWidth="370" />
+                                                </StackPanel>
+                                                <Grid Grid.Row="2">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="3*" />
+                                                        <ColumnDefinition Width="2*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <DataGrid x:Name="PokemonRosterDataGrid" Grid.Column="0" Margin="0,0,5,0"
+                                                              AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False"
+                                                              IsReadOnly="True" TextBlock.Foreground="Black">
+                                                        <DataGrid.Columns>
+                                                            <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="50" />
+                                                            <DataGridTextColumn Header="ポケモン" Binding="{Binding Name}" Width="*" />
+                                                            <DataGridTextColumn Header="性格" Binding="{Binding Nature}" Width="80" />
+                                                            <DataGridTextColumn Header="努力値" Binding="{Binding EVs}" Width="*" />
+                                                            <DataGridTextColumn Header="特性" Binding="{Binding Ability}" Width="*" />
+                                                            <DataGridTextColumn x:Name="PokemonRosterTeraColumn" Header="テラス" Binding="{Binding TeraType}" Width="70" />
+                                                        </DataGrid.Columns>
+                                                    </DataGrid>
+                                                    <DataGrid x:Name="PokemonTeamDataGrid" Grid.Column="1" Margin="5,0,0,0"
+                                                              AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False"
+                                                              IsReadOnly="True" TextBlock.Foreground="Black">
+                                                        <DataGrid.Columns>
+                                                            <DataGridTextColumn Header="チーム" Binding="{Binding Number}" Width="70" />
+                                                            <DataGridTextColumn Header="状態" Binding="{Binding Active}" Width="85" />
+                                                            <DataGridTextColumn Header="メンバー（#登録 ID と持ち物）" Binding="{Binding Members}" Width="*" />
+                                                        </DataGrid.Columns>
+                                                    </DataGrid>
+                                                </Grid>
+                                            </Grid>
+                                        </Grid>
                                     </DockPanel>
                                 </GroupBox>
                             </Canvas>

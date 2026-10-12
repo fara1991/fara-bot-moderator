@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -1046,6 +1048,73 @@ public partial class MainWindow : INotifyPropertyChanged
         PokemonSettingsPanel.Visibility = isPokemon ? Visibility.Visible : Visibility.Collapsed;
         BeatSaberBsrDataGrid.Visibility = isPokemon ? Visibility.Collapsed : Visibility.Visible;
         if (!isPokemon) BeatSaberBsrDataGrid.ItemsSource = TextRegexController.LoadBsrChatModel().BeatSaberChat;
+        else _ = LoadPokemonRosterAsync();
+    }
+
+    /// <summary>
+    /// 登録したポケモン・チームを読み込み、ゲームの選択欄と表に表示します（読むだけで、書き換えはしません）。
+    /// 選んでいたゲームは、読み直したあとも選んだままにします。
+    /// </summary>
+    private async Task LoadPokemonRosterAsync()
+    {
+        var selectedKey = (PokemonRosterGameComboBox.SelectedItem as RosterGameView)?.Key;
+        PokemonRosterReloadButton.IsEnabled = false;
+        PokemonRosterStatusTextBlock.Text = "読み込み中…";
+        try
+        {
+            var games = await PokemonRosterViewer.LoadAsync(
+                PokemonCommandController.ParseDataSource(SelectedPokemonDataSource()));
+            PokemonRosterGameComboBox.ItemsSource = games;
+            PokemonRosterGameComboBox.SelectedItem =
+                games.FirstOrDefault(g => g.Key == selectedKey) ?? games.FirstOrDefault();
+            if (games.Count == 0) ShowPokemonRoster(null);
+            PokemonRosterStatusTextBlock.Text = games.Count == 0
+                ? "まだ登録がありません（チャットの !poke add で登録します）"
+                : games.All(g => g.NamesResolved)
+                    ? $"{DateTime.Now:HH:mm:ss} に読み込み"
+                    : $"{DateTime.Now:HH:mm:ss} に読み込み。データを取得できなかったため、特性・持ち物は ID で表示しています（データの取得元を確認）";
+        }
+        catch (Exception ex)
+        {
+            ShowPokemonRoster(null);
+            PokemonRosterStatusTextBlock.Text = $"読み込めませんでした: {ex.Message}";
+        }
+        finally
+        {
+            PokemonRosterReloadButton.IsEnabled = true;
+        }
+    }
+
+    /// <summary>
+    /// 選んだゲームの登録ポケモンとチームを表に出します。
+    /// </summary>
+    private void ShowPokemonRoster(RosterGameView? game)
+    {
+        PokemonRosterDataGrid.ItemsSource = game?.Pokemon;
+        PokemonTeamDataGrid.ItemsSource = game?.Teams;
+        PokemonRosterTeraColumn.Visibility = game?.HasTeraType == true ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private void PokemonRosterGameComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        ShowPokemonRoster(PokemonRosterGameComboBox.SelectedItem as RosterGameView);
+    }
+
+    private async void PokemonRosterReloadButton_Click(object sender, RoutedEventArgs e)
+    {
+        await LoadPokemonRosterAsync();
+    }
+
+    /// <summary>
+    /// 登録データの保存先フォルダーをエクスプローラーで開きます。
+    /// </summary>
+    private void PokemonRosterOpenFolderButton_Click(object sender, RoutedEventArgs e)
+    {
+        Directory.CreateDirectory(PokemonCommandController.AppDirectory);
+        Process.Start(new ProcessStartInfo("explorer.exe", $"\"{PokemonCommandController.AppDirectory}\"")
+        {
+            UseShellExecute = true
+        });
     }
 
     private void GameResetButton_Click(object sender, RoutedEventArgs e)
