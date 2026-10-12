@@ -87,48 +87,6 @@
                             <Button x:Name="TwitchDisconnectButton" Content="Disconnect" Height="30" Width="105"
                                     HorizontalAlignment="Left" Canvas.Left="420" Canvas.Top="361"
                                     VerticalAlignment="Center" Click="TwitchDisconnectButton_Click" />
-                            <StackPanel Orientation="Horizontal" Canvas.Top="400">
-                                <Label x:Name="PokemonBattleFormatLabel" Content="Pokemon Format"
-                                       VerticalAlignment="Center" Height="25" />
-                                <Button Style="{StaticResource MaterialDesignIconButton}"
-                                        Width="20" Height="20" Margin="-8,0,0,0"
-                                        ToolTipService.InitialShowDelay="0"
-                                        ToolTipService.Placement="Bottom"
-                                        ToolTipService.HorizontalOffset="-10"
-                                        Click="HelpButton_Click">
-                                    <Button.ToolTip>
-                                        <ToolTip Content="!poke 系コマンドのダメージ計算に使う対戦形式（接続中でも切り替え可能）" />
-                                    </Button.ToolTip>
-                                    <materialDesign:PackIcon Kind="HelpCircleOutline" Width="16" Height="16"
-                                                             Foreground="Gray" />
-                                </Button>
-                                <ComboBox x:Name="PokemonBattleFormatComboBox" Width="120" Height="30"
-                                          Margin="10,0,0,0" VerticalAlignment="Center"
-                                          SelectionChanged="PokemonBattleFormatComboBox_SelectionChanged">
-                                    <ComboBoxItem Content="Singles" IsSelected="True" />
-                                    <ComboBoxItem Content="Doubles" />
-                                </ComboBox>
-                                <Label x:Name="PokemonDataSourceLabel" Content="Pokemon Data" Margin="20,0,0,0"
-                                       VerticalAlignment="Center" Height="25" />
-                                <Button Style="{StaticResource MaterialDesignIconButton}"
-                                        Width="20" Height="20" Margin="-8,0,0,0"
-                                        ToolTipService.InitialShowDelay="0"
-                                        ToolTipService.Placement="Bottom"
-                                        ToolTipService.HorizontalOffset="-10"
-                                        Click="HelpButton_Click">
-                                    <Button.ToolTip>
-                                        <ToolTip Content="!poke 系コマンドのデータの取得元。Production: pokemon.fara-labs.com、Develop: pokemon-dev.fara-labs.com（接続中でも切り替え可能）" />
-                                    </Button.ToolTip>
-                                    <materialDesign:PackIcon Kind="HelpCircleOutline" Width="16" Height="16"
-                                                             Foreground="Gray" />
-                                </Button>
-                                <ComboBox x:Name="PokemonDataSourceComboBox" Width="120" Height="30"
-                                          Margin="10,0,0,0" VerticalAlignment="Center"
-                                          SelectionChanged="PokemonDataSourceComboBox_SelectionChanged">
-                                    <ComboBoxItem Content="Production" IsSelected="True" />
-                                    <ComboBoxItem Content="Develop" />
-                                </ComboBox>
-                            </StackPanel>
                             <GroupBox x:Name="TwitchClientGroupBox" HorizontalAlignment="Center"
                                       Height="120" VerticalAlignment="Top" Width="533">
                                 <GroupBox.Header>
@@ -621,7 +579,7 @@
                                                     ToolTipService.HorizontalOffset="-10"
                                                     Click="HelpButton_Click">
                                                 <Button.ToolTip>
-                                                    <ToolTip Content="ゲームごとのチャット変換パターン設定" />
+                                                    <ToolTip Content="ゲームごとの設定（Beat Saber: チャット変換パターン、Pokemon: !poke 系コマンドの対戦形式とデータの取得元）" />
                                                 </Button.ToolTip>
                                                 <materialDesign:PackIcon Kind="HelpCircleOutline" Width="16"
                                                                          Height="16" Foreground="White" />
@@ -634,9 +592,60 @@
                                                       Foreground="Black"
                                                       SelectionChanged="GameSelectComboBox_SelectionChanged">
                                                 <ComboBoxItem Content="Beat Saber" IsSelected="True" />
+                                                <ComboBoxItem Content="Pokemon" />
                                             </ComboBox>
                                             <Button x:Name="GameResetButton" Content="初期化" Width="80" Height="30"
                                                     Margin="10,0,0,0" Click="GameResetButton_Click" />
+                                        </StackPanel>
+                                        <!-- Game で Pokemon を選んだときの設定（Beat Saber のときは表の方を表示） -->
+                                        <StackPanel x:Name="PokemonSettingsPanel" DockPanel.Dock="Top" Visibility="Collapsed" Margin="0,10,0,0"
+                                                   TextBlock.Foreground="Black">
+                                            <StackPanel Orientation="Horizontal">
+                                                <Label x:Name="PokemonBattleFormatLabel" Content="Pokemon Format"
+                                                       VerticalAlignment="Center" Height="25" Width="115" />
+                                                <Button Style="{StaticResource MaterialDesignIconButton}"
+                                                        Width="20" Height="20" Margin="-5,0,0,0"
+                                                        ToolTipService.InitialShowDelay="0"
+                                                        ToolTipService.Placement="Bottom"
+                                                        ToolTipService.HorizontalOffset="-10"
+                                                        Click="HelpButton_Click">
+                                                    <Button.ToolTip>
+                                                        <ToolTip Content="!poke 系コマンドのダメージ計算に使う対戦形式（接続中でも切り替え可能）" />
+                                                    </Button.ToolTip>
+                                                    <materialDesign:PackIcon Kind="HelpCircleOutline" Width="16" Height="16"
+                                                                             Foreground="Gray" />
+                                                </Button>
+                                                <ComboBox x:Name="PokemonBattleFormatComboBox" Width="120" Height="30"
+                                                          Margin="10,0,0,0" VerticalAlignment="Center" Foreground="Black"
+                                                          SelectionChanged="PokemonBattleFormatComboBox_SelectionChanged">
+                                                    <ComboBoxItem Content="Singles" IsSelected="True" />
+                                                    <ComboBoxItem Content="Doubles" />
+                                                </ComboBox>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                                                <Label x:Name="PokemonDataSourceLabel" Content="Pokemon Data"
+                                                       VerticalAlignment="Center" Height="25" Width="115" />
+                                                <Button Style="{StaticResource MaterialDesignIconButton}"
+                                                        Width="20" Height="20" Margin="-5,0,0,0"
+                                                        ToolTipService.InitialShowDelay="0"
+                                                        ToolTipService.Placement="Bottom"
+                                                        ToolTipService.HorizontalOffset="-10"
+                                                        Click="HelpButton_Click">
+                                                    <Button.ToolTip>
+                                                        <ToolTip Content="!poke 系コマンドのデータの取得元。Production: pokemon.fara-labs.com、Develop: pokemon-dev.fara-labs.com（接続中でも切り替え可能）" />
+                                                    </Button.ToolTip>
+                                                    <materialDesign:PackIcon Kind="HelpCircleOutline" Width="16" Height="16"
+                                                                             Foreground="Gray" />
+                                                </Button>
+                                                <ComboBox x:Name="PokemonDataSourceComboBox" Width="120" Height="30"
+                                                          Margin="10,0,0,0" VerticalAlignment="Center" Foreground="Black"
+                                                          SelectionChanged="PokemonDataSourceComboBox_SelectionChanged">
+                                                    <ComboBoxItem Content="Production" IsSelected="True" />
+                                                    <ComboBoxItem Content="Develop" />
+                                                </ComboBox>
+                                            </StackPanel>
+                                            <TextBlock Margin="5,10,0,0" Foreground="Gray" TextWrapping="Wrap"
+                                                       Text="!poke 系コマンド（ダメージ計算・素早さ比較・登録）の設定です。どちらも接続中に切り替えてもすぐ反映されます。" />
                                         </StackPanel>
                                         <DataGrid x:Name="BeatSaberBsrDataGrid"
                                                   AutoGenerateColumns="False"

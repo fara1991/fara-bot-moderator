@@ -1027,16 +1027,39 @@ public partial class MainWindow : INotifyPropertyChanged
         _twitchClientController.SetPokemonDataSource(SelectedPokemonDataSource());
     }
 
+    /// <summary>
+    /// Game の選択で Pokemon が選ばれているかを返します。
+    /// </summary>
+    private bool IsPokemonGameSelected()
+    {
+        return (GameSelectComboBox.SelectedItem as ComboBoxItem)?.Content?.ToString() == "Pokemon";
+    }
+
+    /// <summary>
+    /// Game の選択に合わせて、Beat Saber の変換パターンか Pokemon の設定のどちらかを表示します。
+    /// </summary>
     private void GameSelectComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (BeatSaberBsrDataGrid is null) return;
-        BeatSaberBsrDataGrid.ItemsSource = TextRegexController.LoadBsrChatModel().BeatSaberChat;
+        // XAML 読み込み中（IsSelected の初期化）にも呼ばれるため、まだ作られていない要素があれば何もしない
+        if (BeatSaberBsrDataGrid is null || PokemonSettingsPanel is null) return;
+        var isPokemon = IsPokemonGameSelected();
+        PokemonSettingsPanel.Visibility = isPokemon ? Visibility.Visible : Visibility.Collapsed;
+        BeatSaberBsrDataGrid.Visibility = isPokemon ? Visibility.Collapsed : Visibility.Visible;
+        if (!isPokemon) BeatSaberBsrDataGrid.ItemsSource = TextRegexController.LoadBsrChatModel().BeatSaberChat;
     }
 
     private void GameResetButton_Click(object sender, RoutedEventArgs e)
     {
         var result = MessageBox.Show("設定を初期値に戻しますか？", "確認", MessageBoxButton.OKCancel, MessageBoxImage.Warning);
         if (result != MessageBoxResult.OK) return;
+
+        if (IsPokemonGameSelected())
+        {
+            // Singles / Production に戻す（接続中なら SelectionChanged で即座に反映される）
+            PokemonBattleFormatComboBox.SelectedIndex = 0;
+            PokemonDataSourceComboBox.SelectedIndex = 0;
+            return;
+        }
 
         TextRegexController.ResetBsrChatModel();
         BeatSaberBsrDataGrid.ItemsSource = TextRegexController.LoadBsrChatModel().BeatSaberChat;
