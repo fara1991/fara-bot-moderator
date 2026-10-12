@@ -992,11 +992,11 @@ public partial class MainWindow : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// ポケモンの対戦形式コンボボックスで選択中の値（"Singles" / "Doubles"）を返します。
+    /// ポケモンの対戦形式コンボボックスで選択中の値（Tag の "Singles" / "Doubles"）を返します。
     /// </summary>
     private string SelectedPokemonBattleFormat()
     {
-        return (PokemonBattleFormatComboBox.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "Singles";
+        return (PokemonBattleFormatComboBox.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "Singles";
     }
 
     /// <summary>
@@ -1010,11 +1010,11 @@ public partial class MainWindow : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// ポケモンのデータの取得元コンボボックスで選択中の値（"Production" / "Develop"）を返します。
+    /// ポケモンのデータの取得元コンボボックスで選択中の値（Tag の "Production" / "Develop"）を返します。
     /// </summary>
     private string SelectedPokemonDataSource()
     {
-        return (PokemonDataSourceComboBox.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "Production";
+        return (PokemonDataSourceComboBox.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "Production";
     }
 
     /// <summary>
@@ -1028,11 +1028,11 @@ public partial class MainWindow : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// Game の選択で Pokemon が選ばれているかを返します。
+    /// Game の選択でポケモンシリーズが選ばれているかを返します。
     /// </summary>
     private bool IsPokemonGameSelected()
     {
-        return (GameSelectComboBox.SelectedItem as ComboBoxItem)?.Content?.ToString() == "Pokemon";
+        return (GameSelectComboBox.SelectedItem as ComboBoxItem)?.Tag?.ToString() == "Pokemon";
     }
 
     /// <summary>
