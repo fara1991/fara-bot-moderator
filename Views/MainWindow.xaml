@@ -583,7 +583,7 @@
                                                     ToolTipService.HorizontalOffset="-10"
                                                     Click="HelpButton_Click">
                                                 <Button.ToolTip>
-                                                    <ToolTip Content="ゲームごとの設定（Beat Saber: チャット変換パターン、Pokemon: !poke 系コマンドの対戦形式とデータの取得元）" />
+                                                    <ToolTip Content="ゲームごとの設定（Beat Saber: チャット変換パターン、ポケモンシリーズ: !poke 系コマンドの対戦形式とデータの取得元）" />
                                                 </Button.ToolTip>
                                                 <materialDesign:PackIcon Kind="HelpCircleOutline" Width="16"
                                                                          Height="16" Foreground="White" />
@@ -595,8 +595,9 @@
                                             <ComboBox x:Name="GameSelectComboBox" Width="150" Height="30"
                                                       Foreground="Black"
                                                       SelectionChanged="GameSelectComboBox_SelectionChanged">
-                                                <ComboBoxItem Content="Beat Saber" IsSelected="True" />
-                                                <ComboBoxItem Content="Pokemon" />
+                                                <!-- Tag はコードで判定に使う値（表示名を変えても動きが変わらないようにする） -->
+                                                <ComboBoxItem Content="Beat Saber" Tag="BeatSaber" IsSelected="True" />
+                                                <ComboBoxItem Content="ポケモンシリーズ" Tag="Pokemon" />
                                             </ComboBox>
                                             <Button x:Name="GameResetButton" Content="初期化" Width="80" Height="30"
                                                     Margin="10,0,0,0" Click="GameResetButton_Click" />
@@ -605,7 +606,7 @@
                                         <StackPanel x:Name="PokemonSettingsPanel" DockPanel.Dock="Top" Visibility="Collapsed" Margin="0,10,0,0"
                                                    TextBlock.Foreground="Black">
                                             <StackPanel Orientation="Horizontal">
-                                                <Label x:Name="PokemonBattleFormatLabel" Content="Pokemon Format"
+                                                <Label x:Name="PokemonBattleFormatLabel" Content="対戦形式"
                                                        VerticalAlignment="Center" Height="25" Width="115" />
                                                 <Button Style="{StaticResource MaterialDesignIconButton}"
                                                         Width="20" Height="20" Margin="-5,0,0,0"
@@ -614,7 +615,7 @@
                                                         ToolTipService.HorizontalOffset="-10"
                                                         Click="HelpButton_Click">
                                                     <Button.ToolTip>
-                                                        <ToolTip Content="!poke 系コマンドのダメージ計算に使う対戦形式（接続中でも切り替え可能）" />
+                                                        <ToolTip Content="!poke 系コマンドのダメージ計算に使う対戦形式。ダブルでは全体技の威力が 0.75 倍になります（接続中でも切り替え可能）" />
                                                     </Button.ToolTip>
                                                     <materialDesign:PackIcon Kind="HelpCircleOutline" Width="16" Height="16"
                                                                              Foreground="Gray" />
@@ -622,12 +623,12 @@
                                                 <ComboBox x:Name="PokemonBattleFormatComboBox" Width="120" Height="30"
                                                           Margin="10,0,0,0" VerticalAlignment="Center" Foreground="Black"
                                                           SelectionChanged="PokemonBattleFormatComboBox_SelectionChanged">
-                                                    <ComboBoxItem Content="Singles" IsSelected="True" />
-                                                    <ComboBoxItem Content="Doubles" />
+                                                    <ComboBoxItem Content="シングル" Tag="Singles" IsSelected="True" />
+                                                    <ComboBoxItem Content="ダブル" Tag="Doubles" />
                                                 </ComboBox>
                                             </StackPanel>
                                             <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
-                                                <Label x:Name="PokemonDataSourceLabel" Content="Pokemon Data"
+                                                <Label x:Name="PokemonDataSourceLabel" Content="データの取得元"
                                                        VerticalAlignment="Center" Height="25" Width="115" />
                                                 <Button Style="{StaticResource MaterialDesignIconButton}"
                                                         Width="20" Height="20" Margin="-5,0,0,0"
@@ -636,16 +637,16 @@
                                                         ToolTipService.HorizontalOffset="-10"
                                                         Click="HelpButton_Click">
                                                     <Button.ToolTip>
-                                                        <ToolTip Content="!poke 系コマンドのデータの取得元。Production: pokemon.fara-labs.com、Develop: pokemon-dev.fara-labs.com（接続中でも切り替え可能）" />
+                                                        <ToolTip Content="ポケモン・技・持ち物などのデータをどのサイトから取得するか。ふだんは本番、公開前の確認には開発用を使います（接続中でも切り替え可能）" />
                                                     </Button.ToolTip>
                                                     <materialDesign:PackIcon Kind="HelpCircleOutline" Width="16" Height="16"
                                                                              Foreground="Gray" />
                                                 </Button>
-                                                <ComboBox x:Name="PokemonDataSourceComboBox" Width="120" Height="30"
+                                                <ComboBox x:Name="PokemonDataSourceComboBox" Width="280" Height="30"
                                                           Margin="10,0,0,0" VerticalAlignment="Center" Foreground="Black"
                                                           SelectionChanged="PokemonDataSourceComboBox_SelectionChanged">
-                                                    <ComboBoxItem Content="Production" IsSelected="True" />
-                                                    <ComboBoxItem Content="Develop" />
+                                                    <ComboBoxItem Content="本番（pokemon.fara-labs.com）" Tag="Production" IsSelected="True" />
+                                                    <ComboBoxItem Content="開発用（pokemon-dev.fara-labs.com）" Tag="Develop" />
                                                 </ComboBox>
                                             </StackPanel>
                                             <TextBlock Margin="5,10,0,0" Foreground="Gray" TextWrapping="Wrap"

@@ -218,7 +218,7 @@ DeepL APIを使用した自動翻訳機能の設定です。
 | ゲーム | 設定 |
 |---|---|
 | Beat Saber | ソングリクエストのボットのメッセージを日本語に変換するパターン（正規表現パターン → 変換後テキスト） |
-| Pokemon | `!poke` 系コマンドの対戦形式（Pokemon Format）とデータの取得元（Pokemon Data）。詳しくは [5.4](#54-ポケモンコマンドpoke) |
+| ポケモンシリーズ | `!poke` 系コマンドの「対戦形式」と「データの取得元」。詳しくは [5.4](#54-ポケモンコマンドpoke) |
 
 ### 5.3. タイマー設定（Timer）
 
@@ -316,10 +316,10 @@ DeepL APIを使用した自動翻訳機能の設定です。
 
 - **登録・削除・使用チームの変更（`add` / `rm` / `use team` / `unuse team`）は配信者本人とモデレーターのみ**行えます。視聴者が実行すると「…は配信者・モデレーターのみ行えます」と返ります（閲覧・計算系は誰でも使えます）
 - 計算系（`dmg` / `calc` / `diff`）は同じユーザーの連続実行を5秒間無視します（登録系には掛かりません）
-- ダメージ計算の対戦形式（シングル / ダブル）は Auto Bot Settings > Game で「Pokemon」を選び、「Pokemon Format」で切り替えます（接続中でもすぐ反映され、`secrets.json` の `pokemon.battleFormat` に保存されます）
+- ダメージ計算の対戦形式（シングル / ダブル）は Auto Bot Settings > Game で「ポケモンシリーズ」を選び、「対戦形式」で切り替えます（接続中でもすぐ反映され、`secrets.json` の `pokemon.battleFormat` に保存されます）
 - 登録データは `%LOCALAPPDATA%\FaraBotModerator\pokemon-roster.json` に保存されます（`secrets.json` とは別ファイル）
 - 計算ロジック: [fara-pokemon-battle-assistant](https://github.com/fara1991/fara-pokemon-battle-assistant)（ブラウザ版: https://pokemon.fara-labs.com/command ）
-- ポケモンのデータの取得元は同じ画面の「Pokemon Data」で切り替えます（Production: https://pokemon.fara-labs.com/data/ 、Develop: https://pokemon-dev.fara-labs.com/data/ 。接続中でもすぐ反映され、`secrets.json` の `pokemon.dataSource` に保存されます。1 日キャッシュ）
+- ポケモンのデータの取得元は同じ画面の「データの取得元」で切り替えます（本番: https://pokemon.fara-labs.com/data/ 、開発用: https://pokemon-dev.fara-labs.com/data/ 。接続中でもすぐ反映され、`secrets.json` の `pokemon.dataSource` に保存されます。1 日キャッシュ）
 
 ---
 
