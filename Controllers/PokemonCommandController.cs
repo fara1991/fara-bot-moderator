@@ -54,7 +54,17 @@ public class PokemonCommandController
 
     private static readonly char[] Separators = { ' ', '　', '\t', ',', '、' };
 
-    private readonly string _appDirectory;
+    /// <summary>
+    /// ボットのデータの保存先（%LOCALAPPDATA%\FaraBotModerator）
+    /// </summary>
+    public static readonly string AppDirectory = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "FaraBotModerator");
+
+    /// <summary>
+    /// 登録したポケモン・チームの保存先
+    /// </summary>
+    public static readonly string RosterFilePath = Path.Combine(AppDirectory, "pokemon-roster.json");
+
     private readonly RosterRepository _roster;
     private volatile PokeCommand _command;
     private PokemonDataSource _dataSource;
@@ -77,9 +87,7 @@ public class PokemonCommandController
     public PokemonCommandController(BattleFormat format, PokemonDataSource dataSource)
     {
         Format = format;
-        _appDirectory = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "FaraBotModerator");
-        _roster = new RosterRepository(new FileRosterStore(Path.Combine(_appDirectory, "pokemon-roster.json")));
+        _roster = new RosterRepository(new FileRosterStore(RosterFilePath));
         _dataSource = dataSource;
         _command = CreateCommand(dataSource);
     }
@@ -99,18 +107,28 @@ public class PokemonCommandController
     }
 
     /// <summary>
-    /// 指定した取得元のデータを使うコマンドを作成します。キャッシュは取得元ごとに別のフォルダに保存します。
+    /// 指定した取得元のデータを使うコマンドを作成します。
     /// </summary>
     /// <param name="dataSource">データの取得元</param>
     /// <returns>ポケモンコマンド</returns>
     private PokeCommand CreateCommand(PokemonDataSource dataSource)
     {
+        return new PokeCommand(CreateCatalog(dataSource), _roster);
+    }
+
+    /// <summary>
+    /// 指定した取得元のデータ（CSV）を読むカタログを作成します。キャッシュは取得元ごとに別のフォルダに保存します。
+    /// </summary>
+    /// <param name="dataSource">データの取得元</param>
+    /// <returns>データカタログ</returns>
+    public static DataCatalog CreateCatalog(PokemonDataSource dataSource)
+    {
         var (url, cacheFolder) = dataSource == PokemonDataSource.Develop
             ? (DevelopDataUrl, "pokemon-data-dev")
             : (ProductionDataUrl, "pokemon-data");
         var source = new CachingDataSource(new HttpDataSource(HttpClient, url),
-            Path.Combine(_appDirectory, cacheFolder), TimeSpan.FromDays(1));
-        return new PokeCommand(new DataCatalog(source, TimeSpan.FromDays(1)), _roster);
+            Path.Combine(AppDirectory, cacheFolder), TimeSpan.FromDays(1));
+        return new DataCatalog(source, TimeSpan.FromDays(1));
     }
 
     /// <summary>
