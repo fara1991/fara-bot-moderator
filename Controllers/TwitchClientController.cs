@@ -57,7 +57,7 @@ public class TwitchClientController
         _uniqueChannelPointController = new UniqueChannelPointController(_secretKeys);
         _pokemonCommandController =
             new PokemonCommandController(PokemonCommandController.ParseFormat(_secretKeys.Pokemon.BattleFormat),
-                PokemonCommandController.ParseDataSource(_secretKeys.Pokemon.DataSource));
+                PokemonCommandController.ParseDataSource(_secretKeys.Pokemon.DataSource), _secretKeys.Pokemon.SyncKey);
     }
 
     /// <summary>
@@ -464,6 +464,15 @@ public class TwitchClientController
     public void SetPokemonDataSource(string dataSource)
     {
         _pokemonCommandController.DataSource = PokemonCommandController.ParseDataSource(dataSource);
+    }
+
+    /// <summary>
+    /// ポケモンの登録データの同期キーを切り替えます（空にすると登録系のコマンドは使えなくなります）。
+    /// </summary>
+    /// <param name="syncKey">同期キー</param>
+    public void SetPokemonSyncKey(string syncKey)
+    {
+        _pokemonCommandController.SyncKey = syncKey;
     }
 
     /// <summary>

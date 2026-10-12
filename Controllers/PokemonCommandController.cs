@@ -20,23 +20,37 @@ public class PokemonCommandController
     /// <summary>
     /// 本番のポケモンのデータ（CSV）の URL
     /// </summary>
-    private const string ProductionDataUrl = "https://pokemon.fara-labs.com/data/";
+    private const string ProductionDataUrl = RemoteRosterStore.ProductionBaseUrl + "data/";
 
     /// <summary>
     /// 開発用のポケモンのデータ（CSV）の URL。
     /// pokemon-dev は Cloudflare Access で保護されているため、/data/ を Access の対象外（Bypass）にしておく必要があります。
     /// </summary>
-    private const string DevelopDataUrl = "https://pokemon-dev.fara-labs.com/data/";
+    private const string DevelopDataUrl = RemoteRosterStore.DevelopBaseUrl + "data/";
     private static readonly TimeSpan UserCooldown = TimeSpan.FromSeconds(5);
-    private static readonly HttpClient HttpClient = CreateHttpClient();
 
     /// <summary>
-    /// 連投対策のクールダウンを掛けるサブコマンド（計算系）
+    /// データ・登録データの取得に使う HttpClient
     /// </summary>
-    private static readonly HashSet<string> CooldownSubCommands = new(StringComparer.OrdinalIgnoreCase)
+    internal static readonly HttpClient HttpClient = CreateHttpClient();
+
+    /// <summary>
+    /// 計算系のサブコマンド。連投対策のクールダウンを掛け、登録データ（使用チーム）を読めなくても計算は返します
+    /// </summary>
+    private static readonly HashSet<string> CalcSubCommands = new(StringComparer.OrdinalIgnoreCase)
     {
         "dmg", "damage", "calc", "ev", "diff", "speed", "spd"
     };
+
+    /// <summary>
+    /// 同期キーが無いときに登録系のコマンドで返すメッセージ
+    /// </summary>
+    public const string MissingSyncKeyMessage = "同期キーが設定されていません（Auto Bot Settings > Game で設定してください）";
+
+    /// <summary>
+    /// 計算系コマンドで使用チームを読むときの待ち時間。クラウドに届かなくても計算は返すため、長くは待たない
+    /// </summary>
+    private static readonly TimeSpan CalcRosterTimeout = TimeSpan.FromSeconds(10);
 
     /// <summary>
     /// データ取得用の HttpClient を作成します。
@@ -55,19 +69,16 @@ public class PokemonCommandController
     private static readonly char[] Separators = { ' ', '　', '\t', ',', '、' };
 
     /// <summary>
-    /// ボットのデータの保存先（%LOCALAPPDATA%\FaraBotModerator）
+    /// ボットのデータの保存先（%LOCALAPPDATA%\FaraBotModerator）。ポケモンのデータ（CSV）のキャッシュを置きます
     /// </summary>
     public static readonly string AppDirectory = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "FaraBotModerator");
 
-    /// <summary>
-    /// 登録したポケモン・チームの保存先
-    /// </summary>
-    public static readonly string RosterFilePath = Path.Combine(AppDirectory, "pokemon-roster.json");
-
-    private readonly RosterRepository _roster;
+    // 登録・閲覧系のコマンド（登録データを読めなければ失敗を返す）と、計算系のコマンド（読めなければ使用チームなしで計算する）
     private volatile PokeCommand _command;
+    private volatile PokeCommand _calcCommand;
     private PokemonDataSource _dataSource;
+    private string _syncKey;
     private readonly ConcurrentDictionary<string, DateTime> _lastExecutedAt = new();
     // 登録データ（RosterRepository）はスレッドセーフではないため、コマンドは 1 件ずつ処理する
     private readonly SemaphoreSlim _executeLock = new(1, 1);
@@ -80,20 +91,21 @@ public class PokemonCommandController
     /// <summary>
     /// PokemonCommandController のコンストラクタ
     /// データは Cloudflare に公開した CSV（本番か開発用のどちらか）を使い、ローカルに 1 日キャッシュします（起動中も 1 日ごとに読み直します）。
-    /// 登録したポケモン・チームは %LOCALAPPDATA%\FaraBotModerator\pokemon-roster.json に保存します。
+    /// 登録したポケモン・チームは同期キーで取得元のサイトのクラウドに読み書きします（この PC には保存しません）。
     /// </summary>
     /// <param name="format">ダメージ計算に使う対戦形式</param>
-    /// <param name="dataSource">データの取得元</param>
-    public PokemonCommandController(BattleFormat format, PokemonDataSource dataSource)
+    /// <param name="dataSource">データの取得元（登録データのクラウドも同じサイト）</param>
+    /// <param name="syncKey">登録データの同期キー（空なら登録系のコマンドは使えません）</param>
+    public PokemonCommandController(BattleFormat format, PokemonDataSource dataSource, string syncKey)
     {
         Format = format;
-        _roster = new RosterRepository(new FileRosterStore(RosterFilePath));
         _dataSource = dataSource;
-        _command = CreateCommand(dataSource);
+        _syncKey = syncKey;
+        (_command, _calcCommand) = CreateCommands(dataSource, syncKey);
     }
 
     /// <summary>
-    /// データの取得元。接続中でも切り替えられ、次のコマンドから切り替え先のデータを使います。
+    /// データの取得元。接続中でも切り替えられ、次のコマンドから切り替え先のデータと登録データを使います。
     /// </summary>
     public PokemonDataSource DataSource
     {
@@ -102,18 +114,36 @@ public class PokemonCommandController
         {
             if (_dataSource == value) return;
             _dataSource = value;
-            _command = CreateCommand(value);
+            (_command, _calcCommand) = CreateCommands(value, _syncKey);
         }
     }
 
     /// <summary>
-    /// 指定した取得元のデータを使うコマンドを作成します。
+    /// 登録データの同期キー。接続中でも切り替えられ、次のコマンドから切り替え先のキーを使います。
+    /// </summary>
+    public string SyncKey
+    {
+        get => _syncKey;
+        set
+        {
+            if (_syncKey == value) return;
+            _syncKey = value;
+            (_command, _calcCommand) = CreateCommands(_dataSource, value);
+        }
+    }
+
+    /// <summary>
+    /// 指定した取得元・同期キーを使うコマンドを作成します。
     /// </summary>
     /// <param name="dataSource">データの取得元</param>
-    /// <returns>ポケモンコマンド</returns>
-    private PokeCommand CreateCommand(PokemonDataSource dataSource)
+    /// <param name="syncKey">同期キー</param>
+    /// <returns>登録・閲覧系のコマンドと計算系のコマンド（データは共有）</returns>
+    private static (PokeCommand Command, PokeCommand CalcCommand) CreateCommands(PokemonDataSource dataSource, string syncKey)
     {
-        return new PokeCommand(CreateCatalog(dataSource), _roster);
+        var catalog = CreateCatalog(dataSource);
+        return (new PokeCommand(catalog, new RosterRepository(CreateRosterStore(dataSource, syncKey))),
+            new PokeCommand(catalog, new RosterRepository(
+                new BestEffortRosterStore(CreateRosterStore(dataSource, syncKey), CalcRosterTimeout))));
     }
 
     /// <summary>
@@ -129,6 +159,28 @@ public class PokemonCommandController
         var source = new CachingDataSource(new HttpDataSource(HttpClient, url),
             Path.Combine(AppDirectory, cacheFolder), TimeSpan.FromDays(1));
         return new DataCatalog(source, TimeSpan.FromDays(1));
+    }
+
+    /// <summary>
+    /// 取得元のサイトの URL（登録データのクラウドもこのサイトの /api/roster）を返します。
+    /// </summary>
+    /// <param name="dataSource">データの取得元</param>
+    public static string SiteBaseUrl(PokemonDataSource dataSource)
+    {
+        return dataSource == PokemonDataSource.Develop ? RemoteRosterStore.DevelopBaseUrl : RemoteRosterStore.ProductionBaseUrl;
+    }
+
+    /// <summary>
+    /// 登録データの保存先を作成します。同期キーが無い（形式が違う）ときは、読み書きのたびに
+    /// 「同期キーが設定されていません」の <see cref="RosterUnavailableException"/> を投げる保存先を返します。
+    /// </summary>
+    /// <param name="dataSource">データの取得元（同じサイトのクラウドを使う）</param>
+    /// <param name="syncKey">同期キー</param>
+    public static IRosterStore CreateRosterStore(PokemonDataSource dataSource, string? syncKey)
+    {
+        return RemoteRosterStore.IsValidKey(syncKey)
+            ? new RemoteRosterStore(HttpClient, SiteBaseUrl(dataSource), syncKey!)
+            : new MissingSyncKeyRosterStore();
     }
 
     /// <summary>
@@ -180,13 +232,16 @@ public class PokemonCommandController
             var match = await command.MatchAsync(message);
             if (match is null) return (false, null);
 
-            // クールダウンの確認と記録はロック内で行い、同一ユーザーの同時投稿がすり抜けないようにする
-            if (IsCooldownTarget(match.Value.Arguments))
+            // 計算系はクールダウンを掛け、登録データ（使用チーム）を読めなくても使用チームなしで計算する
+            var isCalc = IsCalcSubCommand(match.Value.Arguments);
+            if (isCalc)
             {
+                // クールダウンの確認と記録はロック内で行い、同一ユーザーの同時投稿がすり抜けないようにする
                 var now = DateTime.UtcNow;
                 if (_lastExecutedAt.TryGetValue(userName, out var last) && now - last < UserCooldown)
                     return (true, null);
                 _lastExecutedAt[userName] = now;
+                command = _calcCommand;
             }
 
             var result = await command.TryExecuteAsync(message, new PokeCommandOptions
@@ -212,10 +267,59 @@ public class PokemonCommandController
     /// 「!pokech dmg ...」のように、接頭辞の後の 1 語目が計算系サブコマンドかどうかを判定します。
     /// </summary>
     /// <param name="arguments">接頭辞を除いた残り（「dmg ...」）</param>
-    private static bool IsCooldownTarget(string arguments)
+    private static bool IsCalcSubCommand(string arguments)
     {
         var tokens = arguments.Split(Separators, 2, StringSplitOptions.RemoveEmptyEntries);
-        return tokens.Length >= 1 && CooldownSubCommands.Contains(tokens[0]);
+        return tokens.Length >= 1 && CalcSubCommands.Contains(tokens[0]);
+    }
+
+    /// <summary>
+    /// 同期キーが無いときの登録データの保存先。読み書きのたびに「同期キーが設定されていません」を投げます
+    /// （PokeCommand が「失敗しました: 同期キーが設定されていません（…）」としてチャットに返します）。
+    /// </summary>
+    private sealed class MissingSyncKeyRosterStore : IRosterStore
+    {
+        public bool AlwaysReload => true;
+
+        public Task<string?> LoadAsync(CancellationToken ct = default) => throw Missing();
+
+        public Task SaveAsync(string json, CancellationToken ct = default) => throw Missing();
+
+        private static RosterUnavailableException Missing() =>
+            new(RosterUnavailableReason.Unauthorized, null, MissingSyncKeyMessage);
+    }
+
+    /// <summary>
+    /// 計算系コマンド用の登録データの保存先。使用チームを読めない（同期キーが無い・クラウドに届かない）ときは
+    /// 登録なしとして扱い、計算は使用チームなしで続けます。計算系は登録データを書き換えません。
+    /// </summary>
+    private sealed class BestEffortRosterStore(IRosterStore inner, TimeSpan timeout) : IRosterStore
+    {
+        public bool AlwaysReload => true;
+
+        public async Task<string?> LoadAsync(CancellationToken ct = default)
+        {
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            cts.CancelAfter(timeout);
+            try
+            {
+                return await inner.LoadAsync(cts.Token).ConfigureAwait(false);
+            }
+            catch (RosterUnavailableException ex)
+            {
+                // メッセージに同期キーは含まれない
+                if (ex.Message != MissingSyncKeyMessage)
+                    LogController.OutputLog($"<Warning> Pokemon roster (計算は使用チームなしで続行): {ex.Message}");
+                return null;
+            }
+            catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+            {
+                LogController.OutputLog("<Warning> Pokemon roster: クラウドの応答が遅いため、使用チームなしで計算します");
+                return null;
+            }
+        }
+
+        public Task SaveAsync(string json, CancellationToken ct = default) => inner.SaveAsync(json, ct);
     }
 }
 
@@ -225,12 +329,12 @@ public class PokemonCommandController
 public enum PokemonDataSource
 {
     /// <summary>
-    /// 本番（https://pokemon.fara-labs.com/data/）
+    /// 本番（https://pokemon.fara-labs.com/）
     /// </summary>
     Production,
 
     /// <summary>
-    /// 開発用（https://pokemon-dev.fara-labs.com/data/）
+    /// 開発用（https://pokemon-dev.fara-labs.com/）
     /// </summary>
     Develop
 }

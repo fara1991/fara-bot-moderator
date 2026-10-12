@@ -10,21 +10,23 @@ using FaraPokemonBattleAssistant.Core.Roster;
 namespace FaraBotModerator.Controllers;
 
 /// <summary>
-/// 登録したポケモン・チーム（pokemon-roster.json）を画面に表示するために読み込みます。読むだけで、書き換えはしません。
+/// 登録したポケモン・チーム（クラウドの登録データ）を画面に表示するために読み込みます。読むだけで、書き換えはしません。
 /// </summary>
 public static class PokemonRosterViewer
 {
     /// <summary>
-    /// 登録データをゲームごとにまとめて読み込みます。特性・持ち物の名前は取得元のデータで引き、
+    /// 登録データを同期キーでクラウドから読み込み、ゲームごとにまとめます。特性・持ち物の名前は取得元のデータで引き、
     /// データを取得できないときは ID のまま表示します。
     /// </summary>
-    /// <param name="dataSource">名前を引くデータの取得元</param>
+    /// <param name="dataSource">登録データのクラウドと、名前を引くデータの取得元</param>
+    /// <param name="syncKey">同期キー</param>
     /// <param name="cancellationToken">キャンセルトークン</param>
     /// <returns>登録のあるゲームの一覧（登録が無ければ空）</returns>
-    public static async Task<IReadOnlyList<RosterGameView>> LoadAsync(PokemonDataSource dataSource,
+    /// <exception cref="RosterUnavailableException">同期キーが無い・クラウドから読めない</exception>
+    public static async Task<IReadOnlyList<RosterGameView>> LoadAsync(PokemonDataSource dataSource, string syncKey,
         CancellationToken cancellationToken = default)
     {
-        var state = await new RosterRepository(new FileRosterStore(PokemonCommandController.RosterFilePath))
+        var state = await new RosterRepository(PokemonCommandController.CreateRosterStore(dataSource, syncKey))
             .GetAsync(cancellationToken);
         var catalog = PokemonCommandController.CreateCatalog(dataSource);
 
