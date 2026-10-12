@@ -39,7 +39,7 @@ public class PokemonCommandController
     /// </summary>
     private static readonly HashSet<string> CalcSubCommands = new(StringComparer.OrdinalIgnoreCase)
     {
-        "dmg", "damage", "calc", "ev", "diff", "speed", "spd"
+        "dmg", "damage", "calc", "ev", "faster"
     };
 
     /// <summary>
