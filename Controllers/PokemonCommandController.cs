@@ -162,7 +162,7 @@ public class PokemonCommandController
     }
 
     /// <summary>
-    /// 取得元のサイトの URL（登録データのクラウドもこのサイトの /api/roster）を返します。
+    /// 取得元のサイトの URL（登録データのクラウドもこのサイトの /api/my-pokemon・/api/my-team）を返します。
     /// </summary>
     /// <param name="dataSource">データの取得元</param>
     public static string SiteBaseUrl(PokemonDataSource dataSource)
@@ -285,6 +285,9 @@ public class PokemonCommandController
 
         public Task SaveAsync(string json, CancellationToken ct = default) => throw Missing();
 
+        public Task SavePartAsync(RosterState state, string dataSetKey, RosterPart part, CancellationToken ct = default) =>
+            throw Missing();
+
         private static RosterUnavailableException Missing() =>
             new(RosterUnavailableReason.Unauthorized, null, MissingSyncKeyMessage);
     }
@@ -320,6 +323,10 @@ public class PokemonCommandController
         }
 
         public Task SaveAsync(string json, CancellationToken ct = default) => inner.SaveAsync(json, ct);
+
+        // 変えた部分（ポケモン / チーム）だけを保存する経路は、そのまま中の保存先に渡す
+        public Task SavePartAsync(RosterState state, string dataSetKey, RosterPart part, CancellationToken ct = default) =>
+            inner.SavePartAsync(state, dataSetKey, part, ct);
     }
 }
 
