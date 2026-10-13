@@ -677,7 +677,7 @@
                                                                 ToolTipService.HorizontalOffset="-10"
                                                                 Click="HelpButton_Click">
                                                             <Button.ToolTip>
-                                                                <ToolTip Content="データ連携のためのキー。登録したポケモン・チームはサイト（データの取得元と同じサイト）のクラウドに保存され、同じアクセスキーを入れたサイトの「登録ポケモン・チーム」ページと同じデータを読み書きします。登録データはこの PC には保存しません。アクセスキーはパスワードと同じ扱いなので、配信画面に映さないでください" />
+                                                                <ToolTip Content="データ連携のためのキー。登録したポケモン・チームはサイト（データの取得元と同じサイト）のクラウドに保存され、同じアクセスキーを入れたサイトの「ポケモン登録」「チーム登録」ページと同じデータを読み書きします。登録データはこの PC には保存しません。アクセスキーはパスワードと同じ扱いなので、配信画面に映さないでください" />
                                                             </Button.ToolTip>
                                                             <materialDesign:PackIcon Kind="HelpCircleOutline" Width="16" Height="16"
                                                                                      Foreground="Gray" />
@@ -722,7 +722,7 @@
                                                                 ToolTipService.HorizontalOffset="-10"
                                                                 Click="HelpButton_Click">
                                                             <Button.ToolTip>
-                                                                <ToolTip Content="チャットの !poke add pokemon / add team / use team やサイトの「登録ポケモン・チーム」ページで登録したポケモンとチーム（アクセスキーでクラウドから読み込みます）。「一覧を開く」で別のウィンドウに一覧を表示します。ここでは見るだけで、登録・削除はチャットのコマンドかサイトで行います" />
+                                                                <ToolTip Content="チャットの !poke add -p / add -t / use -t やサイトの「ポケモン登録」「チーム登録」ページで登録したポケモンとチーム（アクセスキーでクラウドから読み込みます）。「一覧を開く」で別のウィンドウに一覧を表示します。ここでは見るだけで、登録・削除はチャットのコマンドかサイトで行います" />
                                                             </Button.ToolTip>
                                                             <materialDesign:PackIcon Kind="HelpCircleOutline" Width="16" Height="16"
                                                                                      Foreground="Gray" />
@@ -738,7 +738,7 @@
                                                                 Margin="10,0,0,0" Click="PokemonRosterReloadButton_Click" />
                                                         <Button x:Name="PokemonRosterOpenSiteButton" Content="サイトで開く" Width="120" Height="30"
                                                                 Margin="10,0,0,0" Click="PokemonRosterOpenSiteButton_Click"
-                                                                ToolTip="データの取得元のサイトの「登録ポケモン・チーム」ページをブラウザで開きます（サイトでも同じアクセスキーを入力すると編集できます）" />
+                                                                ToolTip="データの取得元のサイトの「ポケモン登録」ページをブラウザで開きます（サイトでも同じアクセスキーを入力すると編集できます）" />
                                                         <TextBlock x:Name="PokemonRosterStatusTextBlock" Margin="10,0,0,0" VerticalAlignment="Center"
                                                                    Foreground="Gray" TextWrapping="Wrap" MaxWidth="500" />
                                                     </StackPanel>
