@@ -1161,7 +1161,7 @@ public partial class MainWindow : INotifyPropertyChanged
         {
             var key = await PokemonSyncKeyController.IssueAsync(SelectedPokemonDataSourceValue());
             await ApplyPokemonSyncKeyAsync(key);
-            MessageBox.Show("アクセスキーを発行しました（データ連携を始めました）。\n\nサイトの「登録ポケモン・チーム」ページの「データ連携」で、このアクセスキーを貼り付けて「アクセスキーを入力して連携」を押すと、サイトと同じ登録データを使えます（「コピー」でコピーできます）。\n\nアクセスキーはパスワードと同じ扱いです。配信画面に映さないでください。",
+            MessageBox.Show("アクセスキーを発行しました（データ連携を始めました）。\n\nサイトの「データ連携」ページで、このアクセスキーを貼り付けて「アクセスキーを入力して連携」を押すと、サイトと同じ登録データを使えます（「コピー」でコピーできます）。\n\nアクセスキーはパスワードと同じ扱いです。配信画面に映さないでください。",
                 "アクセスキー", MessageBoxButton.OK, MessageBoxImage.Information);
         }
         catch (RosterUnavailableException ex)
@@ -1183,7 +1183,7 @@ public partial class MainWindow : INotifyPropertyChanged
         var key = EnteredPokemonSyncKey();
         if (!RemoteRosterStore.IsValidKey(key))
         {
-            MessageBox.Show("アクセスキーの形式が正しくありません（43 文字の英数字・-・_）。\nサイトの「登録ポケモン・チーム」ページでコピーしたアクセスキーを「アクセスキー」の欄に貼り付けてから押してください。",
+            MessageBox.Show("アクセスキーの形式が正しくありません（43 文字の英数字・-・_）。\nサイトの「データ連携」ページでコピーしたアクセスキーを「アクセスキー」の欄に貼り付けてから押してください。",
                 "アクセスキー", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
@@ -1230,7 +1230,7 @@ public partial class MainWindow : INotifyPropertyChanged
                 (oldKeyDeleted
                     ? "アクセスキーを作り直しました。古いアクセスキーは使えなくなりました。"
                     : "アクセスキーを作り直しました（登録データは新しいアクセスキーに移りましたが、古いアクセスキーの置き場を消せませんでした。古いアクセスキーは使わないでください）。") +
-                "\n\nサイトの「登録ポケモン・チーム」ページの「データ連携」で、新しいアクセスキーを入力し直してください（「コピー」でコピーできます）。",
+                "\n\nサイトの「データ連携」ページで、新しいアクセスキーを入力し直してください（「コピー」でコピーできます）。",
                 "アクセスキー", MessageBoxButton.OK, oldKeyDeleted ? MessageBoxImage.Information : MessageBoxImage.Warning);
         }
         catch (RosterUnavailableException ex)
@@ -1302,7 +1302,7 @@ public partial class MainWindow : INotifyPropertyChanged
             PokemonSyncStatusTextBlock.Text = "データ連携中";
             ShowPokemonRoster(games,
                 games.Count == 0
-                    ? "まだ登録がありません（チャットの !poke add pokemon かサイトで登録します）"
+                    ? "まだ登録がありません（チャットの !poke add -p かサイトで登録します）"
                     : games.All(g => g.NamesResolved)
                         ? $"{DateTime.Now:HH:mm:ss} に読み込み"
                         : $"{DateTime.Now:HH:mm:ss} に読み込み。データを取得できなかったため、特性・持ち物は ID で表示しています（データの取得元を確認）",
@@ -1384,7 +1384,7 @@ public partial class MainWindow : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// データの取得元のサイトの「登録ポケモン・チーム」ページをブラウザで開きます。
+    /// データの取得元のサイトの「ポケモン登録」ページをブラウザで開きます。
     /// </summary>
     private void PokemonRosterOpenSiteButton_Click(object sender, RoutedEventArgs e)
     {

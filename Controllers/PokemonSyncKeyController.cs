@@ -12,7 +12,7 @@ namespace FaraBotModerator.Controllers;
 public static class PokemonSyncKeyController
 {
     /// <summary>
-    /// サイトの「登録ポケモン・チーム」ページの URL を返します。
+    /// サイトの「ポケモン登録」ページの URL を返します。
     /// </summary>
     /// <param name="dataSource">データの取得元</param>
     public static string RosterPageUrl(PokemonDataSource dataSource)
