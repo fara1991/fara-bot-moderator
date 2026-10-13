@@ -1103,7 +1103,7 @@ public partial class MainWindow : INotifyPropertyChanged
     /// <summary>
     /// アクセスキーを確定します。すぐに設定ファイルへ保存し、接続中のコマンドにも反映して、登録データを読み直します。
     /// </summary>
-    /// <param name="key">アクセスキー（空ならデータ連携をやめる）</param>
+    /// <param name="key">アクセスキー（空ならデータ共有をやめる）</param>
     private async Task ApplyPokemonSyncKeyAsync(string key)
     {
         _pokemonSyncKey = key;
@@ -1129,7 +1129,7 @@ public partial class MainWindow : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// 使用中のアクセスキーをクリップボードにコピーします（サイトの「アクセスキーを入力して連携」に貼り付ける用）。
+    /// 使用中のアクセスキーをクリップボードにコピーします（サイトの「アクセスキーを入力して共有」に貼り付ける用）。
     /// </summary>
     private void PokemonSyncKeyCopyButton_Click(object sender, RoutedEventArgs e)
     {
@@ -1161,7 +1161,7 @@ public partial class MainWindow : INotifyPropertyChanged
         {
             var key = await PokemonSyncKeyController.IssueAsync(SelectedPokemonDataSourceValue());
             await ApplyPokemonSyncKeyAsync(key);
-            MessageBox.Show("アクセスキーを発行しました（データ連携を始めました）。\n\nサイトの「データ連携」ページで、このアクセスキーを貼り付けて「アクセスキーを入力して連携」を押すと、サイトと同じ登録データを使えます（「コピー」でコピーできます）。\n\nアクセスキーはパスワードと同じ扱いです。配信画面に映さないでください。",
+            MessageBox.Show("アクセスキーを発行しました（データ共有を始めました）。\n\nサイトの「データ共有」ページで、このアクセスキーを貼り付けて「アクセスキーを入力して共有」を押すと、サイトと同じ登録データを使えます（「コピー」でコピーできます）。\n\nアクセスキーはパスワードと同じ扱いです。配信画面に映さないでください。",
                 "アクセスキー", MessageBoxButton.OK, MessageBoxImage.Information);
         }
         catch (RosterUnavailableException ex)
@@ -1183,7 +1183,7 @@ public partial class MainWindow : INotifyPropertyChanged
         var key = EnteredPokemonSyncKey();
         if (!RemoteRosterStore.IsValidKey(key))
         {
-            MessageBox.Show("アクセスキーの形式が正しくありません（43 文字の英数字・-・_）。\nサイトの「データ連携」ページでコピーしたアクセスキーを「アクセスキー」の欄に貼り付けてから押してください。",
+            MessageBox.Show("アクセスキーの形式が正しくありません（43 文字の英数字・-・_）。\nサイトの「データ共有」ページでコピーしたアクセスキーを「アクセスキー」の欄に貼り付けてから押してください。",
                 "アクセスキー", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
@@ -1196,7 +1196,7 @@ public partial class MainWindow : INotifyPropertyChanged
             await ApplyPokemonSyncKeyAsync(key);
             var (pokemon, teams) = PokemonSyncKeyController.Count(state);
             if (pokemon == 0 && teams == 0)
-                MessageBox.Show("アクセスキーを設定しました（データ連携を始めました）。クラウドにはまだ登録がありません（アクセスキーの打ち間違いや、データの取得元が本番・開発用で違っていないか確認してください）。",
+                MessageBox.Show("アクセスキーを設定しました（データ共有を始めました）。クラウドにはまだ登録がありません（アクセスキーの打ち間違いや、データの取得元が本番・開発用で違っていないか確認してください）。",
                     "アクセスキー", MessageBoxButton.OK, MessageBoxImage.Information);
         }
         catch (RosterUnavailableException ex)
@@ -1230,7 +1230,7 @@ public partial class MainWindow : INotifyPropertyChanged
                 (oldKeyDeleted
                     ? "アクセスキーを作り直しました。古いアクセスキーは使えなくなりました。"
                     : "アクセスキーを作り直しました（登録データは新しいアクセスキーに移りましたが、古いアクセスキーの置き場を消せませんでした。古いアクセスキーは使わないでください）。") +
-                "\n\nサイトの「データ連携」ページで、新しいアクセスキーを入力し直してください（「コピー」でコピーできます）。",
+                "\n\nサイトの「データ共有」ページで、新しいアクセスキーを入力し直してください（「コピー」でコピーできます）。",
                 "アクセスキー", MessageBoxButton.OK, oldKeyDeleted ? MessageBoxImage.Information : MessageBoxImage.Warning);
         }
         catch (RosterUnavailableException ex)
@@ -1250,7 +1250,7 @@ public partial class MainWindow : INotifyPropertyChanged
     private async void PokemonSyncKeyStopButton_Click(object sender, RoutedEventArgs e)
     {
         if (!RemoteRosterStore.IsValidKey(_pokemonSyncKey)) return;
-        if (MessageBox.Show("このボットでのデータ連携をやめます（アクセスキーを使うのをやめます）。\nクラウドの登録データは残り、サイトはそのまま使えます。データ連携をやめると、チャットの登録系のコマンド（!poke add など）は使えなくなります。\n\n続けますか？",
+        if (MessageBox.Show("このボットでのデータ共有をやめます（アクセスキーを使うのをやめます）。\nクラウドの登録データは残り、サイトはそのまま使えます。データ共有をやめると、チャットの登録系のコマンド（!poke add など）は使えなくなります。\n\n続けますか？",
                 "確認", MessageBoxButton.OKCancel, MessageBoxImage.Warning) != MessageBoxResult.OK)
             return;
         await ApplyPokemonSyncKeyAsync("");
@@ -1299,7 +1299,7 @@ public partial class MainWindow : INotifyPropertyChanged
         {
             var games = await PokemonRosterViewer.LoadAsync(SelectedPokemonDataSourceValue(), _pokemonSyncKey);
             if (version != _pokemonRosterLoadVersion) return;
-            PokemonSyncStatusTextBlock.Text = "データ連携中";
+            PokemonSyncStatusTextBlock.Text = "データ共有中";
             ShowPokemonRoster(games,
                 games.Count == 0
                     ? "まだ登録がありません（チャットの !poke add -p かサイトで登録します）"
