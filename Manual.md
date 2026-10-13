@@ -357,7 +357,7 @@ Auto Bot Settings > Game で「ポケモンシリーズ」を選び、「アク�
 - ダメージ計算の対戦形式（シングル / ダブル）は Auto Bot Settings > Game で「ポケモンシリーズ」を選び、「対戦形式」で切り替えます（接続中でもすぐ反映され、`secrets.json` の `pokemon.battleFormat` に保存されます）
 - 登録データはサイトのクラウドに保存されます（アクセスキーで読み書きするデータ共有。この PC には保存しません）。詳しくは [データ共有（アクセスキー）](#データ共有アクセスキー) を参照してください
 - 計算ロジック: [fara-pokemon-battle-assistant](https://github.com/fara1991/fara-pokemon-battle-assistant)（ブラウザ版: https://pokemon.fara-labs.com/chat-commands ）
-- ポケモンのデータの取得元は同じ画面の「データの取得元」で切り替えます（本番: https://pokemon.fara-labs.com/data/ 、開発用: https://pokemon-dev.fara-labs.com/data/ 。接続中でもすぐ反映され、`secrets.json` の `pokemon.dataSource` に保存されます。1 日キャッシュ）
+- ポケモンのデータの取得元は同じ画面の「データの取得元」で切り替えます（本番: https://pokemon.fara-labs.com/api/game/ 、開発用: https://pokemon-dev.fara-labs.com/api/game/ 。接続中でもすぐ反映され、`secrets.json` の `pokemon.dataSource` に保存されます。1 日キャッシュ）
 
 ---
 

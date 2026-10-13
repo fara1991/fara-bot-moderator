@@ -50,7 +50,7 @@ public static class PokemonSyncKeyController
     }
 
     /// <summary>
-    /// アクセスキーを作り直します。今のクラウドのデータを新しいキーの置き場に移し、古いキーを使えなくします（/api/access-key）
+    /// アクセスキーを作り直します。今のクラウドのデータを新しいキーの置き場に移し、古いキーを使えなくします（/api/my/access-key）
     /// （古いキーは使えなくなるので、サイトでも新しいキーを入力し直す必要があります）。
     /// </summary>
     /// <param name="dataSource">データの取得元</param>
@@ -67,7 +67,7 @@ public static class PokemonSyncKeyController
         var json = await old.LoadAsync(cancellationToken);
         if (json is not null)
         {
-            // 新しいキーの空の置き場（版 0）に、ポケモン（/api/my-pokemon）→ チーム（/api/my-team）の順で移す。
+            // 新しいキーの空の置き場（版 0）に、ポケモン（/api/my/pokemon）→ チーム（/api/my/team）の順で移す。
             // 新しいキーは移し終わるまで誰も使わないので、途中で失敗したら新しいキーは使わずに捨てる（置き場も消しておく）
             try
             {

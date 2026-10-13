@@ -18,15 +18,15 @@ namespace FaraBotModerator.Controllers;
 public class PokemonCommandController
 {
     /// <summary>
-    /// 本番のポケモンのデータ（CSV）の URL
+    /// 本番のポケモンのデータ（CSV）の URL（https://pokemon.fara-labs.com/api/game/ 。認証なしの静的ファイルで、サイトの Worker は通らない）
     /// </summary>
-    private const string ProductionDataUrl = RemoteRosterStore.ProductionBaseUrl + "data/";
+    private const string ProductionDataUrl = RemoteRosterStore.ProductionBaseUrl + HttpDataSource.GameDataPath;
 
     /// <summary>
-    /// 開発用のポケモンのデータ（CSV）の URL。
-    /// pokemon-dev は Cloudflare Access で保護されているため、/data/ を Access の対象外（Bypass）にしておく必要があります。
+    /// 開発用のポケモンのデータ（CSV）の URL（https://pokemon-dev.fara-labs.com/api/game/ ）。
+    /// pokemon-dev は Cloudflare Access で保護されているため、/api/*（ゲームデータの /api/game/* と登録データの /api/my/*）を Access の対象外（Bypass）にしておく必要があります。
     /// </summary>
-    private const string DevelopDataUrl = RemoteRosterStore.DevelopBaseUrl + "data/";
+    private const string DevelopDataUrl = RemoteRosterStore.DevelopBaseUrl + HttpDataSource.GameDataPath;
     private static readonly TimeSpan UserCooldown = TimeSpan.FromSeconds(5);
 
     /// <summary>
@@ -162,7 +162,7 @@ public class PokemonCommandController
     }
 
     /// <summary>
-    /// 取得元のサイトの URL（登録データのクラウドもこのサイトの /api/my-pokemon・/api/my-team）を返します。
+    /// 取得元のサイトの URL（登録データのクラウドもこのサイトの /api/my/pokemon・/api/my/team）を返します。
     /// </summary>
     /// <param name="dataSource">データの取得元</param>
     public static string SiteBaseUrl(PokemonDataSource dataSource)
