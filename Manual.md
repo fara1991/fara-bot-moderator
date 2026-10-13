@@ -229,7 +229,7 @@ DeepL APIを使用した自動翻訳機能の設定です。
 - アクセスキーが無いときは「アクセスキーが設定されていません」と表示されます
 - 登録データは見るだけです。登録・削除・使用チームの変更はチャットのコマンド（[5.4](#54-ポケモンコマンドpoke)）か、サイトの「ポケモン登録」「チーム登録」ページで行います
 - チャットやサイトで登録したあとは「再読み込み」（Game タブ・一覧のウィンドウのどちらでも、両方が更新されます）で最新の内容になります。読み込めなかったときは、理由（アクセスキーが正しくない、作り直された、ネットワークに接続できない など）が表示されます
-- 「サイトで開く」で、データの取得元のサイトの「ポケモン登録」ページ（本番: https://pokemon.fara-labs.com/pokemon 、開発用: https://pokemon-dev.fara-labs.com/pokemon ）をブラウザで開けます
+- 「サイトで開く」で、データの取得元のサイトの「ポケモン登録」ページ（本番: https://pokemon.fara-labs.com/my-pokemon 、開発用: https://pokemon-dev.fara-labs.com/my-pokemon ）をブラウザで開けます
 - 特性・持ち物の名前は「データの取得元」のデータで表示します。データを取得できないときは ID で表示します
 
 ### 5.3. タイマー設定（Timer）
@@ -356,7 +356,7 @@ Auto Bot Settings > Game で「ポケモンシリーズ」を選び、「アク�
 - 計算系（`dmg` / `calc` / `faster`）は同じユーザーの連続実行を5秒間無視します（登録系には掛かりません）
 - ダメージ計算の対戦形式（シングル / ダブル）は Auto Bot Settings > Game で「ポケモンシリーズ」を選び、「対戦形式」で切り替えます（接続中でもすぐ反映され、`secrets.json` の `pokemon.battleFormat` に保存されます）
 - 登録データはサイトのクラウドに保存されます（アクセスキーで読み書きするデータ連携。この PC には保存しません）。詳しくは [データ連携（アクセスキー）](#データ連携アクセスキー) を参照してください
-- 計算ロジック: [fara-pokemon-battle-assistant](https://github.com/fara1991/fara-pokemon-battle-assistant)（ブラウザ版: https://pokemon.fara-labs.com/command ）
+- 計算ロジック: [fara-pokemon-battle-assistant](https://github.com/fara1991/fara-pokemon-battle-assistant)（ブラウザ版: https://pokemon.fara-labs.com/chat-commands ）
 - ポケモンのデータの取得元は同じ画面の「データの取得元」で切り替えます（本番: https://pokemon.fara-labs.com/data/ 、開発用: https://pokemon-dev.fara-labs.com/data/ 。接続中でもすぐ反映され、`secrets.json` の `pokemon.dataSource` に保存されます。1 日キャッシュ）
 
 ---
