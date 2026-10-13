@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using FaraPokemonBattleAssistant.Core.Roster;
@@ -49,7 +50,7 @@ public static class PokemonSyncKeyController
     }
 
     /// <summary>
-    /// アクセスキーを作り直します。今のクラウドのデータを新しいキーの置き場に移し、古いキーの置き場を消します
+    /// アクセスキーを作り直します。今のクラウドのデータを新しいキーの置き場に移し、古いキーを使えなくします（/api/access-key）
     /// （古いキーは使えなくなるので、サイトでも新しいキーを入力し直す必要があります）。
     /// </summary>
     /// <param name="dataSource">データの取得元</param>
@@ -64,7 +65,27 @@ public static class PokemonSyncKeyController
         var key = RemoteRosterStore.GenerateKey();
         var remote = CreateStore(dataSource, key);
         var json = await old.LoadAsync(cancellationToken);
-        if (json is not null) await remote.SaveAsync(json, cancellationToken); // 新しいキーの置き場は空（版 0）
+        if (json is not null)
+        {
+            // 新しいキーの空の置き場（版 0）に、ポケモン（/api/my-pokemon）→ チーム（/api/my-team）の順で移す。
+            // 新しいキーは移し終わるまで誰も使わないので、途中で失敗したら新しいキーは使わずに捨てる（置き場も消しておく）
+            try
+            {
+                await remote.SaveAsync(json, cancellationToken);
+            }
+            catch
+            {
+                try
+                {
+                    await remote.DeleteAsync(CancellationToken.None);
+                }
+                catch (Exception)
+                {
+                    // 消せなくても新しいキーは使わない
+                }
+                throw;
+            }
+        }
         else await remote.LoadAsync(cancellationToken); // つながるか確かめる
         try
         {
