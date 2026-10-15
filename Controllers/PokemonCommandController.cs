@@ -35,11 +35,12 @@ public class PokemonCommandController
     internal static readonly HttpClient HttpClient = CreateHttpClient();
 
     /// <summary>
-    /// 計算系のサブコマンド。連投対策のクールダウンを掛けます（登録済みのポケモンだけ使うため、登録データを読めなければ失敗を返します）
+    /// 計算系のサブコマンド。連投対策のクールダウンを掛けます（登録済みのポケモンだけ使うため、登録データを読めなければ失敗を返します）。
+    /// scan は相手ポケモンを登録する変更系なので、登録系と同じくクールダウンは掛けません
     /// </summary>
     private static readonly HashSet<string> CalcSubCommands = new(StringComparer.OrdinalIgnoreCase)
     {
-        "dmg", "damage", "scan", "faster"
+        "dmg", "damage", "faster"
     };
 
     /// <summary>
