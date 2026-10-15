@@ -1302,7 +1302,7 @@ public partial class MainWindow : INotifyPropertyChanged
             PokemonSyncStatusTextBlock.Text = "データ共有中";
             ShowPokemonRoster(games,
                 games.Count == 0
-                    ? "まだ登録がありません（チャットの !poke add -p かサイトで登録します）"
+                    ? "まだ登録がありません（チャットの !poke add -m かサイトで登録します）"
                     : games.All(g => g.NamesResolved)
                         ? $"{DateTime.Now:HH:mm:ss} に読み込み"
                         : $"{DateTime.Now:HH:mm:ss} に読み込み。データを取得できなかったため、特性・持ち物は ID で表示しています（データの取得元を確認）",

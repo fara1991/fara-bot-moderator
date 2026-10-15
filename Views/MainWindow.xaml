@@ -722,7 +722,7 @@
                                                                 ToolTipService.HorizontalOffset="-10"
                                                                 Click="HelpButton_Click">
                                                             <Button.ToolTip>
-                                                                <ToolTip Content="チャットの !poke add -p / add -t / use -t やサイトの「ポケモン登録」「チーム登録」ページで登録したポケモンとチーム（アクセスキーでクラウドから読み込みます）。「一覧を開く」で別のウィンドウに一覧を表示します。ここでは見るだけで、登録・削除はチャットのコマンドかサイトで行います" />
+                                                                <ToolTip Content="チャットの !poke add -m / add -t / use -t やサイトの「ポケモン登録」「チーム登録」ページで登録したポケモンとチーム（アクセスキーでクラウドから読み込みます）。「一覧を開く」で別のウィンドウに一覧を表示します。ここでは見るだけで、登録・削除はチャットのコマンドかサイトで行います" />
                                                             </Button.ToolTip>
                                                             <materialDesign:PackIcon Kind="HelpCircleOutline" Width="16" Height="16"
                                                                                      Foreground="Gray" />
