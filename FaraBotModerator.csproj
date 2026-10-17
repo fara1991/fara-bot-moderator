@@ -62,8 +62,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <!-- ポケモンの !poke 系コマンド。git submodule: external/fara-pokemon-assistance -->
-        <ProjectReference Include="external\fara-pokemon-assistance\src\FaraPokemonAssistance.Core\FaraPokemonAssistance.Core.csproj"/>
+        <!-- ポケモンの !poke 系コマンド。git submodule: external/fara-pokemon-battle-assistant -->
+        <ProjectReference Include="external\fara-pokemon-battle-assistant\src\FaraPokemonBattleAssistant.Core\FaraPokemonBattleAssistant.Core.csproj"/>
     </ItemGroup>
 
     <ItemGroup>

@@ -49,6 +49,37 @@ public class SecretKeyModel
     /// </summary>
     [JsonPropertyName("beatSaber")]
     public BeatSaberModel BeatSaber { get; init; } = new();
+
+    /// <summary>
+    /// ポケモン関連コマンドの設定
+    /// </summary>
+    [JsonPropertyName("pokemon")]
+    public PokemonModel Pokemon { get; init; } = new();
+}
+
+/// <summary>
+/// ポケモン関連コマンドの設定を保持するモデル
+/// </summary>
+public class PokemonModel
+{
+    /// <summary>
+    /// ダメージ計算に使う対戦形式（"Singles" または "Doubles"）
+    /// </summary>
+    [JsonPropertyName("battleFormat")]
+    public string BattleFormat { get; init; } = "Singles";
+
+    /// <summary>
+    /// ポケモンのデータの取得元（"Production" または "Develop"）
+    /// </summary>
+    [JsonPropertyName("dataSource")]
+    public string DataSource { get; init; } = "Production";
+
+    /// <summary>
+    /// 登録データ（ポケモン・チーム）をサイトと共有するアクセスキー（43 文字）。空なら登録系のコマンドは使えません。
+    /// パスワードと同じ扱いで、ログや画面のメッセージには出しません。
+    /// </summary>
+    [JsonPropertyName("syncKey")]
+    public string SyncKey { get; init; } = "";
 }
 
 /// <summary>

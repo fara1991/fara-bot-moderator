@@ -134,6 +134,12 @@ public static class SecretKeyController
             BeatSaber = new BeatSaberModel
             {
                 UserDataPath = @"%USERPROFILE%\BSManager\BSInstances\1.29.1\UserData"
+            },
+            Pokemon = new PokemonModel
+            {
+                BattleFormat = "Singles",
+                DataSource = "Production",
+                SyncKey = ""
             }
         };
 
