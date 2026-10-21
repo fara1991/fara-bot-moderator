@@ -701,3 +701,11 @@ main:focus { outline: none; }
 @media (prefers-reduced-motion: reduce) {
     .theme-ready .theme-switch, .theme-ready .theme-knob { transition: none; }
 }
+
+/* 背景の飾り: Twitch のチャットのような吹き出しが、ゆっくり浮かび上がる（js/bgscene.js が canvas に描く。画面の後ろに固定） */
+#site-scene {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+}
