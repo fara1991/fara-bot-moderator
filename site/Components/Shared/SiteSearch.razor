@@ -5,7 +5,7 @@
     <input type="search" class="site-search-input" placeholder="検索（例: dmg、アクセスキー、翻訳）" autocomplete="off" spellcheck="false"
            aria-label="サイト内を検索" role="combobox" aria-expanded="false" aria-controls="@ListId" aria-autocomplete="list" />
     <span class="site-search-hint" aria-hidden="true"><kbd>Ctrl</kbd><kbd>K</kbd></span>
-    <div class="site-search-list" id="@ListId" role="listbox" aria-label="検索の候補" hidden></div>
+    <div class="site-search-list" id="@ListId" tabindex="-1" role="listbox" aria-label="検索の候補" hidden></div>
 </div>
 
 @code {
