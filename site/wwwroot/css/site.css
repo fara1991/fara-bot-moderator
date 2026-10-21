@@ -149,6 +149,8 @@ a:hover { color: var(--accent); }
     text-decoration: none;
 }
 .brand:hover { color: #fff; }
+/* スマホのメニューのボタンは左上（ポケモンのサイトと同じ）。サイト名はその右に（PC ではこの行は隠れている） */
+.top-row .brand { margin-left: 3.75rem; }
 
 /* スマホのメニューの開閉は、チェックボックス + CSS（静的 SSR のため JS なし） */
 .navbar-toggler {
@@ -158,7 +160,7 @@ a:hover { color: var(--accent); }
     height: 2.5rem;
     position: absolute;
     top: 0.5rem;
-    right: 1rem;
+    left: 1rem;
     margin: 0;
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 0.25rem;
