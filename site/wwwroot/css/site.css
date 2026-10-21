@@ -285,6 +285,11 @@ main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
     html { scroll-padding-top: calc(3.5rem + 16px); }
     main .doc-toc { top: calc(3.5rem + 20px); max-height: calc(100vh - 3.5rem - 40px); }
 
+    /* アイコンを、細い列の真ん中に置く。項目の左右の余白を 0.5rem にし、アイコン（18px）が、列（3.25rem）から左右 0.5rem を除いた幅（2.25rem）の中で中央になるようにする。
+       この位置は、開いているときも、広げたときも同じ（アイコンが動かない） */
+    .sidebar-panel .nav-item { padding: 0.1rem 0.5rem; }
+    html.sidebar-hidden .sidebar:not(:hover):not(:has(:focus-visible)) .sidebar-panel .nav-link { width: 2.25rem; }
+
     /* 隠しているとき: サイドバーは、アイコンだけの細い列（3.25rem。項目の名前の頭が、列の端に見えないよう、ハンバーガーと同じくらいの幅）にする。項目の名前は、枠の外にはみ出して切れる。
        この列にマウスを乗せている間（または、キーボードで入ったとき）は、本来の幅まで広げて、ページの上にかぶせて出す。
        ハンバーガーを押すと、クラスが外れて、ふつうに広がったまま並ぶ */
