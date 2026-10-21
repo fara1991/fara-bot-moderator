@@ -102,6 +102,7 @@ public sealed partial class ContentService
             foreach (var t in p.Toc) pageOfId.TryAdd(t.Id, p.Slug);
         pages = pages.Select(p => p with { Html = Decorate(p.Html, p.Slug, pageOfId, headingPage) }).ToList();
 
+        // changelog.json の誤りは、ここで例外にして気づけるようにする（ビルド・書き出し・テストで失敗する）
         var changelogPath = Path.Combine(_env.ContentRootPath, "Content", "changelog.json");
         _changelog = File.Exists(changelogPath) ? ParseChangelog(File.ReadAllText(changelogPath)) : Array.Empty<ChangelogEntry>();
 
