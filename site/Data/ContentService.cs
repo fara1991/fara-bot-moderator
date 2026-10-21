@@ -24,6 +24,7 @@ public sealed partial class ContentService
     private IReadOnlyList<DocPage> _pages = Array.Empty<DocPage>();
     private IReadOnlyList<PageGroup> _groups = Array.Empty<PageGroup>();
     private Dictionary<string, DocPage> _bySlug = new();
+    private IReadOnlyList<ChangelogEntry> _changelog = Array.Empty<ChangelogEntry>();
 
     public ContentService(IWebHostEnvironment env, IOptions<SiteOptions> options)
     {
@@ -34,6 +35,31 @@ public sealed partial class ContentService
 
     public IReadOnlyList<DocPage> Pages => _pages;
     public IReadOnlyList<PageGroup> Groups => _groups;
+    /// <summary>更新履歴（新しい順）。Content/changelog.json。</summary>
+    public IReadOnlyList<ChangelogEntry> Changelog => _changelog;
+
+    /// <summary>changelog.json（[ { "date": "2026-10-22", "title": "...", "items": ["..."] } ]）を、新しい順の一覧にする。日付が無い・見出しが空・細かい内容に空の項目があれば FormatException。</summary>
+    public static IReadOnlyList<ChangelogEntry> ParseChangelog(string json)
+    {
+        List<ChangelogEntry> list;
+        try
+        {
+            list = JsonSerializer.Deserialize<List<ChangelogEntry>>(json, new JsonSerializerOptions(JsonSerializerDefaults.Web)) ?? new();
+        }
+        catch (JsonException ex)
+        {
+            throw new FormatException("changelog.json を読めません: " + ex.Message, ex);
+        }
+        foreach (var e in list)
+        {
+            if (e is null) throw new FormatException("changelog.json に null の項目があります");
+            if (e.Date == default) throw new FormatException($"changelog.json: date がありません（{e.Title}）");
+            if (string.IsNullOrWhiteSpace(e.Title)) throw new FormatException($"changelog.json: {e.Date:yyyy-MM-dd} の title が空です");
+            if (e.Items is null || e.Items.Any(string.IsNullOrWhiteSpace)) throw new FormatException($"changelog.json: {e.Date:yyyy-MM-dd} の items に空の項目があります");
+        }
+        // 同じ日付は書いた順のまま（OrderByDescending は安定ソート）
+        return list.OrderByDescending(e => e.Date).ToList();
+    }
 
     public DocPage? Find(string slug) => _bySlug.GetValueOrDefault(slug);
 
@@ -75,6 +101,10 @@ public sealed partial class ContentService
         foreach (var p in pages)
             foreach (var t in p.Toc) pageOfId.TryAdd(t.Id, p.Slug);
         pages = pages.Select(p => p with { Html = Decorate(p.Html, p.Slug, pageOfId, headingPage) }).ToList();
+
+        // changelog.json の誤りは、ここで例外にして気づけるようにする（ビルド・書き出し・テストで失敗する）
+        var changelogPath = Path.Combine(_env.ContentRootPath, "Content", "changelog.json");
+        _changelog = File.Exists(changelogPath) ? ParseChangelog(File.ReadAllText(changelogPath)) : Array.Empty<ChangelogEntry>();
 
         _pages = pages;
         _bySlug = pages.ToDictionary(p => p.Slug);

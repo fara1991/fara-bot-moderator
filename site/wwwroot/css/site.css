@@ -709,3 +709,12 @@ main:focus { outline: none; }
     z-index: -1;
     pointer-events: none;
 }
+
+/* 更新履歴（ホームは新しい数件の見出しだけ、/changelog は細かい内容まで） */
+.changelog-date { font-size: 0.78rem; color: var(--faint); font-variant-numeric: tabular-nums; margin-right: 0.35rem; }
+.changelog-entry .changelog-date { display: block; margin: 0 0 4px; }
+.changelog-recent { list-style: none; margin: 0 0 8px; padding: 0; }
+.changelog-recent li { padding: 3px 0; }
+.changelog-entry { padding-bottom: 16px; margin-bottom: 20px; border-bottom: 1px solid var(--border); }
+.changelog-entry h2 { margin: 0 0 8px; font-size: 1.15rem; }
+.changelog-entry ul { margin: 0; padding-left: 1.2rem; color: var(--muted); font-size: 0.94rem; line-height: 1.7; }

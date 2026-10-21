@@ -1,0 +1,30 @@
+@page "/changelog"
+@inject ContentService Content
+@inject IOptions<SiteOptions> Site
+
+<PageTitle>更新履歴 | @Site.Value.Title</PageTitle>
+<HeadContent>
+    <meta name="description" content="@Site.Value.Title の更新履歴です。機能の追加や、説明・サイトの変更を新しい順に載せています。" />
+</HeadContent>
+
+<section class="page-section narrow">
+    <h1>更新履歴</h1>
+    <p class="lead">機能の追加や、説明・サイトの変更の記録です（新しい順）。アプリの新しい版は <a href="@Site.Value.ReleasesUrl" target="_blank" rel="noopener noreferrer">Releases</a> からダウンロードできます。</p>
+
+    @foreach (var e in Content.Changelog)
+    {
+        <article class="changelog-entry">
+            <div class="changelog-date">@e.Date.ToString("yyyy/MM/dd")</div>
+            <h2>@e.Title</h2>
+            @if (e.Items.Count > 0)
+            {
+                <ul>
+                    @foreach (var item in e.Items)
+                    {
+                        <li>@item</li>
+                    }
+                </ul>
+            }
+        </article>
+    }
+</section>

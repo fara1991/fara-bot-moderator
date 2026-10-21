@@ -1,5 +1,6 @@
 @page "/"
 @inject IOptions<SiteOptions> Site
+@inject ContentService Content
 
 <PageTitle>@Site.Value.Title | Twitch 配信者向けチャットボット</PageTitle>
 <HeadContent>
@@ -18,6 +19,17 @@
         </p>
         <p class="hero-note">Windows 10 / 11（x64）・.NET 8 ランタイム・WebView2 ランタイムが必要です。</p>
     </div>
+</section>
+
+<section class="page-section">
+    <h2>更新履歴</h2>
+    <ul class="changelog-recent">
+        @foreach (var e in Content.Changelog.Take(RecentCount))
+        {
+            <li><span class="changelog-date">@e.Date.ToString("MM/dd")</span> @e.Title</li>
+        }
+    </ul>
+    <p><a href="/changelog">すべて見る →</a></p>
 </section>
 
 <section class="page-section">
@@ -109,3 +121,8 @@
         <a class="button ghost" href="/docs">ドキュメント一覧</a>
     </p>
 </section>
+
+@code {
+    /// <summary>ホームに出す更新履歴の件数（細かい内容は /changelog）。</summary>
+    private const int RecentCount = 3;
+}

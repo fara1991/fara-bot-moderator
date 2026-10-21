@@ -13,6 +13,16 @@ public sealed class SiteOptions
     public string ManualPath { get; set; } = "../Manual.md";
 }
 
+/// <summary>更新履歴の 1 件（Content/changelog.json）。ホームは見出しだけ、/changelog は細かい内容（Items）まで出す。</summary>
+public sealed class ChangelogEntry
+{
+    public DateOnly Date { get; set; }
+    /// <summary>短い見出し（ホームにも出す）。</summary>
+    public string Title { get; set; } = "";
+    /// <summary>細かい内容（/changelog だけに出す）。</summary>
+    public List<string> Items { get; set; } = new();
+}
+
 /// <summary>ページ内の見出し（右側の「このページの目次」に出す）。</summary>
 public sealed record TocItem(string Id, string Text, int Level);
 
