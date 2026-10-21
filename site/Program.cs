@@ -45,6 +45,14 @@ if (!exporting)
 app.UseStaticFiles();
 app.UseAntiforgery();
 
+// 検索インデックス（クライアント側の検索 wwwroot/js/search.js が読み込む。静的に書き出すときも、同じ内容を /search-index.json に書く）
+var searchJsonOptions = new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web)
+{
+    // 日本語を \uXXXX にエスケープしない
+    Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+};
+app.MapGet("/search-index.json", (ContentService content) => Results.Json(content.BuildSearchIndex(), searchJsonOptions));
+
 app.MapRazorComponents<App>();
 
 if (exporting)

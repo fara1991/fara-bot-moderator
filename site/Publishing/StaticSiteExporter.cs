@@ -48,6 +48,7 @@ public static class StaticSiteExporter
         {
             ["/"] = "index.html",
             ["/docs"] = "docs.html",
+            ["/search-index.json"] = "search-index.json",
         };
         foreach (var page in content.Pages) pages[page.Url] = page.Url.TrimStart('/') + ".html";
 

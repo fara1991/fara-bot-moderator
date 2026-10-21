@@ -41,3 +41,12 @@ public sealed class SectionDefinition
     public string Heading { get; set; } = "";
     public bool Own { get; set; }
 }
+
+/// <summary>/search-index.json の 1 件（検索はクライアント側の wwwroot/js/search.js で行う）。ページ自体と、ページの中の見出しごとの節を 1 件ずつ持つ。</summary>
+/// <param name="Type">page = ページ自体 / section = ページの中の見出し</param>
+/// <param name="Title">節の見出し（ページ自体の場合はページの題名）</param>
+/// <param name="Page">ページの題名</param>
+/// <param name="Group">ページのグループ</param>
+/// <param name="Url">行き先（見出しなら #見出し 付き）</param>
+/// <param name="Text">本文のプレーンテキスト（一致する場所の抜き出しと、部分一致に使う）</param>
+public sealed record SearchEntry(string Type, string Title, string Page, string Group, string Url, string Text);

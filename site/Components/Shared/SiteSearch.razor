@@ -1,0 +1,16 @@
+@* ヘッダー（PC）とメニュー（スマホ）に置くサイト内検索の欄。入力するとすぐに、一致した場所（ページ › 見出し）と、その前後の文章を出す。
+   候補の取得と表示は wwwroot/js/search.js（/search-index.json を読む）。同じ画面に 2 つ置くことがあるので、id は IdPrefix で分ける *@
+<div class="site-search" data-site-search>
+    <svg class="site-search-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></svg>
+    <input type="search" class="site-search-input" placeholder="検索（例: dmg、アクセスキー、翻訳）" autocomplete="off" spellcheck="false"
+           aria-label="サイト内を検索" role="combobox" aria-expanded="false" aria-controls="@ListId" aria-autocomplete="list" />
+    <span class="site-search-hint" aria-hidden="true"><kbd>Ctrl</kbd><kbd>K</kbd></span>
+    <div class="site-search-list" id="@ListId" role="listbox" aria-label="検索の候補" hidden></div>
+</div>
+
+@code {
+    /// <summary>この欄の id の頭（同じ画面に 2 つ置くため）。</summary>
+    [Parameter] public string IdPrefix { get; set; } = "hdr";
+
+    private string ListId => IdPrefix + "-search-list";
+}

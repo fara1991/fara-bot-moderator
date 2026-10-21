@@ -1,4 +1,4 @@
-/* FaraBotModerator サイト。紫ベース。色は :root の変数にまとめ、ライトモードは prefers-color-scheme で切り替える。
+/* FaraBotModerator サイト。紫ベース。色は :root の変数にまとめ、ライト・ダークは端末の設定（prefers-color-scheme）か、ヘッダーのスイッチ（data-theme）で切り替える。
    外部のフォント・CSS は読み込まない（システムフォントのみ）。 */
 :root {
     color-scheme: dark;
@@ -24,8 +24,9 @@
     --font-mono: ui-monospace, "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
 }
 
+/* ライトモード: 端末の設定がライトで、スイッチで選んでいないとき ／ スイッチでライトを選んだとき（どちらも同じ色） */
 @media (prefers-color-scheme: light) {
-    :root {
+    :root:not([data-theme="dark"]) {
         color-scheme: light;
         --bg: #fbf8ff;
         --bg-2: #f3ecff;
@@ -43,6 +44,25 @@
         --code-bg: #f1e9ff;
         --grad-text: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
     }
+}
+
+:root[data-theme="light"] {
+    color-scheme: light;
+    --bg: #fbf8ff;
+    --bg-2: #f3ecff;
+    --surface: #ffffff;
+    --surface-2: #f5eeff;
+    --border: rgba(109, 40, 217, 0.16);
+    --border-strong: rgba(109, 40, 217, 0.4);
+    --text: #251745;
+    --muted: #5b4a82;
+    --faint: #6b5c94;
+    --accent: #7c3aed;
+    --accent-strong: #6d28d9;
+    --accent-ink: #ffffff;
+    --link: #6d28d9;
+    --code-bg: #f1e9ff;
+    --grad-text: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
 }
 
 * { box-sizing: border-box; }
@@ -508,4 +528,141 @@ main:focus { outline: none; }
 @media (prefers-reduced-motion: reduce) {
     html { scroll-behavior: auto; }
     .button, .link-card { transition: none; }
+}
+
+/* ---- ヘッダーの検索欄・ライト／ダークのスイッチ ---- */
+.site-search {
+    position: relative;
+    flex: 1 1 360px;
+    max-width: 560px;
+    margin-left: auto;
+}
+.site-search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    width: 18px;
+    height: 18px;
+    margin-top: -9px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    color: #b9acd6;
+    pointer-events: none;
+}
+.site-search-input {
+    width: 100%;
+    height: 40px;
+    padding: 0 76px 0 38px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+    font: inherit;
+    font-size: 0.95rem;
+}
+.site-search-input::placeholder { color: #b9acd6; }
+.site-search-input:focus { outline: none; border-color: #c084fc; background: rgba(255, 255, 255, 0.14); }
+.site-search-input::-webkit-search-cancel-button { display: none; }
+.site-search-hint { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); display: flex; gap: 4px; pointer-events: none; }
+.site-search:focus-within .site-search-hint { opacity: 0; }
+.site-search-hint kbd {
+    padding: 1px 6px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 5px;
+    background: transparent;
+    color: #d8c7f5;
+    font: inherit;
+    font-size: 0.72rem;
+}
+
+.site-search-list {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    right: 0;
+    z-index: 80;
+    max-height: min(70vh, 560px);
+    overflow-y: auto;
+    padding: 6px;
+    border: 1px solid var(--border-strong);
+    border-radius: 12px;
+    background: var(--surface);
+    color: var(--text);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+}
+.site-search-list[hidden] { display: none; }
+.site-search-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 9px 12px;
+    border-radius: 8px;
+    color: var(--text);
+    text-decoration: none;
+    line-height: 1.5;
+}
+.site-search-item:hover,
+.site-search-item.is-active { background: var(--surface-2); color: var(--text); }
+.site-search-title { font-weight: 700; font-size: 0.95rem; }
+.site-search-badge {
+    margin-left: 8px;
+    padding: 0 7px;
+    border-radius: 999px;
+    border: 1px solid var(--border-strong);
+    color: var(--muted);
+    font-size: 0.7rem;
+    font-weight: 400;
+}
+.site-search-where { color: var(--faint); font-size: 0.78rem; }
+.site-search-snippet { color: var(--muted); font-size: 0.82rem; overflow-wrap: anywhere; }
+.site-search-list mark { background: rgba(250, 204, 21, 0.35); color: inherit; border-radius: 3px; padding: 0 1px; }
+.site-search-empty,
+.site-search-more { padding: 12px; color: var(--muted); font-size: 0.88rem; }
+
+/* ライト・ダークのスイッチ（ON = ダークモード = 月、OFF = ライトモード = 太陽） */
+.theme-switch {
+    position: relative;
+    flex: 0 0 auto;
+    width: 56px;
+    height: 30px;
+    padding: 0;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 999px;
+    background: #cbd5e1;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+.theme-switch[aria-checked="true"] { background: #7c3aed; }
+.theme-knob {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #fff;
+    color: #f59e0b;
+    display: grid;
+    place-items: center;
+    transition: transform 0.15s ease;
+}
+.theme-switch[aria-checked="true"] .theme-knob { transform: translateX(26px); color: #6d28d9; }
+.theme-knob svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.theme-moon { display: none; }
+.theme-switch[aria-checked="true"] .theme-sun { display: none; }
+.theme-switch[aria-checked="true"] .theme-moon { display: block; fill: currentColor; }
+.theme-switch:focus-visible { outline: 2px solid #e9d5ff; outline-offset: 2px; }
+
+/* スマホ: ヘッダーが無いので、メニューの中に出す */
+.mobile-tools { display: flex; align-items: center; gap: 10px; padding: 12px 1rem 0; }
+.mobile-tools .site-search { margin-left: 0; max-width: none; }
+.mobile-tools .site-search-hint { display: none; }
+@media (min-width: 900px) {
+    .mobile-tools { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .theme-switch, .theme-knob { transition: none; }
 }

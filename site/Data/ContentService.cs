@@ -81,6 +81,36 @@ public sealed partial class ContentService
         _groups = pages.GroupBy(p => p.Group).Select(g => new PageGroup(g.Key, g.ToList())).ToList();
     }
 
+    /// <summary>
+    /// 検索インデックス。ページ自体（題名・説明）と、ページの中の見出し（h2・h3）ごとの節を 1 件ずつ。
+    /// 一致した場所を「ページ › 見出し」で示せるように、節ごとに分けて持つ。
+    /// </summary>
+    public IReadOnlyList<SearchEntry> BuildSearchIndex()
+    {
+        var entries = new List<SearchEntry>();
+        foreach (var page in _pages)
+        {
+            entries.Add(new SearchEntry("page", page.Title, page.Title, page.Group, page.Url, page.Description));
+            var headings = HeadingPattern().Matches(page.Html).Where(m => m.Groups[1].Value is "2" or "3").ToList();
+            var introEnd = headings.Count > 0 ? headings[0].Index : page.Html.Length;
+            var intro = PlainText(page.Html[..introEnd]);
+            if (intro.Length > 0) entries.Add(new SearchEntry("section", page.Title, page.Title, page.Group, page.Url, intro));
+            for (var i = 0; i < headings.Count; i++)
+            {
+                var start = headings[i].Index + headings[i].Length;
+                var end = i + 1 < headings.Count ? headings[i + 1].Index : page.Html.Length;
+                var title = PlainText(headings[i].Groups[3].Value);
+                var id = System.Net.WebUtility.HtmlDecode(headings[i].Groups[2].Value);
+                entries.Add(new SearchEntry("section", title, page.Title, page.Group, $"{page.Url}#{Uri.EscapeDataString(id)}", PlainText(page.Html[start..end])));
+            }
+        }
+        return entries;
+    }
+
+    /// <summary>HTML のタグを除き、空白をそろえたプレーンテキストにする。</summary>
+    private static string PlainText(string html) =>
+        Regex.Replace(System.Net.WebUtility.HtmlDecode(Regex.Replace(html, "<[^>]+>", " ")), @"\s+", " ").Trim();
+
     private static List<TocItem> ExtractToc(string html) =>
         HeadingPattern().Matches(html)
             .Select(m => new TocItem(System.Net.WebUtility.HtmlDecode(m.Groups[2].Value), System.Net.WebUtility.HtmlDecode(Regex.Replace(m.Groups[3].Value, "<[^>]+>", "")), int.Parse(m.Groups[1].Value)))
