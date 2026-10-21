@@ -1,0 +1,59 @@
+# Cloudflare Workers の設定（静的ファイル）。dist/ は `dotnet run -- --export dist` で生成する（.github/workflows/site.yml 参照）。
+#
+#   本番:     master  ブランチ → twitch-bot.fara-labs.com      (npx wrangler deploy --env production)
+#   develop:  develop ブランチ → twitch-bot-dev.fara-labs.com  (npx wrangler deploy --env dev)
+#   Worker 名は本番 fara-twitch-bot、develop は fara-twitch-bot-dev。
+#   ここの name はダッシュボードの Worker 名と一致させる（違うと別の Worker が新しく作られる）。
+#
+# すべてのリクエストが worker/index.js を通る（run_worker_first = true。セキュリティ用のヘッダーと、確認用ホストの noindex のため）。
+
+name = "fara-twitch-bot"
+main = "worker/index.js"
+compatibility_date = "2026-10-01"
+# workers.dev と preview の URL は使わない（確認用は Cloudflare Access でカスタムドメインだけを守っているため、ほかの URL から見えないようにする）
+workers_dev = false
+preview_urls = false
+
+[assets]
+directory = "./dist"
+binding = "ASSETS"
+# /docs/overview → docs/overview.html、/docs/overview/ → /docs/overview へリダイレクト
+html_handling = "auto-trailing-slash"
+# 存在しないパスは 404.html を 404 ステータスで返す
+not_found_handling = "404-page"
+run_worker_first = true
+
+[env.production]
+name = "fara-twitch-bot"
+workers_dev = false
+preview_urls = false
+routes = [
+  { pattern = "twitch-bot.fara-labs.com", custom_domain = true },
+]
+
+[env.production.assets]
+directory = "./dist"
+binding = "ASSETS"
+html_handling = "auto-trailing-slash"
+not_found_handling = "404-page"
+run_worker_first = true
+
+[env.dev]
+name = "fara-twitch-bot-dev"
+workers_dev = false
+preview_urls = false
+routes = [
+  { pattern = "twitch-bot-dev.fara-labs.com", custom_domain = true },
+]
+
+# 確認用は検索エンジンに載せない（worker/index.js がすべての応答に X-Robots-Tag: noindex を付ける。
+# ホスト名ではなくこの変数で判断するので、ドメインが変わっても付く）
+[env.dev.vars]
+NOINDEX = "true"
+
+[env.dev.assets]
+directory = "./dist"
+binding = "ASSETS"
+html_handling = "auto-trailing-slash"
+not_found_handling = "404-page"
+run_worker_first = true

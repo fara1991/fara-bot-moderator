@@ -1,0 +1,80 @@
+name: Site
+
+# FaraBotModerator の紹介サイト（site/）。
+#   master  → https://twitch-bot.fara-labs.com      （本番）
+#   develop → https://twitch-bot-dev.fara-labs.com  （確認用。Cloudflare Access で自分だけが見られる）
+# PR では書き出し（ビルド）だけ行い、デプロイはしない。
+
+on:
+  push:
+    branches: [master, develop]
+    paths:
+      - "site/**"
+      - "Manual.md"
+      - "global.json"
+      - ".github/workflows/site.yml"
+  pull_request:
+    paths:
+      - "site/**"
+      - "Manual.md"
+      - "global.json"
+      - ".github/workflows/site.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: site-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build static site
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Build
+        working-directory: site
+        run: dotnet build -c Release --nologo
+
+      - name: Export static site
+        working-directory: site
+        run: dotnet run -c Release --no-build --no-launch-profile -- --export dist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: site
+          path: site/dist
+          retention-days: 7
+
+  deploy:
+    name: Deploy to Cloudflare
+    needs: build
+    # PR では build だけ行い、master / develop への push（と手動実行）でデプロイする。
+    # 手動実行は master / develop を選んだときだけ（ほかのブランチで確認用サイトを上書きしない）
+    if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/develop')
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.ref_name == 'master' && 'production' || 'develop' }}
+      url: ${{ github.ref_name == 'master' && 'https://twitch-bot.fara-labs.com' || 'https://twitch-bot-dev.fara-labs.com' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: site
+          path: site/dist
+
+      - uses: cloudflare/wrangler-action@v3
+        with:
+          wranglerVersion: "4.149.0"
+          workingDirectory: site
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy --env ${{ github.ref_name == 'master' && 'production' || 'dev' }}

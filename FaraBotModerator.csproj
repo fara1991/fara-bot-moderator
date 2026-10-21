@@ -38,6 +38,10 @@
         <EmbeddedResource Remove="external\**"/>
         <None Remove="external\**"/>
         <Page Remove="external\**"/>
+        <Compile Remove="site\**"/>
+        <EmbeddedResource Remove="site\**"/>
+        <None Remove="site\**"/>
+        <Page Remove="site\**"/>
         <Content Remove="external\**"/>
         <Resource Include="Resources\app.ico" />
         <None Update="Resources\secrets.json">

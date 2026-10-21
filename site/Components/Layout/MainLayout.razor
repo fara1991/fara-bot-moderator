@@ -1,0 +1,35 @@
+@inherits LayoutComponentBase
+@inject IOptions<SiteOptions> Site
+
+<a class="skip-link" href="#main-content">本文へスキップ</a>
+
+<header class="site-header">
+    <div class="site-header-inner">
+        <a class="brand" href="/" aria-label="@Site.Value.Title トップへ">
+            <img src="/images/site-icon.svg" alt="" width="32" height="32" />
+            <span>@Site.Value.Title</span>
+        </a>
+        <nav class="header-nav" aria-label="サイト内の移動">
+            <a href="/">ホーム</a>
+            <a href="/docs">ドキュメント</a>
+            <a href="/docs/pokemon">ポケモンコマンド</a>
+            <a href="@Site.Value.ReleasesUrl" target="_blank" rel="noopener noreferrer">ダウンロード</a>
+            <a href="@Site.Value.RepositoryUrl" target="_blank" rel="noopener noreferrer">GitHub</a>
+        </nav>
+    </div>
+</header>
+
+<main id="main-content" tabindex="-1">
+    @Body
+</main>
+
+<footer class="site-footer">
+    <div class="site-footer-inner">
+        <span>© Fara</span>
+        <nav aria-label="フッター">
+            <a href="@Site.Value.PortfolioUrl">Fara のポートフォリオ</a>
+            <a href="@Site.Value.PokemonSiteUrl" target="_blank" rel="noopener noreferrer">Pokémon Battle Assistant</a>
+            <a href="@Site.Value.RepositoryUrl" target="_blank" rel="noopener noreferrer">GitHub で修正を提案する</a>
+        </nav>
+    </div>
+</footer>
