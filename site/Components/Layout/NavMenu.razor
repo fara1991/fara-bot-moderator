@@ -1,0 +1,52 @@
+@inject ContentService Content
+@inject IOptions<SiteOptions> Site
+
+<div class="top-row">
+    <a class="brand" href="/" aria-label="@Site.Value.Title トップへ">
+        <img src="/images/site-icon.svg" alt="" width="30" height="30" />
+        <span>@Site.Value.Title</span>
+    </a>
+</div>
+
+@* 静的 SSR なので、スマホのメニューの開閉は、チェックボックスと CSS で行う（JS なし）。PC のサイドバーの表示・隠すは wwwroot/js/site.js *@
+<input type="checkbox" id="nav-toggle" class="navbar-toggler" aria-label="メニューを開く" title="メニュー" />
+
+<div class="nav-scrollable">
+    <nav class="flex-column" aria-label="サイト内の移動">
+        <div class="nav-item">
+            <NavLink class="nav-link" href="/" Match="NavLinkMatch.All">ホーム</NavLink>
+        </div>
+        <div class="nav-item">
+            <NavLink class="nav-link" href="/docs" Match="NavLinkMatch.All">ドキュメント一覧</NavLink>
+        </div>
+
+        @foreach (var group in Content.Groups)
+        {
+            <div class="nav-section">@group.Name</div>
+            @foreach (var p in group.Pages)
+            {
+                <div class="nav-item">
+                    <NavLink class="nav-link" href="@p.Url">@p.Title</NavLink>
+                </div>
+            }
+        }
+
+        <div class="nav-section">リンク</div>
+        <div class="nav-item">
+            <a class="nav-link" href="@Site.Value.ReleasesUrl" target="_blank" rel="noopener noreferrer">ダウンロード（最新版）</a>
+        </div>
+        <div class="nav-item">
+            <a class="nav-link" href="@Site.Value.RepositoryUrl" target="_blank" rel="noopener noreferrer">GitHub</a>
+        </div>
+        <div class="nav-item">
+            <a class="nav-link" href="@Site.Value.PokemonSiteUrl" target="_blank" rel="noopener noreferrer">Pokémon Battle Assistant</a>
+        </div>
+        <div class="nav-item">
+            <a class="nav-link" href="@Site.Value.PortfolioUrl">Fara のポートフォリオ</a>
+        </div>
+    </nav>
+
+    <div class="side-foot">
+        <button type="button" class="side-hide" data-sidebar-toggle aria-controls="site-sidebar" aria-expanded="true">◀ サイドバーを隠す</button>
+    </div>
+</div>
