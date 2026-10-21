@@ -2,26 +2,26 @@
    外部のフォント・CSS は読み込まない（システムフォントのみ）。 */
 :root {
     color-scheme: dark;
-    --bg: #180820;
-    --bg-2: #230d2f;
-    --surface: #2b1238;
-    --surface-2: #371847;
-    --border: rgba(228, 167, 255, 0.18);
-    --border-strong: rgba(228, 167, 255, 0.4);
-    --text: #f8ebff;
-    --muted: #c8acd6;
-    --faint: #9f83ae;
-    --accent: #ec84fc;
-    --accent-strong: #e355f7;
-    --accent-ink: #290b33;
-    --link: #f3b4fe;
-    --code-bg: #1e0a28;
-    --glow-1: rgba(227, 85, 247, 0.22);
-    --glow-2: rgba(147, 51, 234, 0.2);
-    --glow-3: rgba(227, 85, 247, 0.05);
+    --bg: #0e0920;
+    --bg-2: #150f2e;
+    --surface: #1a1238;
+    --surface-2: #231a4a;
+    --border: rgba(181, 167, 255, 0.18);
+    --border-strong: rgba(181, 167, 255, 0.4);
+    --text: #eeeaff;
+    --muted: #b4acd8;
+    --faint: #8a82b0;
+    --accent: #9575cd;
+    --accent-strong: #9575cd;
+    --accent-ink: #140b33;
+    --link: #b39ddb;
+    --code-bg: #110b26;
+    --glow-1: rgba(149, 117, 205, 0.22);
+    --glow-2: rgba(69, 39, 160, 0.30);
+    --glow-3: rgba(149, 117, 205, 0.05);
     /* ボタンの背景（白い文字が 4.5:1 以上で読める濃さ）と、見出しの文字（暗い背景に映える明るさ） */
-    --grad: linear-gradient(135deg, #d633ea 0%, #be3aed 100%);
-    --grad-text: linear-gradient(135deg, #f8d5ff 0%, #ec84fc 50%, #e355f7 100%);
+    --grad: #4527a0;
+    --grad-text: linear-gradient(135deg, #d1c4e9 0%, #b39ddb 45%, #9575cd 100%);
     --radius: 14px;
     --font: "Segoe UI", "Hiragino Sans", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
     --font-mono: ui-monospace, "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
@@ -31,47 +31,49 @@
 @media (prefers-color-scheme: light) {
     :root:not([data-theme="dark"]) {
         color-scheme: light;
-        --bg: #fef8ff;
-        --bg-2: #faecff;
+        --bg: #f9f6ff;
+        --bg-2: #efe9fb;
         --surface: #ffffff;
-        --surface-2: #fbeeff;
-        --border: rgba(174, 40, 217, 0.16);
-        --border-strong: rgba(174, 40, 217, 0.4);
-        --text: #361745;
-        --muted: #704a82;
-        --faint: #805c94;
-        --accent: #be3aed;
-        --accent-strong: #ae28d9;
+        --surface-2: #f1ecfb;
+        --border: rgba(69, 39, 160, 0.16);
+        --border-strong: rgba(69, 39, 160, 0.40);
+        --text: #1c1440;
+        --muted: #4f4580;
+        --faint: #5f5790;
+        --accent: #4527a0;
+        --accent-strong: #4527a0;
         --accent-ink: #ffffff;
-        --link: #ae28d9;
-        --code-bg: #f9e9ff;
-        --glow-1: rgba(217, 70, 239, 0.14);
-        --glow-2: rgba(168, 85, 247, 0.12);
-        --glow-3: rgba(217, 70, 239, 0.04);
-        --grad-text: linear-gradient(135deg, #be3aed 0%, #ae28d9 100%);
+        --link: #4527a0;
+        --code-bg: #ece6f8;
+        --glow-1: rgba(149, 117, 205, 0.16);
+        --glow-2: rgba(69, 39, 160, 0.10);
+        --glow-3: rgba(149, 117, 205, 0.05);
+        --grad-text: linear-gradient(135deg, #4527a0 0%, #4527a0 100%);
+        --grad: #4527a0;
     }
 }
 
 :root[data-theme="light"] {
     color-scheme: light;
-    --bg: #fef8ff;
-    --bg-2: #faecff;
+    --bg: #f9f6ff;
+    --bg-2: #efe9fb;
     --surface: #ffffff;
-    --surface-2: #fbeeff;
-    --border: rgba(174, 40, 217, 0.16);
-    --border-strong: rgba(174, 40, 217, 0.4);
-    --text: #361745;
-    --muted: #704a82;
-    --faint: #805c94;
-    --accent: #be3aed;
-    --accent-strong: #ae28d9;
+    --surface-2: #f1ecfb;
+    --border: rgba(69, 39, 160, 0.16);
+    --border-strong: rgba(69, 39, 160, 0.40);
+    --text: #1c1440;
+    --muted: #4f4580;
+    --faint: #5f5790;
+    --accent: #4527a0;
+    --accent-strong: #4527a0;
     --accent-ink: #ffffff;
-    --link: #ae28d9;
-    --code-bg: #f9e9ff;
-    --glow-1: rgba(217, 70, 239, 0.14);
-    --glow-2: rgba(168, 85, 247, 0.12);
-    --glow-3: rgba(217, 70, 239, 0.04);
-    --grad-text: linear-gradient(135deg, #be3aed 0%, #ae28d9 100%);
+    --link: #4527a0;
+    --code-bg: #ece6f8;
+    --glow-1: rgba(149, 117, 205, 0.16);
+    --glow-2: rgba(69, 39, 160, 0.10);
+    --glow-3: rgba(149, 117, 205, 0.05);
+    --grad-text: linear-gradient(135deg, #4527a0 0%, #4527a0 100%);
+    --grad: #4527a0;
 }
 
 * { box-sizing: border-box; }
@@ -104,7 +106,7 @@ a:hover { color: var(--accent); }
     top: 8px;
     z-index: 100;
     padding: 8px 14px;
-    background: #be3aed;
+    background: #4527a0;
     color: #fff;
     border-radius: 8px;
 }
@@ -116,9 +118,9 @@ a:hover { color: var(--accent); }
 /* サイドバーは、ライト・ダークどちらでも濃い紫（文字色は固定） */
 .sidebar {
     position: relative;
-    color: #f4e0ff;
-    background-image: linear-gradient(180deg, #1e0a26 0%, #361243 60%, #401b4e 100%);
-    border-right: 1px solid rgba(231, 170, 255, 0.14);
+    color: #e3e0ff;
+    background-image: linear-gradient(180deg, #120a2a 0%, #1f1348 60%, #2a1b5c 100%);
+    border-right: 1px solid rgba(186, 170, 255, 0.14);
 }
 .top-row {
     position: relative;
@@ -135,7 +137,7 @@ a:hover { color: var(--accent); }
     right: 0;
     bottom: 0;
     height: 2px;
-    background: linear-gradient(90deg, #ec84fc, #f979db, #a281f8);
+    background: linear-gradient(90deg, #9575cd, #b39ddb, #d1c4e9);
 }
 .brand {
     display: inline-flex;
@@ -201,7 +203,7 @@ a:hover { color: var(--accent); }
 .sidebar .nav-link:hover { color: #fff; background-color: rgba(255, 255, 255, 0.1); }
 .sidebar .nav-link.active { color: #fff; background-color: rgba(255, 255, 255, 0.2); font-weight: 700; }
 .sidebar nav { padding: 0.75rem 0 0.5rem; }
-.sidebar :focus-visible { outline-color: #f8d5ff; }
+.sidebar :focus-visible { outline-color: #d1c4e9; }
 
 /* PC の上に固定するヘッダー（ハンバーガーとサイト名）。スマホは出さず、サイドバー上部のサイト名とメニューのボタンを使う */
 .app-header {
@@ -261,8 +263,8 @@ main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
         gap: 12px;
         padding: 0 12px;
         color: #fff;
-        background: linear-gradient(90deg, #1e0a26 0%, #361243 100%);
-        border-bottom: 2px solid #c35cf6;
+        background: linear-gradient(90deg, #120a2a 0%, #1f1348 100%);
+        border-bottom: 2px solid #9575cd;
     }
     /* サイドバーは、ヘッダーの下。サイドバー上部のサイト名とメニューのボタンは、ヘッダーがあるので出さない。
        中身（.sidebar-panel）は枠（.sidebar）の中に重ねて置く。隠している間は、枠を細くして（アイコンの列）、中身も同じ幅にする。
@@ -289,9 +291,9 @@ main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
         width: 100%;
         pointer-events: auto;
         overflow: hidden;
-        background-color: #280d33;
-        background-image: linear-gradient(180deg, #1e0a26 0%, #361243 60%, #401b4e 100%);
-        border-right: 1px solid rgba(231, 170, 255, 0.14);
+        background-color: #160d36;
+        background-image: linear-gradient(180deg, #120a2a 0%, #1f1348 60%, #2a1b5c 100%);
+        border-right: 1px solid rgba(186, 170, 255, 0.14);
         transition: width 0.15s ease, box-shadow 0.15s ease;
     }
     /* 項目は、いつも本来の幅（270px）で並べておき、細い列のときは、枠で切る（広げたときに並べ直さない） */
@@ -327,7 +329,7 @@ main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
     }
 
     .app-header :focus-visible {
-        outline-color: #f8d5ff;
+        outline-color: #d1c4e9;
     }
 }
 
@@ -376,7 +378,7 @@ main:focus { outline: none; }
     border: 1px solid transparent;
     transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
-.button:hover { color: #fff; transform: translateY(-1px); box-shadow: 0 8px 24px rgba(227, 85, 247, 0.4); }
+.button:hover { color: #fff; transform: translateY(-1px); box-shadow: 0 8px 24px rgba(141, 85, 247, 0.4); }
 .button.ghost { background: transparent; color: var(--text); border-color: var(--border-strong); }
 .button.ghost:hover { background: var(--surface-2); color: var(--text); box-shadow: none; }
 
@@ -384,7 +386,7 @@ main:focus { outline: none; }
 .hero {
     padding: 72px 20px 56px;
     text-align: center;
-    background: linear-gradient(180deg, rgba(227, 85, 247, 0.12), transparent);
+    background: linear-gradient(180deg, rgba(141, 85, 247, 0.12), transparent);
     border-bottom: 1px solid var(--border);
 }
 .hero-inner { max-width: 760px; margin: 0 auto; }
@@ -581,7 +583,7 @@ main:focus { outline: none; }
     stroke-width: 2;
     stroke-linecap: round;
     stroke-linejoin: round;
-    color: #c8acd6;
+    color: #b2acd6;
     pointer-events: none;
 }
 .site-search-input {
@@ -595,8 +597,8 @@ main:focus { outline: none; }
     font: inherit;
     font-size: 0.95rem;
 }
-.site-search-input::placeholder { color: #c8acd6; }
-.site-search-input:focus { outline: none; border-color: #ec84fc; background: rgba(255, 255, 255, 0.14); }
+.site-search-input::placeholder { color: #b2acd6; }
+.site-search-input:focus { outline: none; border-color: #9575cd; background: rgba(255, 255, 255, 0.14); }
 .site-search-input::-webkit-search-cancel-button { display: none; }
 .site-search-hint { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); display: flex; gap: 4px; pointer-events: none; }
 .site-search:focus-within .site-search-hint { opacity: 0; }
@@ -605,7 +607,7 @@ main:focus { outline: none; }
     border: 1px solid rgba(255, 255, 255, 0.3);
     border-radius: 5px;
     background: transparent;
-    color: #e9c7f5;
+    color: #d0c7f5;
     font: inherit;
     font-size: 0.72rem;
 }
@@ -666,7 +668,7 @@ main:focus { outline: none; }
     background: #cbd5e1;
     cursor: pointer;
 }
-.theme-switch[aria-checked="true"] { background: #be3aed; }
+.theme-switch[aria-checked="true"] { background: #4527a0; }
 .theme-knob {
     position: absolute;
     top: 2px;
@@ -682,12 +684,12 @@ main:focus { outline: none; }
 /* 動きは、最初の状態を合わせたあと（site.js が theme-ready を付ける）から */
 .theme-ready .theme-switch { transition: background-color 0.15s ease; }
 .theme-ready .theme-knob { transition: transform 0.15s ease; }
-.theme-switch[aria-checked="true"] .theme-knob { transform: translateX(26px); color: #ae28d9; }
+.theme-switch[aria-checked="true"] .theme-knob { transform: translateX(26px); color: #4527a0; }
 .theme-knob svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .theme-moon { display: none; }
 .theme-switch[aria-checked="true"] .theme-sun { display: none; }
 .theme-switch[aria-checked="true"] .theme-moon { display: block; fill: currentColor; }
-.theme-switch:focus-visible { outline: 2px solid #f8d5ff; outline-offset: 2px; }
+.theme-switch:focus-visible { outline: 2px solid #d1c4e9; outline-offset: 2px; }
 
 /* スマホ: ヘッダーが無いので、メニューの中に出す */
 .mobile-tools { display: flex; align-items: center; gap: 10px; padding: 12px 1rem 0; }
