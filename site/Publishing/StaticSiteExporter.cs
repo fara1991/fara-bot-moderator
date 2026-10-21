@@ -11,6 +11,10 @@ namespace FaraBotModeratorSite.Publishing;
 /// </summary>
 public static class StaticSiteExporter
 {
+    private static readonly System.Text.RegularExpressions.Regex DeadAnchor = new("href=\"#(?!main-content\")[^\"]*\"");
+
+    private const string MarkerFile = ".site-export";
+
     public static async Task ExportAsync(WebApplication app, string outputDir)
     {
         var content = app.Services.GetRequiredService<ContentService>();
@@ -27,8 +31,17 @@ public static class StaticSiteExporter
         {
             throw new InvalidOperationException($"--export には専用の出力フォルダ（例: dist）を指定してください: {outputDir}");
         }
-        if (Directory.Exists(outputDir)) Directory.Delete(outputDir, recursive: true);
+        // 書き出し先は丸ごと消す。空か、前回の書き出しの印（.site-export）があるフォルダだけを対象にする
+        // （--export wwwroot や --export Content のような、ソースのフォルダを消さないため）
+        var marker = Path.Combine(outputDir, MarkerFile);
+        if (Directory.Exists(outputDir))
+        {
+            if (Directory.EnumerateFileSystemEntries(outputDir).Any() && !File.Exists(marker))
+                throw new InvalidOperationException($"--export の出力先は、空のフォルダか、前回の書き出し先（dist など）にしてください: {outputDir}");
+            Directory.Delete(outputDir, recursive: true);
+        }
         Directory.CreateDirectory(outputDir);
+        await File.WriteAllTextAsync(marker, "このフォルダは StaticSiteExporter が書き出したものです（次の書き出しで丸ごと消します）。");
 
         // Workers の html_handling = "auto-trailing-slash" に合わせ、/docs/overview は docs/overview.html に書く。
         var pages = new Dictionary<string, string>
@@ -45,7 +58,11 @@ public static class StaticSiteExporter
             {
                 throw new InvalidOperationException($"{path} returned {(int)response.StatusCode}");
             }
-            await WriteAsync(outputDir, file, await response.Content.ReadAsByteArrayAsync());
+            var bytes = await response.Content.ReadAsByteArrayAsync();
+            // 説明ページに、行き先のないページ内リンク（#見出し）が残っていたら、リンク切れなので止める（スキップリンク以外）
+            if (file.EndsWith(".html", StringComparison.Ordinal) && DeadAnchor.Match(System.Text.Encoding.UTF8.GetString(bytes)) is { Success: true } dead)
+                throw new InvalidOperationException($"{path} に、行き先のないリンクがあります: {dead.Value}（Manual.md の見出しの名前と pages.json を確認してください）");
+            await WriteAsync(outputDir, file, bytes);
         }
 
         // 404 ページ（Workers の not_found_handling = "404-page" が /404.html を返す）

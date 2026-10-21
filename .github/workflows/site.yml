@@ -11,11 +11,13 @@ on:
     paths:
       - "site/**"
       - "Manual.md"
+      - "global.json"
       - ".github/workflows/site.yml"
   pull_request:
     paths:
       - "site/**"
       - "Manual.md"
+      - "global.json"
       - ".github/workflows/site.yml"
   workflow_dispatch:
 
@@ -35,7 +37,7 @@ jobs:
 
       - uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 8.0.x
+          global-json-file: global.json
 
       - name: Build
         working-directory: site

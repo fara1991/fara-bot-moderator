@@ -54,11 +54,15 @@ public sealed partial class ContentService
         var definitions = JsonSerializer.Deserialize<List<PageDefinition>>(File.ReadAllText(definitionPath),
             new JsonSerializerOptions(JsonSerializerDefaults.Web)) ?? new();
 
+        foreach (var d in definitions)
+            if (!Regex.IsMatch(d.Slug, "^[a-z0-9-]+$")) throw new InvalidOperationException($"pages.json の slug は、小文字の英数字とハイフンだけにしてください: {d.Slug}");
+        if (definitions.Select(d => d.Slug).Distinct().Count() != definitions.Count) throw new InvalidOperationException("pages.json に、同じ slug が重複しています");
+
         var pages = new List<DocPage>();
         // ページの題名にしたため本文に出さない見出し（1 つ目の見出し）へのリンクは、そのページ自体へ向ける
         var headingPage = new Dictionary<string, string>();
         foreach (var d in definitions)
-            if (d.Sections.Count > 0) headingPage[Slugify(d.Sections[0].Heading)] = d.Slug;
+            if (d.Sections.Count > 0) headingPage[Slugify(manual.FullHeading(d.Sections[0].Heading))] = d.Slug;
         foreach (var d in definitions)
         {
             var markdown = string.Join("\n", d.Sections.Select((s, i) => manual.Extract(s.Heading, s.Own, includeHeading: i > 0)));
@@ -79,7 +83,7 @@ public sealed partial class ContentService
 
     private static List<TocItem> ExtractToc(string html) =>
         HeadingPattern().Matches(html)
-            .Select(m => new TocItem(m.Groups[2].Value, Regex.Replace(m.Groups[3].Value, "<[^>]+>", ""), int.Parse(m.Groups[1].Value)))
+            .Select(m => new TocItem(System.Net.WebUtility.HtmlDecode(m.Groups[2].Value), System.Net.WebUtility.HtmlDecode(Regex.Replace(m.Groups[3].Value, "<[^>]+>", "")), int.Parse(m.Groups[1].Value)))
             .Where(t => t.Level >= 2)
             .ToList();
 
@@ -152,6 +156,13 @@ internal sealed class ManualDocument
     /// 見出し（先頭が一致するもの）の部分を取り出す。下の見出しは、本文が h2 から始まるようにレベルをそろえる。
     /// includeHeading が false なら、見出し自身は出さない（ページの題名として別に出すため）。
     /// </summary>
+    /// <summary>見出しの先頭の文字（pages.json に書いたもの）から、見出しの全文を返す。</summary>
+    public string FullHeading(string headingPrefix)
+    {
+        var heading = _headings.Find(h => h.Text.StartsWith(headingPrefix, StringComparison.Ordinal));
+        return heading?.Text ?? throw new InvalidOperationException($"Manual.md に見出しが見つかりません: {headingPrefix}");
+    }
+
     public string Extract(string headingPrefix, bool own, bool includeHeading)
     {
         var index = _headings.FindIndex(h => h.Text.StartsWith(headingPrefix, StringComparison.Ordinal));

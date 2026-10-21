@@ -16,7 +16,9 @@
     --accent-ink: #1a0b33;
     --link: #d8b4fe;
     --code-bg: #130a28;
-    --grad: linear-gradient(135deg, #c084fc 0%, #a855f7 45%, #7c3aed 100%);
+    /* ボタンの背景（白い文字が 4.5:1 以上で読める濃さ）と、見出しの文字（暗い背景に映える明るさ） */
+    --grad: linear-gradient(135deg, #9333ea 0%, #7c3aed 100%);
+    --grad-text: linear-gradient(135deg, #e9d5ff 0%, #c084fc 50%, #a855f7 100%);
     --radius: 14px;
     --header-h: 60px;
     --font: "Segoe UI", "Hiragino Sans", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
@@ -34,12 +36,13 @@
         --border-strong: rgba(109, 40, 217, 0.4);
         --text: #251745;
         --muted: #5b4a82;
-        --faint: #7d6ea3;
+        --faint: #6b5c94;
         --accent: #7c3aed;
         --accent-strong: #6d28d9;
         --accent-ink: #ffffff;
         --link: #6d28d9;
         --code-bg: #f1e9ff;
+        --grad-text: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
     }
 }
 
@@ -67,7 +70,7 @@ a:hover { color: var(--accent); }
     top: 8px;
     z-index: 100;
     padding: 8px 14px;
-    background: var(--accent-strong);
+    background: #7c3aed;
     color: #fff;
     border-radius: 8px;
 }
@@ -190,7 +193,7 @@ main:focus { outline: none; }
     margin: 0 0 16px;
     font-size: clamp(2.2rem, 6vw, 3.4rem);
     line-height: 1.2;
-    background: var(--grad);
+    background: var(--grad-text);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
@@ -285,6 +288,7 @@ main:focus { outline: none; }
 }
 .prose h3 { font-size: 1.2rem; margin: 32px 0 10px; line-height: 1.45; }
 .prose h4 { font-size: 1.05rem; margin: 24px 0 8px; }
+.prose { overflow-wrap: anywhere; }
 .prose p { margin: 0 0 14px; }
 .prose ul, .prose ol { margin: 0 0 16px; padding-left: 1.5em; }
 .prose li { margin: 4px 0; }
@@ -352,6 +356,9 @@ main:focus { outline: none; }
     }
     .doc-nav-narrow summary { cursor: pointer; font-weight: 700; padding: 4px 0; }
     .doc-nav-narrow nav { margin-top: 12px; }
+    /* ヘッダーが何行にもなるので、固定しない（見出しへのジャンプがヘッダーの下に隠れないように） */
+    .site-header { position: static; }
+    html { scroll-padding-top: 16px; }
     .hero { padding: 48px 20px 40px; }
     .page-section { padding-top: 32px; }
     .doc-main h1, .page-section h1 { font-size: 1.6rem; }
