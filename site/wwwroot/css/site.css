@@ -256,11 +256,12 @@ main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
         position: sticky;
         top: 0;
         flex-shrink: 0;
-        z-index: 75;
         pointer-events: none;
         background: none;
         border-right: 0;
     }
+    /* 広げた中身が、ほかの上に出るよう、隠しているときだけ前に置く（開いているときは、ヘッダーの検索結果の下にならないよう、前に置かない） */
+    html.sidebar-hidden .sidebar { z-index: 75; }
     .sidebar .top-row,
     .navbar-toggler { display: none; }
     .sidebar-panel {
@@ -274,7 +275,7 @@ main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
         background-color: #1a0d33;
         background-image: linear-gradient(180deg, #140a26 0%, #241243 60%, #2d1b4e 100%);
         border-right: 1px solid rgba(200, 170, 255, 0.14);
-        transition: width 0.15s ease;
+        transition: width 0.15s ease, box-shadow 0.15s ease;
     }
     /* 項目は、いつも本来の幅（270px）で並べておき、細い列のときは、枠で切る（広げたときに並べ直さない） */
     .sidebar-panel .nav-scrollable { width: 270px; }
@@ -284,13 +285,12 @@ main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
     html { scroll-padding-top: calc(3.5rem + 16px); }
     main .doc-toc { top: calc(3.5rem + 20px); max-height: calc(100vh - 3.5rem - 40px); }
 
-    /* 隠しているとき: サイドバーは、アイコンだけの細い列（52px。項目の名前の頭が、列の端に見えないよう、ハンバーガーと同じ幅）にする。項目の名前は、枠の外にはみ出して切れる。
+    /* 隠しているとき: サイドバーは、アイコンだけの細い列（3.25rem。項目の名前の頭が、列の端に見えないよう、ハンバーガーと同じくらいの幅）にする。項目の名前は、枠の外にはみ出して切れる。
        この列にマウスを乗せている間（または、キーボードで入ったとき）は、本来の幅まで広げて、ページの上にかぶせて出す。
        ハンバーガーを押すと、クラスが外れて、ふつうに広がったまま並ぶ */
-    html.sidebar-hidden .sidebar { width: 52px; }
-    html.sidebar-hidden .sidebar-panel { width: 52px; }
+    html.sidebar-hidden .sidebar { width: 3.25rem; }
+    html.sidebar-hidden .sidebar-panel { width: 3.25rem; }
     html.sidebar-hidden .sidebar-panel .nav-section { opacity: 0; transition: opacity 0.15s ease; }
-    html.sidebar-hidden .sidebar-panel .nav-scrollable { scrollbar-width: none; }
     html.sidebar-hidden .sidebar:has(:focus-visible) .sidebar-panel {
         width: 270px;
         box-shadow: 8px 0 24px rgba(0, 0, 0, 0.45);
@@ -300,7 +300,7 @@ main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
     @media (prefers-reduced-motion: reduce) {
         .sidebar-panel,
         html.sidebar-hidden .sidebar-panel .nav-section {
-            transition: none;
+            transition-duration: 0s;
         }
     }
 
@@ -320,7 +320,6 @@ main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
         opacity: 1;
         transition-delay: 0.12s;
     }
-    html.sidebar-hidden .sidebar:hover .sidebar-panel .nav-scrollable { scrollbar-width: thin; }
 }
 
 main:focus { outline: none; }
