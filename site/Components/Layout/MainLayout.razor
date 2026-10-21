@@ -4,12 +4,14 @@
 <a class="skip-link" href="#main-content">本文へスキップ</a>
 
 <div class="page">
+    @* ボタンは、画面では左上に固定するが、キーボードで最初に届くよう、サイドバーの前に置く *@
+    @* PC の左上に固定する、サイドバーの表示・非表示のハンバーガー（スマホは、サイドバー上部のメニューのボタンを使う）。押す処理は wwwroot/js/site.js *@
+    <button type="button" class="sidebar-toggle" data-sidebar-toggle aria-controls="site-sidebar" aria-expanded="true" aria-label="サイドバーの表示・非表示" title="サイドバーの表示・非表示"></button>
+
     <div class="sidebar" id="site-sidebar">
         <NavMenu />
     </div>
 
-    @* PC の左上に固定する、サイドバーの表示・非表示のハンバーガー（スマホは、サイドバー上部のメニューのボタンを使う）。押す処理は wwwroot/js/site.js *@
-    <button type="button" class="sidebar-toggle" data-sidebar-toggle aria-controls="site-sidebar" aria-expanded="true" aria-label="サイドバーの表示・非表示" title="サイドバーの表示・非表示"></button>
 
     <main id="main-content" tabindex="-1">
         @Body
