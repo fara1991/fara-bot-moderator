@@ -2,23 +2,23 @@
    外部のフォント・CSS は読み込まない（システムフォントのみ）。 */
 :root {
     color-scheme: dark;
-    --bg: #0f0820;
-    --bg-2: #170d2f;
-    --surface: #1d1238;
-    --surface-2: #261847;
-    --border: rgba(196, 167, 255, 0.18);
-    --border-strong: rgba(196, 167, 255, 0.4);
-    --text: #f1ebff;
-    --muted: #b9acd6;
-    --faint: #8f83ae;
-    --accent: #c084fc;
-    --accent-strong: #a855f7;
-    --accent-ink: #1a0b33;
-    --link: #d8b4fe;
-    --code-bg: #130a28;
+    --bg: #180820;
+    --bg-2: #230d2f;
+    --surface: #2b1238;
+    --surface-2: #371847;
+    --border: rgba(228, 167, 255, 0.18);
+    --border-strong: rgba(228, 167, 255, 0.4);
+    --text: #f8ebff;
+    --muted: #c8acd6;
+    --faint: #9f83ae;
+    --accent: #ec84fc;
+    --accent-strong: #e355f7;
+    --accent-ink: #290b33;
+    --link: #f3b4fe;
+    --code-bg: #1e0a28;
     /* ボタンの背景（白い文字が 4.5:1 以上で読める濃さ）と、見出しの文字（暗い背景に映える明るさ） */
-    --grad: linear-gradient(135deg, #9333ea 0%, #7c3aed 100%);
-    --grad-text: linear-gradient(135deg, #e9d5ff 0%, #c084fc 50%, #a855f7 100%);
+    --grad: linear-gradient(135deg, #d633ea 0%, #be3aed 100%);
+    --grad-text: linear-gradient(135deg, #f8d5ff 0%, #ec84fc 50%, #e355f7 100%);
     --radius: 14px;
     --font: "Segoe UI", "Hiragino Sans", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
     --font-mono: ui-monospace, "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
@@ -28,41 +28,41 @@
 @media (prefers-color-scheme: light) {
     :root:not([data-theme="dark"]) {
         color-scheme: light;
-        --bg: #fbf8ff;
-        --bg-2: #f3ecff;
+        --bg: #fef8ff;
+        --bg-2: #faecff;
         --surface: #ffffff;
-        --surface-2: #f5eeff;
-        --border: rgba(109, 40, 217, 0.16);
-        --border-strong: rgba(109, 40, 217, 0.4);
-        --text: #251745;
-        --muted: #5b4a82;
-        --faint: #6b5c94;
-        --accent: #7c3aed;
-        --accent-strong: #6d28d9;
+        --surface-2: #fbeeff;
+        --border: rgba(174, 40, 217, 0.16);
+        --border-strong: rgba(174, 40, 217, 0.4);
+        --text: #361745;
+        --muted: #704a82;
+        --faint: #805c94;
+        --accent: #be3aed;
+        --accent-strong: #ae28d9;
         --accent-ink: #ffffff;
-        --link: #6d28d9;
-        --code-bg: #f1e9ff;
-        --grad-text: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+        --link: #ae28d9;
+        --code-bg: #f9e9ff;
+        --grad-text: linear-gradient(135deg, #be3aed 0%, #ae28d9 100%);
     }
 }
 
 :root[data-theme="light"] {
     color-scheme: light;
-    --bg: #fbf8ff;
-    --bg-2: #f3ecff;
+    --bg: #fef8ff;
+    --bg-2: #faecff;
     --surface: #ffffff;
-    --surface-2: #f5eeff;
-    --border: rgba(109, 40, 217, 0.16);
-    --border-strong: rgba(109, 40, 217, 0.4);
-    --text: #251745;
-    --muted: #5b4a82;
-    --faint: #6b5c94;
-    --accent: #7c3aed;
-    --accent-strong: #6d28d9;
+    --surface-2: #fbeeff;
+    --border: rgba(174, 40, 217, 0.16);
+    --border-strong: rgba(174, 40, 217, 0.4);
+    --text: #361745;
+    --muted: #704a82;
+    --faint: #805c94;
+    --accent: #be3aed;
+    --accent-strong: #ae28d9;
     --accent-ink: #ffffff;
-    --link: #6d28d9;
-    --code-bg: #f1e9ff;
-    --grad-text: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+    --link: #ae28d9;
+    --code-bg: #f9e9ff;
+    --grad-text: linear-gradient(135deg, #be3aed 0%, #ae28d9 100%);
 }
 
 * { box-sizing: border-box; }
@@ -71,7 +71,7 @@ html { scroll-behavior: smooth; scroll-padding-top: 16px; }
 
 body {
     margin: 0;
-    background: radial-gradient(1200px 500px at 80% -10%, rgba(168, 85, 247, 0.18), transparent 60%), var(--bg);
+    background: radial-gradient(1200px 500px at 80% -10%, rgba(227, 85, 247, 0.18), transparent 60%), var(--bg);
     color: var(--text);
     font-family: var(--font);
     font-size: 16px;
@@ -89,7 +89,7 @@ a:hover { color: var(--accent); }
     top: 8px;
     z-index: 100;
     padding: 8px 14px;
-    background: #7c3aed;
+    background: #be3aed;
     color: #fff;
     border-radius: 8px;
 }
@@ -101,9 +101,9 @@ a:hover { color: var(--accent); }
 /* サイドバーは、ライト・ダークどちらでも濃い紫（文字色は固定） */
 .sidebar {
     position: relative;
-    color: #e9e0ff;
-    background-image: linear-gradient(180deg, #140a26 0%, #241243 60%, #2d1b4e 100%);
-    border-right: 1px solid rgba(200, 170, 255, 0.14);
+    color: #f4e0ff;
+    background-image: linear-gradient(180deg, #1e0a26 0%, #361243 60%, #401b4e 100%);
+    border-right: 1px solid rgba(231, 170, 255, 0.14);
 }
 .top-row {
     position: relative;
@@ -120,7 +120,7 @@ a:hover { color: var(--accent); }
     right: 0;
     bottom: 0;
     height: 2px;
-    background: linear-gradient(90deg, #c084fc, #e879f9, #818cf8);
+    background: linear-gradient(90deg, #ec84fc, #f979db, #a281f8);
 }
 .brand {
     display: inline-flex;
@@ -153,7 +153,9 @@ a:hover { color: var(--accent); }
 
 .nav-section {
     padding: 0 1rem;
-    margin: 1rem 0 0.25rem;
+    margin: 0.4rem 0 0.2rem;
+    white-space: nowrap;   /* 細い列でも折り返さず、列の高さを使わない */
+    overflow: hidden;
     color: rgba(255, 255, 255, 0.55);
     font-size: 0.75rem;
     letter-spacing: 0.05em;
@@ -184,7 +186,7 @@ a:hover { color: var(--accent); }
 .sidebar .nav-link:hover { color: #fff; background-color: rgba(255, 255, 255, 0.1); }
 .sidebar .nav-link.active { color: #fff; background-color: rgba(255, 255, 255, 0.2); font-weight: 700; }
 .sidebar nav { padding: 0.75rem 0 0.5rem; }
-.sidebar :focus-visible { outline-color: #e9d5ff; }
+.sidebar :focus-visible { outline-color: #f8d5ff; }
 
 /* PC の上に固定するヘッダー（ハンバーガーとサイト名）。スマホは出さず、サイドバー上部のサイト名とメニューのボタンを使う */
 .app-header {
@@ -244,8 +246,8 @@ main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
         gap: 12px;
         padding: 0 12px;
         color: #fff;
-        background: linear-gradient(90deg, #140a26 0%, #241243 100%);
-        border-bottom: 2px solid #8b5cf6;
+        background: linear-gradient(90deg, #1e0a26 0%, #361243 100%);
+        border-bottom: 2px solid #c35cf6;
     }
     /* サイドバーは、ヘッダーの下。サイドバー上部のサイト名とメニューのボタンは、ヘッダーがあるので出さない。
        中身（.sidebar-panel）は枠（.sidebar）の中に重ねて置く。隠している間は、枠を細くして（アイコンの列）、中身も同じ幅にする。
@@ -272,9 +274,9 @@ main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
         width: 100%;
         pointer-events: auto;
         overflow: hidden;
-        background-color: #1a0d33;
-        background-image: linear-gradient(180deg, #140a26 0%, #241243 60%, #2d1b4e 100%);
-        border-right: 1px solid rgba(200, 170, 255, 0.14);
+        background-color: #280d33;
+        background-image: linear-gradient(180deg, #1e0a26 0%, #361243 60%, #401b4e 100%);
+        border-right: 1px solid rgba(231, 170, 255, 0.14);
         transition: width 0.15s ease, box-shadow 0.15s ease;
     }
     /* 項目は、いつも本来の幅（270px）で並べておき、細い列のときは、枠で切る（広げたときに並べ直さない） */
@@ -310,7 +312,7 @@ main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
     }
 
     .app-header :focus-visible {
-        outline-color: #e9d5ff;
+        outline-color: #f8d5ff;
     }
 }
 
@@ -359,7 +361,7 @@ main:focus { outline: none; }
     border: 1px solid transparent;
     transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
-.button:hover { color: #fff; transform: translateY(-1px); box-shadow: 0 8px 24px rgba(168, 85, 247, 0.4); }
+.button:hover { color: #fff; transform: translateY(-1px); box-shadow: 0 8px 24px rgba(227, 85, 247, 0.4); }
 .button.ghost { background: transparent; color: var(--text); border-color: var(--border-strong); }
 .button.ghost:hover { background: var(--surface-2); color: var(--text); box-shadow: none; }
 
@@ -367,7 +369,7 @@ main:focus { outline: none; }
 .hero {
     padding: 72px 20px 56px;
     text-align: center;
-    background: linear-gradient(180deg, rgba(168, 85, 247, 0.12), transparent);
+    background: linear-gradient(180deg, rgba(227, 85, 247, 0.12), transparent);
     border-bottom: 1px solid var(--border);
 }
 .hero-inner { max-width: 760px; margin: 0 auto; }
@@ -564,7 +566,7 @@ main:focus { outline: none; }
     stroke-width: 2;
     stroke-linecap: round;
     stroke-linejoin: round;
-    color: #b9acd6;
+    color: #c8acd6;
     pointer-events: none;
 }
 .site-search-input {
@@ -578,8 +580,8 @@ main:focus { outline: none; }
     font: inherit;
     font-size: 0.95rem;
 }
-.site-search-input::placeholder { color: #b9acd6; }
-.site-search-input:focus { outline: none; border-color: #c084fc; background: rgba(255, 255, 255, 0.14); }
+.site-search-input::placeholder { color: #c8acd6; }
+.site-search-input:focus { outline: none; border-color: #ec84fc; background: rgba(255, 255, 255, 0.14); }
 .site-search-input::-webkit-search-cancel-button { display: none; }
 .site-search-hint { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); display: flex; gap: 4px; pointer-events: none; }
 .site-search:focus-within .site-search-hint { opacity: 0; }
@@ -588,7 +590,7 @@ main:focus { outline: none; }
     border: 1px solid rgba(255, 255, 255, 0.3);
     border-radius: 5px;
     background: transparent;
-    color: #d8c7f5;
+    color: #e9c7f5;
     font: inherit;
     font-size: 0.72rem;
 }
@@ -649,7 +651,7 @@ main:focus { outline: none; }
     background: #cbd5e1;
     cursor: pointer;
 }
-.theme-switch[aria-checked="true"] { background: #7c3aed; }
+.theme-switch[aria-checked="true"] { background: #be3aed; }
 .theme-knob {
     position: absolute;
     top: 2px;
@@ -665,12 +667,12 @@ main:focus { outline: none; }
 /* 動きは、最初の状態を合わせたあと（site.js が theme-ready を付ける）から */
 .theme-ready .theme-switch { transition: background-color 0.15s ease; }
 .theme-ready .theme-knob { transition: transform 0.15s ease; }
-.theme-switch[aria-checked="true"] .theme-knob { transform: translateX(26px); color: #6d28d9; }
+.theme-switch[aria-checked="true"] .theme-knob { transform: translateX(26px); color: #ae28d9; }
 .theme-knob svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .theme-moon { display: none; }
 .theme-switch[aria-checked="true"] .theme-sun { display: none; }
 .theme-switch[aria-checked="true"] .theme-moon { display: block; fill: currentColor; }
-.theme-switch:focus-visible { outline: 2px solid #e9d5ff; outline-offset: 2px; }
+.theme-switch:focus-visible { outline: 2px solid #f8d5ff; outline-offset: 2px; }
 
 /* スマホ: ヘッダーが無いので、メニューの中に出す */
 .mobile-tools { display: flex; align-items: center; gap: 10px; padding: 12px 1rem 0; }
