@@ -633,7 +633,6 @@ main:focus { outline: none; }
     border-radius: 999px;
     background: #cbd5e1;
     cursor: pointer;
-    transition: background-color 0.15s ease;
 }
 .theme-switch[aria-checked="true"] { background: #7c3aed; }
 .theme-knob {
@@ -647,8 +646,10 @@ main:focus { outline: none; }
     color: #f59e0b;
     display: grid;
     place-items: center;
-    transition: transform 0.15s ease;
 }
+/* 動きは、最初の状態を合わせたあと（site.js が theme-ready を付ける）から */
+.theme-ready .theme-switch { transition: background-color 0.15s ease; }
+.theme-ready .theme-knob { transition: transform 0.15s ease; }
 .theme-switch[aria-checked="true"] .theme-knob { transform: translateX(26px); color: #6d28d9; }
 .theme-knob svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .theme-moon { display: none; }
@@ -664,5 +665,5 @@ main:focus { outline: none; }
     .mobile-tools { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
-    .theme-switch, .theme-knob { transition: none; }
+    .theme-ready .theme-switch, .theme-ready .theme-knob { transition: none; }
 }

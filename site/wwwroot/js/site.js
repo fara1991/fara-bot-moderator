@@ -39,7 +39,16 @@
         for (var j = 0; j < switches.length; j++) switches[j].setAttribute("aria-checked", dark ? "true" : "false");
     }
 
-    document.addEventListener("DOMContentLoaded", sync);
+    document.addEventListener("DOMContentLoaded", function () {
+        sync();
+        // スイッチの動き（0.15 秒のスライド）は、最初の状態を合わせたあとから。ライトの人に、ページを開くたびにスイッチが動いて見えないように
+        requestAnimationFrame(function () { root.classList.add("theme-ready"); });
+    });
+    // 何も選んでいないとき、端末の設定が変わったら、スイッチも合わせる
+    if (window.matchMedia) {
+        var query = window.matchMedia("(prefers-color-scheme: light)");
+        if (query.addEventListener) query.addEventListener("change", sync);
+    }
     document.addEventListener("click", function (e) {
         if (!e.target.closest) return;
         if (e.target.closest("[data-sidebar-toggle]")) {
