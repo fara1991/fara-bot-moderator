@@ -140,12 +140,26 @@ a:hover { color: var(--accent); }
 }
 .sidebar .nav-item { padding: 0.1rem 1rem; font-size: 0.9rem; }
 .sidebar .nav-link {
-    display: block;
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
     padding: 0.4rem 0.6rem;
     border-radius: 6px;
     color: rgba(255, 255, 255, 0.82);
     text-decoration: none;
     line-height: 1.5;
+}
+/* 項目の左のアイコン（線だけの SVG。色は文字色に合わせる） */
+.nav-icon {
+    flex: 0 0 auto;
+    width: 1.15rem;
+    height: 1.15rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    opacity: 0.85;
 }
 .sidebar .nav-link:hover { color: #fff; background-color: rgba(255, 255, 255, 0.1); }
 .sidebar .nav-link.active { color: #fff; background-color: rgba(255, 255, 255, 0.2); font-weight: 700; }
