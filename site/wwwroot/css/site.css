@@ -235,8 +235,9 @@ main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
         transform: translateX(-100%);
         transition: transform 0.15s ease;
     }
+    /* 左端へのマウスオーバーで出す仕組みは、マウスのある環境だけ（タッチでは、タップで出たまま戻らなくなるのを避ける）。
+       キーボードで中に入ったときも出す（マウスのクリックでは、フォーカスが残っても出たままにしない） */
     html.sidebar-hidden .sidebar-edge {
-        display: block;
         position: fixed;
         top: 3.5rem;
         bottom: 0;
@@ -244,10 +245,34 @@ main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
         width: 14px;
         z-index: 61;
     }
-    html.sidebar-hidden .sidebar-edge:hover + .sidebar,
-    html.sidebar-hidden .sidebar:hover,
-    html.sidebar-hidden .sidebar:focus-within {
+
+    html.sidebar-hidden .sidebar:has(:focus-visible) {
         transform: none;
+        transition-delay: 0s;
+        box-shadow: 8px 0 24px rgba(0, 0, 0, 0.45);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        html.sidebar-hidden .sidebar {
+            transition: none;
+        }
+    }
+
+    .app-header :focus-visible {
+        outline-color: #e9d5ff;
+    }
+}
+
+@media (min-width: 900px) and (hover: hover) {
+    html.sidebar-hidden .sidebar-edge {
+        display: block;
+    }
+
+    /* 出すときだけ、少し待つ（ほかのモニターへ向かってマウスを大きく動かしたときに、ちらつかないように） */
+    html.sidebar-hidden .sidebar-edge:hover + .sidebar,
+    html.sidebar-hidden .sidebar:hover {
+        transform: none;
+        transition-delay: 0.12s;
         /* 影は、出ている間だけ（隠れている間に、画面の左端へ染み出さないように） */
         box-shadow: 8px 0 24px rgba(0, 0, 0, 0.45);
     }
