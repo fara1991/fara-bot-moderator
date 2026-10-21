@@ -16,6 +16,9 @@
     --accent-ink: #290b33;
     --link: #f3b4fe;
     --code-bg: #1e0a28;
+    --glow-1: rgba(227, 85, 247, 0.22);
+    --glow-2: rgba(147, 51, 234, 0.2);
+    --glow-3: rgba(227, 85, 247, 0.05);
     /* ボタンの背景（白い文字が 4.5:1 以上で読める濃さ）と、見出しの文字（暗い背景に映える明るさ） */
     --grad: linear-gradient(135deg, #d633ea 0%, #be3aed 100%);
     --grad-text: linear-gradient(135deg, #f8d5ff 0%, #ec84fc 50%, #e355f7 100%);
@@ -42,6 +45,9 @@
         --accent-ink: #ffffff;
         --link: #ae28d9;
         --code-bg: #f9e9ff;
+        --glow-1: rgba(217, 70, 239, 0.14);
+        --glow-2: rgba(168, 85, 247, 0.12);
+        --glow-3: rgba(217, 70, 239, 0.04);
         --grad-text: linear-gradient(135deg, #be3aed 0%, #ae28d9 100%);
     }
 }
@@ -62,6 +68,9 @@
     --accent-ink: #ffffff;
     --link: #ae28d9;
     --code-bg: #f9e9ff;
+    --glow-1: rgba(217, 70, 239, 0.14);
+    --glow-2: rgba(168, 85, 247, 0.12);
+    --glow-3: rgba(217, 70, 239, 0.04);
     --grad-text: linear-gradient(135deg, #be3aed 0%, #ae28d9 100%);
 }
 
@@ -71,7 +80,13 @@ html { scroll-behavior: smooth; scroll-padding-top: 16px; }
 
 body {
     margin: 0;
-    background: radial-gradient(1200px 500px at 80% -10%, rgba(227, 85, 247, 0.18), transparent 60%), var(--bg);
+    /* 背景の飾り: 配信画面の照明のような、光のにじみ（右上にピンク、左下に紫）。固定して、スクロールしても動かさない */
+    background:
+        radial-gradient(900px 520px at 85% -5%, var(--glow-1), transparent 65%),
+        radial-gradient(800px 600px at -5% 105%, var(--glow-2), transparent 65%),
+        radial-gradient(500px 360px at 50% 55%, var(--glow-3), transparent 70%),
+        var(--bg);
+    background-attachment: fixed;
     color: var(--text);
     font-family: var(--font);
     font-size: 16px;
