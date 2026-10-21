@@ -408,3 +408,6 @@ obj/
 Installer/WebView2RuntimeInstaller.exe
 
 # End of https://www.toptal.com/developers/gitignore/api/csharp,dotnetcore
+
+# 紹介サイトの書き出し先
+site/dist/

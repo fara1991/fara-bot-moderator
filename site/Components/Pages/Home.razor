@@ -1,0 +1,111 @@
+@page "/"
+@inject IOptions<SiteOptions> Site
+
+<PageTitle>@Site.Value.Title | Twitch 配信者向けチャットボット</PageTitle>
+<HeadContent>
+    <meta name="description" content="@Site.Value.Description" />
+    <meta property="og:title" content="@Site.Value.Title" />
+</HeadContent>
+
+<section class="hero">
+    <div class="hero-inner">
+        <p class="eyebrow">Twitch 配信者向け・Windows アプリ</p>
+        <h1>@Site.Value.Title</h1>
+        <p class="lead">チャットの表示・自動翻訳・読み上げ・イベント通知・タイマー、そしてポケモンのダメージ計算まで。配信まわりの作業を 1 つのアプリにまとめた、多機能チャットボットです。</p>
+        <p class="button-row">
+            <a class="button" href="@Site.Value.ReleasesUrl" target="_blank" rel="noopener noreferrer">ダウンロード（最新版）</a>
+            <a class="button ghost" href="/docs/overview">使い方を読む</a>
+        </p>
+        <p class="hero-note">Windows 10 / 11（x64）・.NET 8 ランタイム・WebView2 ランタイムが必要です。</p>
+    </div>
+</section>
+
+<section class="page-section">
+    <h2>できること</h2>
+    <div class="card-grid">
+        <article class="card">
+            <h3>チャット連携</h3>
+            <p>Twitch のチャットを取得して表示し、そのまま送信もできます。ユーザーアイコン付きの専用ウィンドウで見られます。</p>
+            <a href="/docs/windows">ウィンドウ設定 →</a>
+        </article>
+        <article class="card">
+            <h3>イベント通知</h3>
+            <p>フォロー・レイド・サブスク・ビッツ・ギフト・チャンネルポイントを検知して、テンプレートから自動でお礼のチャットを送信します。</p>
+            <a href="/docs/reaction-events">リアクションイベント →</a>
+        </article>
+        <article class="card">
+            <h3>自動翻訳</h3>
+            <p>DeepL API と連携して、受信したチャットを日本語 ⇄ 英語にリアルタイムで翻訳し、結果をチャットに送ります。</p>
+            <a href="/docs/translate">翻訳設定 →</a>
+        </article>
+        <article class="card">
+            <h3>棒読みちゃん連携</h3>
+            <p>受信したチャットを棒読みちゃんで読み上げます。HTTP 連携（ポート 5008）を有効にするだけで使えます。</p>
+            <a href="/docs/main-settings">初期設定 →</a>
+        </article>
+        <article class="card">
+            <h3>タイマー</h3>
+            <p>15 分〜120 分ごとの定期メッセージと、日時を指定した 1 回だけのメッセージ。配信ルールの告知や終了予告に使えます。</p>
+            <a href="/docs/timer">タイマー設定 →</a>
+        </article>
+        <article class="card">
+            <h3>レイド支援</h3>
+            <p>配信終了時に、配信中のフォロー中ユーザーや、同じゲームをプレイ中の配信者をレイド先候補として表示し、コマンドをコピーできます。</p>
+            <a href="/docs/windows">ウィンドウ設定 →</a>
+        </article>
+        <article class="card">
+            <h3>EventSub 対応</h3>
+            <p>WebSocket を使った低遅延なイベント受信に対応しています。Twitch API（Helix）でユーザー情報の取得や各種アクションも行います。</p>
+            <a href="/docs/main-settings">初期設定 →</a>
+        </article>
+        <article class="card highlight">
+            <h3>ポケモンコマンド</h3>
+            <p>チャットの <code>!pokech</code> などで、育成ポケモンの登録・ダメージ計算・相手の努力値推定・素早さ比較・対戦中の相手と試合履歴の管理ができます。</p>
+            <a href="/docs/pokemon">ポケモンコマンド →</a>
+        </article>
+    </div>
+</section>
+
+<section class="page-section">
+    <h2>ポケモンコマンドの例</h2>
+    <p>ポケモンのデータは初回のみインターネット接続が必要です。登録した内容は、ブラウザ版の <a href="@Site.Value.PokemonSiteUrl" target="_blank" rel="noopener noreferrer">Pokémon Battle Assistant</a> とアクセスキーで共有できます。</p>
+    <pre class="code-sample"><code>!poke help
+!pokech add -m ガブリアス 4 32 0 0 0 30 ようき
+!pokech add -t 1 1 こだわりスカーフ
+!pokech use -t 1
+!pokech dmg ガブリアス ドラゴンクロー+1 リザードン
+!pokesv faster ガブリアス ハバタクカミ</code></pre>
+    <ul class="link-list">
+        <li><a href="/docs/pokemon">概要と接頭辞（データセット）</a></li>
+        <li><a href="/docs/pokemon-my">育成ポケモンの登録</a> / <a href="/docs/pokemon-team">自分チーム</a></li>
+        <li><a href="/docs/pokemon-battle">ダメージ計算・scan・素早さ比較</a></li>
+        <li><a href="/docs/pokemon-rival">相手チームと試合の履歴</a></li>
+        <li><a href="/docs/pokemon-sync">データ共有（アクセスキー）</a></li>
+    </ul>
+</section>
+
+<section class="page-section">
+    <h2>使い始めるまで</h2>
+    <ol class="steps">
+        <li>
+            <strong>インストール</strong>
+            <span><a href="@Site.Value.ReleasesUrl" target="_blank" rel="noopener noreferrer">Releases</a> から最新の <code>FaraBotModerator_Setup.exe</code> をダウンロードして実行します。</span>
+        </li>
+        <li>
+            <strong>Client 設定</strong>
+            <span>Twitch の UserName と DisplayName を入力します。</span>
+        </li>
+        <li>
+            <strong>API 設定</strong>
+            <span>Twitch Developer でアプリを登録し、ClientId と ClientSecret を設定して「Authorize」で認証します。</span>
+        </li>
+        <li>
+            <strong>DeepL・棒読みちゃん（任意）</strong>
+            <span>翻訳を使うなら DeepL の認証キー、読み上げを使うなら棒読みちゃんの HTTP 連携を設定します。</span>
+        </li>
+    </ol>
+    <p class="button-row">
+        <a class="button" href="/docs/main-settings">初期設定の手順を見る</a>
+        <a class="button ghost" href="/docs">ドキュメント一覧</a>
+    </p>
+</section>

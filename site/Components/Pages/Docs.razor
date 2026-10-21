@@ -1,0 +1,26 @@
+@page "/docs"
+@inject ContentService Content
+@inject IOptions<SiteOptions> Site
+
+<PageTitle>ドキュメント | @Site.Value.Title</PageTitle>
+<HeadContent>
+    <meta name="description" content="@Site.Value.Title の使い方。初期設定、リアクションイベント、翻訳、タイマー、ポケモンコマンドまで。" />
+</HeadContent>
+
+<section class="page-section">
+    <h1>ドキュメント</h1>
+    <p class="lead">初期設定から各機能の使い方まで。上から順に読めば、はじめての人でも使い始められます。</p>
+    @foreach (var group in Content.Groups)
+    {
+        <h2>@group.Name</h2>
+        <div class="card-grid">
+            @foreach (var p in group.Pages)
+            {
+                <a class="card link-card" href="@p.Url">
+                    <h3>@p.Title</h3>
+                    <p>@p.Description</p>
+                </a>
+            }
+        </div>
+    }
+</section>
