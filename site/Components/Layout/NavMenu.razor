@@ -3,7 +3,6 @@
 
 <div class="top-row">
     <a class="brand" href="/" aria-label="@Site.Value.Title トップへ">
-        <img src="/images/site-icon.svg" alt="" width="30" height="30" />
         <span>@Site.Value.Title</span>
     </a>
 </div>
@@ -12,6 +11,11 @@
 <input type="checkbox" id="nav-toggle" class="navbar-toggler" aria-label="メニューを開く" title="メニュー" />
 
 <div class="nav-scrollable">
+    @* スマホでは、ヘッダーが無いので、検索欄とライト・ダークの切り替えは、メニューの中に出す *@
+    <div class="mobile-tools">
+        <SiteSearch IdPrefix="m" />
+        <ThemeToggle />
+    </div>
     <nav class="flex-column" aria-label="サイト内の移動">
         <div class="nav-item">
             <NavLink class="nav-link" href="/" Match="NavLinkMatch.All"><NavIcon Name="home" /><span>ホーム</span></NavLink>

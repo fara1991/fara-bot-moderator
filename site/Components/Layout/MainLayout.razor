@@ -9,9 +9,11 @@
     <header class="app-header">
         <button type="button" class="sidebar-toggle" data-sidebar-toggle aria-controls="site-sidebar" aria-expanded="true" aria-label="サイドバーの表示・非表示" title="サイドバーの表示・非表示"></button>
         <a class="app-brand" href="/" aria-label="@Site.Value.Title トップへ">
-            <img src="/images/site-icon.svg" alt="" width="30" height="30" />
             <span>@Site.Value.Title</span>
         </a>
+        @* 検索欄とライト・ダークの切り替え（ヘッダーの右側）。スマホは、メニューの中に同じものを出す（NavMenu.razor） *@
+        <SiteSearch IdPrefix="hdr" />
+        <ThemeToggle />
     </header>
 
     @* サイドバーを隠しているとき、画面の左端にマウスを近づけると、サイドバーが一時的に出る（CSS の :hover）。ハンバーガーを押すと、出したままにする *@
