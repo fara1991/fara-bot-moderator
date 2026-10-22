@@ -15,9 +15,17 @@
     <script src="/js/site.js"></script>
     <script src="/js/search.js" defer></script>
     <script src="/js/bgscene.js" defer></script>
+    <script src="/js/nav-config.js" defer></script>
+    <script src="/js/nav.js?v=@NavVersion" defer></script>
+    <script src="/js/site-nav.js" defer></script>
     <HeadOutlet />
 </head>
 <body>
     <Routes />
 </body>
 </html>
+
+@code {
+    // ページ移動の JS（nav.js）のキャッシュを、公開のたびに変える（書き出しのたびに値が変わる）
+    private static readonly string NavVersion = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
+}

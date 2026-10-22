@@ -1,7 +1,9 @@
-// 「作者へ報告」ページ（/report）のフォーム。Cloudflare Turnstile（ボット判定）を出し、POST /api/report（worker/report.js）に送る。
+// 「問い合わせ」ページ（/report）のフォーム。Cloudflare Turnstile（ボット判定）を出し、POST /api/report（worker/report.js）に送る。
 // 外部のスクリプトは https://challenges.cloudflare.com だけ。Avatar Modding Guide と FaraBotModerator のサイトで同じファイルを使う。
 (function () {
     "use strict";
+    // ページ移動（nav.js）のあとは、新しいフォームで init をもう一度呼ぶ（フォームのないページでは何もしない）
+    function init() {
     var form = document.getElementById("report-form");
     if (!form) return;
 
@@ -159,4 +161,7 @@
                 submit.disabled = false;
             });
     }
+    }
+
+    window.faraNav ? window.faraNav.register(init) : init();
 })();
