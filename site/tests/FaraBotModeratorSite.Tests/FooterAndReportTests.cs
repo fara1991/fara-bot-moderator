@@ -163,6 +163,19 @@ public class FooterAndReportTests
     }
 
     [Fact]
+    public void Footer_is_centred_and_each_item_stays_on_one_line_when_it_wraps()
+    {
+        var css = File.ReadAllText(FindUp("wwwroot/css/site.css"));
+        // 折り返しても中央に並ぶ（スマホで左揃えに見えない）
+        Assert.Matches(@"\.site-footer-line \{[^}]*justify-content: center;[^}]*text-align: center;", css);
+        Assert.Matches(@"\.site-footer \{[^}]*text-align: center;", css);
+        // 文言の途中では改行しない（項目ごとに折り返す）
+        Assert.Matches(@"\.site-footer-line > \* \{ white-space: nowrap; \}", css);
+        // 狭い画面では区切りを隠す（PC は残す）
+        Assert.Matches(@"@media \(max-width: 899\.98px\) \{[^@]*\.site-footer-sep \{ display: none; \}", css);
+    }
+
+    [Fact]
     public void Shipped_sns_urls_in_appsettings_match_the_portfolio_values()
     {
         var path = FindUp("appsettings.json");

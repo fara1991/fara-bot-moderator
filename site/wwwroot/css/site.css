@@ -247,7 +247,15 @@ a:hover { color: var(--accent); }
 }
 .site-footer a { color: var(--muted); text-decoration: underline; text-underline-offset: 2px; }
 .site-footer a:hover { color: var(--accent); }
-.site-footer-line { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 12px; }
+.site-footer { text-align: center; }
+.site-footer-line { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 4px 12px; text-align: center; }
+/* 狭い画面で折り返しても、中央に並ぶ。項目（サイト名・問い合わせ・プライバシーポリシー・© 年 Fara・SNS）は、文言の途中では改行しない（項目ごとに折り返す） */
+.site-footer-line > * { white-space: nowrap; }
+/* 狭い画面（スマホ幅）では区切りの「|」を隠し、項目の間は gap で空ける（折り返しても行頭・行末に「|」が来ない）。PC は区切りを残す */
+@media (max-width: 899.98px) {
+    .site-footer-sep { display: none; }
+    .site-footer-line { gap: 6px 14px; }
+}
 .site-footer-sep { opacity: 0.5; }
 /* フッターの SNS アイコン（© の右）。色はポートフォリオと同じ（.service-* の --brand） */
 .site-footer-socials { display: inline-flex; gap: 8px; margin-left: 4px; }
