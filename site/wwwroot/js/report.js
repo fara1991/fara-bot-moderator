@@ -79,11 +79,35 @@
         if (!category.value) { show("種類を選んでください", "error"); category.focus(); return; }
         if (text.length < MIN_MESSAGE) { show("内容を " + MIN_MESSAGE + " 文字以上で書いてください", "error"); message.focus(); return; }
         if (text.length > MAX_MESSAGE) { show("内容は " + MAX_MESSAGE + " 文字までにしてください（いま " + text.length + " 文字）", "error"); message.focus(); return; }
-        if (!token) { show("「ロボットではありません」の確認をしてください", "error"); return; }
-
         submit.disabled = true;
-        show("送信中…", "info");
-        fetch("/api/report", {
+        // 確認（Turnstile）は、読み込み直後や、送信に失敗して作り直した直後は、数秒かかることがある。待ってから送る
+        show(token ? "送信中…" : "確認しています…", "info");
+        waitForToken(5000).then(function (t) {
+            if (!t) {
+                show("「ロボットではありません」の確認が終わっていません。表示された確認をしてから、もう一度押してください", "error");
+                submit.disabled = false;
+                return null;
+            }
+            show("送信中…", "info");
+            return send(text, t);
+        });
+    });
+
+    // 確認のトークンが届くまで、最大 timeoutMs 待つ（届いていれば、すぐ返す）
+    function waitForToken(timeoutMs) {
+        return new Promise(function (resolve) {
+            var waited = 0;
+            (function check() {
+                if (token) { resolve(token); return; }
+                if (waited >= timeoutMs) { resolve(""); return; }
+                waited += 200;
+                setTimeout(check, 200);
+            })();
+        });
+    }
+
+    function send(text, checkToken) {
+        return fetch("/api/report", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -91,7 +115,7 @@
                 message: text,
                 contact: contact.value.trim(),
                 page: fromPage(),
-                turnstileToken: token,
+                turnstileToken: checkToken,
                 website: trap.value,
             }),
         })
@@ -109,7 +133,8 @@
                 }
                 var msg = "";
                 try { var j = JSON.parse(r.body); if (j && typeof j.message === "string") msg = j.message; } catch (e) { /* 読めない応答 */ }
-                if (!msg) msg = r.status === 413 ? "内容が長すぎます。短くして、もう一度お試しください"
+                if (!msg) msg = r.status === 429 ? "短い間に何度も送信されました。少し待ってから、もう一度お試しください"
+                    : r.status === 413 ? "内容が長すぎます。短くして、もう一度お試しください"
                     : r.status === 503 ? "いまは報告を受け付けていません。しばらくしてからお試しください"
                     : r.status >= 500 ? "送信に失敗しました。しばらくしてからもう一度お試しください"
                     : "送信できませんでした。入力を確かめて、もう一度お試しください";
@@ -122,5 +147,5 @@
                 resetCheck();
                 submit.disabled = false;
             });
-    });
+    }
 })();
