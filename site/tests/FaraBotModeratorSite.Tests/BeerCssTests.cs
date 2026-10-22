@@ -57,4 +57,16 @@ public class BeerCssTests
         var site = app.IndexOf("/css/site.css", StringComparison.Ordinal);
         Assert.True(vendor >= 0 && site > vendor, "BeerCSS は site.css より先に読む");
     }
+
+    /// <summary>BeerCSS の既定を戻す上書きが、site.css に残っていること（崩れやすいので、正規表現は緩めに書く）。</summary>
+    [Theory]
+    [InlineData(@"\.doc-toc nav \{[^}]*white-space:\s*normal;")]
+    [InlineData(@"\.app-header \{\s*min-block-size:\s*0;")]
+    [InlineData(@"\.site-footer \{\s*min-block-size:\s*0;")]
+    [InlineData(@"\.prose pre code, \.code-sample code \{\s*white-space:\s*pre;")]
+    public void Site_css_overrides_beercss_defaults(string pattern)
+    {
+        var css = File.ReadAllText(Path.Combine(ProjectDir(), "wwwroot", "css", "site.css"));
+        Assert.Matches(pattern, css);
+    }
 }
