@@ -3,6 +3,7 @@
 // ↑↓ で選んで Enter、Esc で閉じる。どのページでも Ctrl+K（Mac は ⌘K）か「/」で、見えている検索欄に移る。
 // 日本語は単語区切りがないので、形態素解析はせず、スペースで区切った語が「すべて含まれる」ものを一致とする。全角・半角の違いは NFKC で、カタカナはひらがなにそろえる（あどおん・アドオンのどちらでも探せる）。
 // ローマ字（adoon）も、ひらがな（あどおん）にした形で探す。
+// ページの題名に漢字があるものは、Content/pages.json の reading（ひらがなの読み）でも探す（例: kenri・こまんどじっこう → コマンド実行）。
 (function () {
     "use strict";
     var MAX = 10;
@@ -14,7 +15,7 @@
                 if (!r.ok) throw new Error("search index " + r.status);
                 return r.json();
             }).then(function (list) {
-                list.forEach(function (e) { e._t = norm(e.title); e._p = norm(e.page); e._x = norm(e.text); });
+                list.forEach(function (e) { e._t = norm(e.title); e._p = norm(e.page); e._x = norm(e.text); e._r = looseKana(norm(e.reading || "")); });
                 return list;
             }).catch(function (err) { indexPromise = null; throw err; });
         }
@@ -111,11 +112,37 @@
     }
     function escapeRegExp(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
 
+    // 読みの比べ方（pokemon の LooseKana と同じ規則）: 長音の「ー」を除き、おう・おお の書き方を 1 つにそろえる（ほうき・ほき、おおきい・おきい）。
+    // え段＋い（ていき・けいさん）は、長音と区別できないので、そろえない。
+    var LONG_O = "おこそとのほもよろごぞどぼぽょぉ";
+    function looseKana(s) {
+        var t = String(s).replace(/ー/g, ""), out = "";
+        for (var i = 0; i < t.length; i++) {
+            var c = t[i], prev = i > 0 ? t[i - 1] : "";
+            if (c === "う" && prev && LONG_O.indexOf(prev) >= 0) continue;
+            if (c === "お" && prev === "お") continue;
+            out += c;
+        }
+        return out;
+    }
+
+    /** 読みでの点数。完全一致 30・前方一致は 3 文字以上で 15（2 文字だけなら 5）・途中の一致は 3 文字以上だけ 10。2 文字のかなは、読みの途中には当てない（「あい」が途中に偶然当たらないように） */
+    function readingScore(reading, t) {
+        if (!reading) return 0;
+        var key = looseKana(t);
+        if (key.length < 2) return 0;
+        if (reading === key) return 30;
+        if (reading.indexOf(key) === 0) return key.length >= 3 ? 15 : 5;
+        return key.length >= 3 && reading.indexOf(key) > 0 ? 10 : 0;
+    }
+
     /** 1 つの語の点数（含まれなければ 0） */
     function scoreOf(e, t) {
         if (e._t === t) return 30;
         if (e._t.indexOf(t) === 0) return 15;
         if (e._t.indexOf(t) >= 0) return 10;
+        var reading = readingScore(e._r, t);
+        if (reading) return reading;
         if (e._p.indexOf(t) >= 0) return 4;
         if (e._x.indexOf(t) >= 0) return 1;
         return 0;

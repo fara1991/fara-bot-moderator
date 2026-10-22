@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace FaraBotModeratorSite.Data;
 
 /// <summary>appsettings.json の Site セクション。サイト名や外部リンクはここにだけ書く。</summary>
@@ -34,7 +36,7 @@ public sealed class ChangelogEntry
 public sealed record TocItem(string Id, string Text, int Level);
 
 /// <summary>1 つの説明ページ。Parent は親ページの slug（親が無いページは null）。子ページは親のグループに入る。</summary>
-public sealed record DocPage(string Slug, string Title, string Group, string Description, string Html, IReadOnlyList<TocItem> Toc, string? Parent = null)
+public sealed record DocPage(string Slug, string Title, string Group, string Description, string Html, IReadOnlyList<TocItem> Toc, string? Parent = null, string Reading = "")
 {
     public string Url => $"/docs/{Slug}";
 }
@@ -53,6 +55,8 @@ public sealed class PageDefinition
     public string Group { get; set; } = "";
     public string Parent { get; set; } = "";
     public string Description { get; set; } = "";
+    /// <summary>題名の読み（ひらがな・長音の「ー」）。題名に漢字があるページだけに書く。サイト内検索で、読みからも探せるようにする。</summary>
+    public string Reading { get; set; } = "";
     public List<SectionDefinition> Sections { get; set; } = new();
 }
 
@@ -70,4 +74,6 @@ public sealed class SectionDefinition
 /// <param name="Group">ページのグループ</param>
 /// <param name="Url">行き先（見出しなら #見出し 付き）</param>
 /// <param name="Text">本文のプレーンテキスト（一致する場所の抜き出しと、部分一致に使う）</param>
-public sealed record SearchEntry(string Type, string Title, string Page, string Group, string Url, string Text);
+/// <param name="Reading">ページの題名の読み（ページ自体の行だけ。無ければ出さない）</param>
+public sealed record SearchEntry(string Type, string Title, string Page, string Group, string Url, string Text,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Reading = null);

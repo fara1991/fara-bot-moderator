@@ -1,5 +1,6 @@
 using FaraBotModeratorSite.Components.Layout;
 using FaraBotModeratorSite.Components.Pages;
+using FaraBotModeratorSite.Components.Shared;
 using FaraBotModeratorSite.Data;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
@@ -182,6 +183,34 @@ public class FooterAndReportTests
         Assert.Matches(@"\.site-footer-line > \* \{ white-space: nowrap; \}", css);
         // 狭い画面では区切りを隠す（PC は残す）
         Assert.Matches(@"@media \(max-width: 899\.98px\) \{[^@]*\.site-footer-sep \{ display: none; \}", css);
+    }
+
+    [Fact]
+    public void Footer_stays_at_the_bottom_of_the_screen_and_clears_the_home_bar()
+    {
+        var css = File.ReadAllText(FindUp("wwwroot/css/site.css"));
+        Assert.Matches(@"\.site-footer \{[^}]*position: sticky;[^}]*bottom: 0;", css);
+        Assert.Contains("env(safe-area-inset-bottom", css);
+    }
+
+    [Fact]
+    public void Japanese_text_wraps_at_phrases_and_not_inside_a_word()
+    {
+        var css = File.ReadAllText(FindUp("wwwroot/css/site.css"));
+        Assert.Contains("word-break: auto-phrase;", css);
+        Assert.Contains("line-break: strict;", css);
+        Assert.Contains("overflow-wrap: break-word;", css);
+        Assert.Contains("text-wrap: pretty;", css);
+        Assert.DoesNotContain(".prose { overflow-wrap: anywhere; }", css);
+    }
+
+    [Fact]
+    public async Task Not_found_shows_the_large_404_with_a_home_button()
+    {
+        var html = await RenderAsync<NotFoundContent>();
+        Assert.Contains("<p class=\"not-found-code\" aria-hidden=\"true\">404</p>", html);
+        Assert.Contains("<h1>ページが見つかりません</h1>", html);
+        Assert.Contains("<a class=\"button\" href=\"/\">ホームへ戻る", html);
     }
 
     [Fact]

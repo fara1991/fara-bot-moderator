@@ -122,6 +122,26 @@ public class CommandsStructureTests
     }
 
     [Fact]
+    public void Every_page_whose_title_has_kanji_has_a_hiragana_reading_for_search()
+    {
+        var pages = LoadContent().Pages;
+        var kanji = new System.Text.RegularExpressions.Regex(@"\p{IsCJKUnifiedIdeographs}");
+        var missing = pages.Where(p => kanji.IsMatch(p.Title) && p.Reading.Length == 0).Select(p => p.Slug).ToList();
+        Assert.Empty(missing);
+        Assert.All(pages.Where(p => p.Reading.Length > 0), p => Assert.Matches(@"^[ぁ-ゖー]+$", p.Reading));
+    }
+
+    [Fact]
+    public void Search_index_gives_the_reading_only_to_the_page_entry()
+    {
+        var entries = LoadContent().BuildSearchIndex();
+        var withReading = entries.Where(e => e.Reading is not null).ToList();
+        Assert.All(withReading, e => Assert.Equal("page", e.Type));
+        Assert.Contains(withReading, e => e.Url == "/docs/commands" && e.Reading == "こまんどじっこう");
+        Assert.Contains(withReading, e => e.Url == "/docs/faq" && e.Reading == "よくあるしつもん");
+    }
+
+    [Fact]
     public async Task Beat_Saber_page_has_breadcrumb_to_the_hub_and_its_sections()
     {
         var content = LoadContent();
