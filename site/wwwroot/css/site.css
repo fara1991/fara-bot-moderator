@@ -750,4 +750,29 @@ main:focus { outline: none; }
 .report-done { max-width: 42rem; margin-top: 20px; }
 
 /* メンテナンスのお知らせ（MAINTENANCE=notice。worker/maintenance.js が <main> の先頭に足す） */
-.maintenance-notice { padding: 0.5rem 1rem; background: #f59e0b; color: #1a0b33; font-size: 0.9rem; font-weight: 700; text-align: center; }
+/* 帯は、スクロールしても上に残る（sticky）。PC は固定ヘッダー（3.5rem）の真下、スマホはヘッダーが無いので上端。
+   z-index 60 は、固定ヘッダー（70）より下、隠したサイドバーが広がったとき（75）より下。
+   --notice-h は帯の高さの目安（1 行のとき。0.9rem × 1.5 + 上下の余白 1rem ≈ 2.35rem）。2 行以上になると、
+   見出しへのジャンプと目次は、帯の下に数 rem 隠れることがある（帯の高さは可変のため、CSS だけでは合わせられない） */
+:root { --notice-h: 2.4rem; }
+.maintenance-notice {
+    position: sticky;
+    top: 0;
+    z-index: 60;
+    padding: 0.5rem 1rem;
+    background: #f59e0b;
+    color: #1a0b33;
+    font-size: 0.9rem;
+    font-weight: 700;
+    line-height: 1.5;
+    text-align: center;
+}
+html:has(.maintenance-notice) { scroll-padding-top: calc(var(--notice-h) + 16px); }
+@media (min-width: 900px) {
+    .maintenance-notice { top: 3.5rem; }
+    html:has(.maintenance-notice) { scroll-padding-top: calc(3.5rem + var(--notice-h) + 16px); }
+    html:has(.maintenance-notice) main .doc-toc {
+        top: calc(3.5rem + var(--notice-h) + 20px);
+        max-height: calc(100vh - 3.5rem - var(--notice-h) - 40px);
+    }
+}
