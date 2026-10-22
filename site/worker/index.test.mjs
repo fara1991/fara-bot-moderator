@@ -123,7 +123,7 @@ test("MAINTENANCE=notice: ページの先頭に、更新予定のお知らせ。
   const res = await open("/", pageEnv({ MAINTENANCE: "notice", MAINTENANCE_MESSAGE: "10月25日 20:00 ごろ" }));
   assert.equal(res.status, 200);
   const html = await res.text();
-  assert.match(html, /<main><div class="maintenance-notice"[^>]*><strong>お知らせ<\/strong> 10月25日 20:00 ごろ<\/div>本文/);
+  assert.match(html, /<main><div class="maintenance-notice"[^>]*><strong class="maintenance-notice-title">【お知らせ】<\/strong><span class="maintenance-notice-text">10月25日 20:00 ごろ<\/span><\/div>本文/);
   assert.equal(res.headers.get("Cache-Control"), "no-store");
 });
 

@@ -163,6 +163,15 @@ public class FooterAndReportTests
     }
 
     [Fact]
+    public void Notice_band_puts_the_heading_on_its_own_line_and_its_height_fits_two_lines()
+    {
+        var css = File.ReadAllText(FindUp("wwwroot/css/site.css"));
+        // 見出し（太字）は 1 行目、本文は次の行（block にして改行する）
+        Assert.Contains(".maintenance-notice-title, .maintenance-notice-text { display: block; }", css);
+        Assert.Contains("--notice-h: 3.75rem;", css);
+    }
+
+    [Fact]
     public void Footer_is_centred_and_each_item_stays_on_one_line_when_it_wraps()
     {
         var css = File.ReadAllText(FindUp("wwwroot/css/site.css"));
