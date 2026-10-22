@@ -1,0 +1,16 @@
+@* 3 サイト共通の形のフッター: サイト名 | 作者へ報告 | プライバシーポリシー | © 公開年 Fara（Fara は作者のホームページへ）。
+   「作者へ報告」には、いま見ているページを ?from= で付ける（報告に、どのページかが分かるように） *@
+@inject IOptions<SiteOptions> Site
+@inject NavigationManager Nav
+
+<footer class="site-footer">
+    <div class="site-footer-line">
+        <span class="site-footer-name">@Site.Value.Title</span>
+        <span class="site-footer-sep" aria-hidden="true">|</span>
+        <a href="@SiteFooterLinks.ReportHref(new Uri(Nav.Uri).AbsolutePath)">作者へ報告</a>
+        <span class="site-footer-sep" aria-hidden="true">|</span>
+        <a href="/privacy">プライバシーポリシー</a>
+        <span class="site-footer-sep" aria-hidden="true">|</span>
+        <span>© @Site.Value.PublishedYear <a href="@Site.Value.PortfolioUrl">Fara</a></span>
+    </div>
+</footer>
