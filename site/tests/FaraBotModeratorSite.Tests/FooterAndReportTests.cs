@@ -159,7 +159,7 @@ public class FooterAndReportTests
     }
 
     [Fact]
-    public void Shipped_sns_urls_are_the_same_as_the_portfolio()
+    public void Shipped_sns_urls_in_appsettings_match_the_portfolio_values()
     {
         var path = FindUp("appsettings.json");
         using var doc = System.Text.Json.JsonDocument.Parse(File.ReadAllText(path));

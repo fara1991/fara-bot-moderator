@@ -799,7 +799,18 @@ html:has(.maintenance-notice) { scroll-padding-top: calc(var(--notice-h) + 16px)
     transform: scaleX(var(--progress, 0));
     pointer-events: none;
 }
-/* PC は、固定ヘッダーの下端（ヘッダーの下の 2px。前は、ヘッダーの border-bottom だった場所）に置く */
+/* PC は、固定ヘッダーの下端（ヘッダーの下の 2px。前は、ヘッダーの border-bottom だった場所）に置く。
+   その下には、進んでいない部分の薄い線（トラック）を置く。スクロール 0 でも、下端の線が見える */
 @media (min-width: 900px) {
     .scroll-progress { top: calc(3.5rem - 2px); }
+    .app-header::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 2px;
+        background: rgba(192, 132, 252, 0.22);
+        pointer-events: none;
+    }
 }
