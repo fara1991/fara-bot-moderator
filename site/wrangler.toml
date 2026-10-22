@@ -48,10 +48,7 @@ routes = [
   { pattern = "twitch-bot-dev.fara-labs.com", custom_domain = true },
 ]
 
-# 確認用は検索エンジンに載せない（worker/index.js がすべての応答に X-Robots-Tag: noindex を付ける。
-# ホスト名ではなくこの変数で判断するので、ドメインが変わっても付く）
-[env.dev.vars]
-NOINDEX = "true"
+# 確認用の noindex（X-Robots-Tag）は、公開のワークフロー（.github/workflows/site.yml）が dist/_headers に付ける（ポケモンのサイトと同じ）
 
 [env.dev.assets]
 directory = "./dist"

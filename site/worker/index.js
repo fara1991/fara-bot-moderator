@@ -1,6 +1,6 @@
 // Cloudflare Worker。すべてのリクエストがまずここを通る（wrangler.toml の run_worker_first = true）。
 // 静的ファイル（dist/）をそのまま返し、セキュリティ用のヘッダーを付ける。
-// 確認用（env.dev の NOINDEX、または *-dev のホスト）には、検索エンジン向けの noindex も付ける。
+// 確認用の noindex は、公開のワークフローが dist/_headers に付ける。
 
 import { handleReport } from "./report.js";
 import { getMaintenance, maintenanceResponse, withNotice } from "./maintenance.js";
@@ -55,9 +55,6 @@ export default {
     out.headers.set("Content-Security-Policy", isReportPage(url.pathname) ? REPORT_PAGE_CONTENT_SECURITY_POLICY : CONTENT_SECURITY_POLICY);
     out.headers.set("X-Content-Type-Options", "nosniff");
     out.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
-    if (env.NOINDEX === "true" || url.hostname.endsWith("-dev.fara-labs.com")) {
-      out.headers.set("X-Robots-Tag", "noindex, nofollow");
-    }
     return out;
   },
 };

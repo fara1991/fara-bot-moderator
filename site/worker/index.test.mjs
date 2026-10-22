@@ -45,13 +45,18 @@ test("全ページに nosniff と Referrer-Policy が付く", async () => {
   assert.equal(res.headers.get("Referrer-Policy"), "strict-origin-when-cross-origin");
 });
 
-test("確認用のホストと NOINDEX には noindex が付く", async () => {
-  const dev = await worker.fetch(new Request("https://twitch-bot-dev.fara-labs.com/"), env);
-  assert.match(dev.headers.get("X-Robots-Tag") ?? "", /noindex/);
-  const flagged = await worker.fetch(new Request(HOST + "/"), { ...env, NOINDEX: "true" });
-  assert.match(flagged.headers.get("X-Robots-Tag") ?? "", /noindex/);
-  const prod = await worker.fetch(new Request(HOST + "/"), env);
-  assert.equal(prod.headers.get("X-Robots-Tag"), null);
+test("noindex は、Worker では付けない（確認用の noindex は、公開のワークフローが dist/_headers に付ける）。変数 NOINDEX も使わない", async () => {
+  const { readFileSync } = await import("node:fs");
+  for (const host of ["https://twitch-bot-dev.fara-labs.com/", HOST + "/"]) {
+    const res = await worker.fetch(new Request(host), { ...env, NOINDEX: "true" });
+    assert.equal(res.headers.get("X-Robots-Tag"), null, host);
+  }
+  assert.ok(!readFileSync(new URL("../wrangler.toml", import.meta.url), "utf8").includes("NOINDEX"));
+  const yml = readFileSync(new URL("../../.github/workflows/site.yml", import.meta.url), "utf8");
+  const step = yml.indexOf("Add noindex header (develop)");
+  assert.ok(step > 0);
+  assert.match(yml.slice(step, step + 150), /if: github\.ref_name != 'master'/);
+  assert.match(yml, /X-Robots-Tag: noindex, nofollow/);
 });
 
 test("/api/report/config は報告の受け口へ（静的ファイルに任せない）", async () => {
