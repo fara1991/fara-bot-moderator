@@ -43,6 +43,12 @@
         <p class="note">送信すると、<a href="/privacy">プライバシーポリシー</a>に書いたとおり、内容が作者に通知されます。個人情報（パスワード・Twitch のトークンなど）は書かないでください。</p>
         <noscript><p class="note">この送信フォームは、JavaScript を有効にすると使えます。</p></noscript>
     </form>
+
+@* 送信に成功したら、入力欄の代わりにこれを出す（report.js）。「もう 1 件送る」で入力欄に戻る *@
+<div id="report-done" class="report-done" role="status" hidden>
+    <p class="report-status report-status-ok">送信しました。ありがとうございます。返信が必要な場合は、書いていただいた連絡先にお返事することがあります。</p>
+    <button id="report-again" type="button" class="button ghost">もう 1 件送る</button>
+</div>
 </section>
 
 <script src="/js/report.js" defer></script>

@@ -15,6 +15,8 @@
     var status = document.getElementById("report-status");
     var submit = document.getElementById("report-submit");
     var box = document.getElementById("report-turnstile");
+    var done = document.getElementById("report-done");
+    var again = document.getElementById("report-again");
     var token = "";
     var widgetId = null;
 
@@ -66,6 +68,12 @@
             });
         })
         .catch(function () { disable("確認の部品を読み込めませんでした。ページを開き直してお試しください。"); });
+
+    again.addEventListener("click", function () {
+        done.hidden = true;
+        form.hidden = false;
+        category.focus();
+    });
 
     function resetCheck() {
         token = "";
@@ -124,10 +132,13 @@
             })
             .then(function (r) {
                 if (r.ok) {
+                    // 入力欄を隠して、お礼を出す（「もう 1 件送る」で戻る）。確認は 1 回で使い切りなので、作り直しておく
                     form.reset();
                     updateCount();
                     resetCheck();
-                    show("送信しました。ありがとうございます。返信が必要な場合は、書いていただいた連絡先にお返事することがあります。", "ok");
+                    show("");
+                    form.hidden = true;
+                    done.hidden = false;
                     submit.disabled = false;
                     return;
                 }

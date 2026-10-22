@@ -745,3 +745,6 @@ main:focus { outline: none; }
 .changelog-entry { padding-bottom: 16px; margin-bottom: 20px; border-bottom: 1px solid var(--border); }
 .changelog-entry h2 { margin: 0 0 8px; font-size: 1.15rem; }
 .changelog-entry ul { margin: 0; padding-left: 1.2rem; color: var(--muted); font-size: 0.94rem; line-height: 1.7; }
+
+.report-done[hidden], .report-form[hidden] { display: none; }
+.report-done { max-width: 42rem; margin-top: 20px; }
