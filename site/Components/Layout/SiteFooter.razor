@@ -1,5 +1,6 @@
-@* 3 サイト共通の形のフッター: サイト名 | 作者へ報告 | プライバシーポリシー | © 公開年 Fara（Fara は作者のホームページへ）。
-   「作者へ報告」には、いま見ているページを ?from= で付ける（報告に、どのページかが分かるように） *@
+@* 3 サイト共通の形のフッター: サイト名 | 問い合わせ | プライバシーポリシー | © 公開年 Fara（Fara は作者のホームページへ）。
+   その右に SNS のアイコン（SiteOptions の URL が空のものは出さない）。
+   「問い合わせ」には、いま見ているページを ?from= で付ける（問い合わせに、どのページかが分かるように） *@
 @inject IOptions<SiteOptions> Site
 @inject NavigationManager Nav
 
@@ -7,10 +8,23 @@
     <div class="site-footer-line">
         <span class="site-footer-name">@Site.Value.Title</span>
         <span class="site-footer-sep" aria-hidden="true">|</span>
-        <a href="@SiteFooterLinks.ReportHref(new Uri(Nav.Uri).AbsolutePath)">作者へ報告</a>
+        <a href="@SiteFooterLinks.ReportHref(new Uri(Nav.Uri).AbsolutePath)">問い合わせ</a>
         <span class="site-footer-sep" aria-hidden="true">|</span>
         <a href="/privacy">プライバシーポリシー</a>
         <span class="site-footer-sep" aria-hidden="true">|</span>
         <span>© @Site.Value.PublishedYear <a href="@Site.Value.PortfolioUrl">Fara</a></span>
+        @if (socials.Count > 0)
+        {
+            <span class="site-footer-socials">
+                @foreach (var s in socials)
+                {
+                    <a class="service-@s.Service" href="@s.Url" target="_blank" rel="noopener noreferrer" aria-label="@s.Label" title="@s.Label"><SocialIcon Name="@s.Service" Size="18" /></a>
+                }
+            </span>
+        }
     </div>
 </footer>
+
+@code {
+    private IReadOnlyList<SocialLink> socials => SiteFooterLinks.Socials(Site.Value);
+}
