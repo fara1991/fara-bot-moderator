@@ -16,7 +16,7 @@
     }
 
     <form id="report-form" class="report-form" novalidate>
-        <div class="field">
+        <div class="report-field">
             <label for="report-category">種類</label>
             <select id="report-category" required>
                 <option value="">選んでください</option>
@@ -25,11 +25,11 @@
                 <option value="other">その他</option>
             </select>
         </div>
-        <div class="field">
+        <div class="report-field">
             <label for="report-message">内容 <small>（5〜2000 文字。いま <span id="report-count">0</span> 文字）</small></label>
             <textarea id="report-message" rows="6" maxlength="2000" required placeholder="例: 〇〇の機能で、△△すると動きません（使っているアプリのバージョン・操作の手順も書いてもらえると助かります）"></textarea>
         </div>
-        <div class="field">
+        <div class="report-field">
             <label for="report-contact">連絡先（任意）</label>
             <input id="report-contact" type="text" maxlength="200" autocomplete="off" placeholder="返信が必要なときだけ（メールアドレス・Twitter の ID など）" />
         </div>
@@ -37,7 +37,7 @@
         <div class="report-trap" aria-hidden="true">
             <label>ウェブサイト <input id="report-website" type="text" tabindex="-1" autocomplete="off" /></label>
         </div>
-        <div id="report-turnstile" class="field"></div>
+        <div id="report-turnstile" class="report-field"></div>
         <p id="report-status" class="report-status" role="status" aria-live="polite" hidden></p>
         <button id="report-submit" type="submit" class="button">送信する</button>
         <p class="note">送信すると、<a href="/privacy">プライバシーポリシー</a>に書いたとおり、内容が作者に通知されます。個人情報（パスワード・Twitch のトークンなど）は書かないでください。</p>
@@ -47,7 +47,7 @@
 @* 送信に成功したら、入力欄の代わりにこれを出す（report.js）。「もう 1 件送る」で入力欄に戻る *@
 <div id="report-done" class="report-done" role="status" hidden>
     <p class="report-status report-status-ok">送信しました。ありがとうございます。返信が必要な場合は、書いていただいた連絡先にお返事することがあります。</p>
-    <button id="report-again" type="button" class="button ghost">もう 1 件送る</button>
+    <button id="report-again" type="button" class="button border">もう 1 件送る</button>
 </div>
 </section>
 
