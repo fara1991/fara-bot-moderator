@@ -11,6 +11,8 @@ public sealed class SiteOptions
     public string PokemonSiteUrl { get; set; } = "";
     /// <summary>説明の元になる Manual.md の場所（プロジェクトのフォルダからの相対パス）。</summary>
     public string ManualPath { get; set; } = "../Manual.md";
+    /// <summary>フッターの © に出す、サイトを公開した年。</summary>
+    public int PublishedYear { get; set; } = 2026;
 }
 
 /// <summary>更新履歴の 1 件（Content/changelog.json）。ホームは見出しだけ、/changelog は細かい内容（Items）まで出す。</summary>

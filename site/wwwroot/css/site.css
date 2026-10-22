@@ -241,13 +241,38 @@ a:hover { color: var(--accent); }
     background: var(--bg-2);
     color: var(--muted);
     font-size: 0.9rem;
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    gap: 8px 24px;
+    text-align: center;
 }
-.site-footer a { color: var(--muted); }
+.site-footer a { color: var(--muted); text-decoration: underline; text-underline-offset: 2px; }
 .site-footer a:hover { color: var(--accent); }
+.site-footer-line { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 12px; }
+.site-footer-sep { opacity: 0.5; }
+
+/* 作者へ報告・プライバシーポリシー */
+.report-form { margin-top: 20px; }
+.report-form .field { margin-bottom: 16px; }
+.report-form label { display: block; margin-bottom: 6px; font-weight: 600; }
+.report-form label small { font-weight: 400; color: var(--muted); }
+.report-form select, .report-form textarea, .report-form input[type="text"] {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border-strong);
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+}
+.report-form textarea { resize: vertical; }
+.report-form select:focus, .report-form textarea:focus, .report-form input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.report-form .button { cursor: pointer; }
+.report-form .button:disabled { opacity: 0.55; cursor: not-allowed; transform: none; box-shadow: none; }
+.report-trap { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+.report-status { padding: 8px 12px; border-radius: 10px; border: 1px solid var(--border-strong); }
+.report-status-ok { border-color: #22c55e; }
+.report-status-error { border-color: #ef4444; }
+.report-status-warn { border-color: #f59e0b; }
+.page-section .note { color: var(--muted); font-size: 0.9rem; }
+.policy h2 { margin-top: 28px; font-size: 1.15rem; }
 
 main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 
