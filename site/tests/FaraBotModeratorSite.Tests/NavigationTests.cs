@@ -1,10 +1,16 @@
+using System.Security.Cryptography;
+
 using Xunit;
 
 namespace FaraBotModeratorSite.Tests;
 
-/// <summary>サイト内の移動（wwwroot/js/router.js）。Blazor の拡張ナビゲーションは使わず、静的な HTML のまま、本文だけを差し替える。その配線を確かめる。</summary>
+/// <summary>ページ移動（wwwroot/js/nav.js。avatar と共有）の配線。静的に書き出した HTML を、JS でページ単位に差し替える仕組みの、つながりを確かめる。
+/// 画面の動きは、Edge（headless）で別に確かめる。判定の関数は node のテスト（tests/js/nav.test.mjs・site-nav.test.mjs）で確かめる。</summary>
 public class NavigationTests
 {
+    /// <summary>avatar の develop の wwwroot/js/nav.js の sha256（共有ファイル。直すときは avatar 側と同じ内容にすること）</summary>
+    private const string SharedNavSha256 = "d7eb60bc39ef9929c7133e1d4cb1993e8fc23ba909c903c0a6a06ad974faf93e";
+
     private static string ReadProjectFile(string relative)
     {
         for (var dir = new DirectoryInfo(AppContext.BaseDirectory); dir is not null; dir = dir.Parent)
@@ -16,68 +22,88 @@ public class NavigationTests
     }
 
     [Fact]
-    public void App_loads_the_router_as_a_deferred_script_and_not_blazor_web_js()
+    public void App_loads_the_config_then_nav_then_the_site_hooks_as_deferred_scripts()
     {
         var app = ReadProjectFile("Components/App.razor");
-        Assert.Contains("<script src=\"/js/router.js\" defer></script>", app);
-        // 静的な書き出しでは _framework が出ないので、Blazor の拡張ナビゲーションは使わない
+        var config = app.IndexOf("<script src=\"/js/nav-config.js\" defer></script>", StringComparison.Ordinal);
+        var nav = app.IndexOf("<script src=\"/js/nav.js?v=@NavVersion\" defer></script>", StringComparison.Ordinal);
+        var hooks = app.IndexOf("<script src=\"/js/site-nav.js\" defer></script>", StringComparison.Ordinal);
+        Assert.True(config >= 0 && nav >= 0 && hooks >= 0, "App.razor に nav-config.js・nav.js（キャッシュ更新のバージョン付き）・site-nav.js の読み込みがない");
+        // 設定 → nav.js → 登録（site-nav.js）の順。defer のスクリプトは書いた順に動く
+        Assert.True(config < nav && nav < hooks);
+        Assert.Contains("private static readonly string NavVersion = DateTime.UtcNow.ToString(\"yyyyMMddHHmmss\");", app);
+    }
+
+    [Fact]
+    public void Shared_nav_js_is_identical_to_the_avatar_copy()
+    {
+        var bytes = File.ReadAllBytes(Path.Combine(Path.GetDirectoryName(ProjectPath())!, "wwwroot", "js", "nav.js"));
+        var hash = Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant();
+        Assert.Equal(SharedNavSha256, hash);
+    }
+
+    [Fact]
+    public void Navigation_does_not_use_blazor_web_js_or_the_old_router()
+    {
+        var app = ReadProjectFile("Components/App.razor");
         Assert.DoesNotContain("blazor.web.js", app);
         Assert.DoesNotContain("_framework", app);
+        Assert.DoesNotContain("router.js", app);
+        var search = ReadProjectFile("wwwroot/js/search.js");
+        Assert.DoesNotContain("faraNavigate", search);
+        Assert.Contains("window.faraNav.navigate(href)", search);
     }
 
     [Fact]
-    public void Router_swaps_only_the_main_content_and_keeps_the_header_and_sidebar()
+    public void Layout_keeps_the_header_and_sidebar_controls_outside_the_swapped_parts()
     {
-        var js = ReadProjectFile("wwwroot/js/router.js");
-        Assert.Contains("var MAIN_SELECTOR = \"main#main-content\";", js);
-        // 差し替えは本文だけ。ヘッダーとサイドバーは触らない（それぞれの初期化が二重にならない）
-        Assert.DoesNotContain("app-header", js);
-        Assert.DoesNotContain("document.body", js);
-        Assert.Contains("main.replaceChildren(frag);", js);
+        // 移動では #main-content（本文）と、左のメニューの中のリンク（.nav-scrollable > nav）だけを差し替える。ヘッダー・開閉のボタン・検索欄は残る
+        var layout = ReadProjectFile("Components/Layout/MainLayout.razor");
+        Assert.Contains("<main id=\"main-content\" tabindex=\"-1\">", layout);
+        Assert.Contains("<header class=\"app-header\">", layout);
+        Assert.Contains("class=\"skip-link\"", layout);
+        var menu = ReadProjectFile("Components/Layout/NavMenu.razor");
+        Assert.Contains("<div class=\"nav-scrollable\">", menu);
+        Assert.Contains("<nav class=\"flex-column\"", menu);
+        var config = ReadProjectFile("wwwroot/js/nav-config.js");
+        Assert.Contains("swap: [\".nav-scrollable > nav\"],", config);
+        Assert.Contains("main: \"#main-content\",", config);
+        Assert.Contains("excludePrefixes: [\"/api/\", \"/report\"],", config);
     }
 
     [Fact]
-    public void Router_keeps_the_report_page_out_of_the_swap_because_its_csp_differs()
+    public void Site_hooks_close_the_mobile_menu_and_tell_the_scroll_line_about_the_move()
     {
-        var js = ReadProjectFile("wwwroot/js/router.js");
-        Assert.Contains("return path === \"/report\" || path === \"/report/\";", js);
-        Assert.Contains("!isNavigablePath(here.pathname)", js);
-    }
-
-    [Fact]
-    public void Router_syncs_title_meta_and_the_sidebar_current_link_and_announces_the_navigation()
-    {
-        var js = ReadProjectFile("wwwroot/js/router.js");
-        Assert.Contains("'meta[name=\"description\"]'", js);
-        Assert.Contains("'meta[property^=\"og:\"]'", js);
-        Assert.Contains("'link[rel=\"canonical\"]'", js);
-        Assert.Contains("aria-current", js);
-        Assert.Contains("document.dispatchEvent(new Event(\"fara:navigated\"));", js);
-    }
-
-    [Fact]
-    public void Scripts_that_keep_running_listen_for_the_navigation_instead_of_being_registered_again()
-    {
+        var hooks = ReadProjectFile("wwwroot/js/site-nav.js");
+        Assert.Contains("window.faraNav.register(", hooks);
+        Assert.Contains("getElementById(\"nav-toggle\")", hooks);
+        Assert.Contains("new Event(\"fara:navigated\")", hooks);
         var site = ReadProjectFile("wwwroot/js/site.js");
         Assert.Contains("document.addEventListener(\"fara:navigated\", schedule);", site);
-        var search = ReadProjectFile("wwwroot/js/search.js");
-        Assert.Contains("if (window.faraNavigate) window.faraNavigate(href);", search);
     }
 
     [Fact]
-    public void The_router_is_never_inlined_and_only_uses_same_origin_files()
+    public void Page_scripts_register_with_nav_so_they_run_again_after_a_move()
     {
-        var css = ReadProjectFile("wwwroot/js/router.js");
-        // CSP（script-src 'self'）に合わせ、インラインの script・eval・外部の取得を使わない
-        Assert.DoesNotContain("eval(", css);
-        Assert.DoesNotContain("https://", css);
-        Assert.DoesNotContain("innerHTML", css);
+        // report.js は、nav.js がなくても動く形（faraNav があれば register、なければその場で呼ぶ）
+        var report = ReadProjectFile("wwwroot/js/report.js");
+        Assert.Contains("window.faraNav ? window.faraNav.register(init) : init();", report);
     }
 
     [Fact]
-    public void The_CI_runs_the_router_tests()
+    public void The_CI_runs_the_navigation_node_tests()
     {
         var workflow = ReadProjectFile("../.github/workflows/site.yml");
-        Assert.Contains("node --test worker/report.test.mjs worker/index.test.mjs worker/maintenance.test.mjs tests/js/router.test.mjs", workflow);
+        Assert.Contains("tests/js/nav.test.mjs tests/js/site-nav.test.mjs", workflow);
+    }
+
+    private static string ProjectPath()
+    {
+        for (var dir = new DirectoryInfo(AppContext.BaseDirectory); dir is not null; dir = dir.Parent)
+        {
+            var candidate = Path.Combine(dir.FullName, "FaraBotModeratorSite.csproj");
+            if (File.Exists(candidate)) return candidate;
+        }
+        throw new FileNotFoundException("FaraBotModeratorSite.csproj");
     }
 }

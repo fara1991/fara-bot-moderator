@@ -54,9 +54,9 @@ jobs:
         working-directory: site
         run: dotnet test tests/FaraBotModeratorSite.Tests -c Release --nologo
 
-      - name: Report endpoint test
+      - name: Node tests (worker and page navigation)
         working-directory: site
-        run: node --test worker/report.test.mjs worker/index.test.mjs worker/maintenance.test.mjs tests/js/router.test.mjs
+        run: node --test worker/report.test.mjs worker/index.test.mjs worker/maintenance.test.mjs tests/js/nav.test.mjs tests/js/site-nav.test.mjs
 
       - name: Deploy gate test
         run: node --test .github/scripts/require-maintenance.test.mjs
