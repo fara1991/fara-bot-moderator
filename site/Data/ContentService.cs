@@ -110,7 +110,7 @@ public sealed partial class ContentService
             var markdown = string.Join("\n", d.Sections.Select((s, i) => manual.Extract(s.Heading, s.Own, includeHeading: i > 0)));
             var html = Markdown.ToHtml(markdown, Pipeline);
             var parent = d.Parent.Length > 0 ? d.Parent : null;
-            pages.Add(new DocPage(d.Slug, d.Title, GroupOf(d, byDefinition), d.Description, html, ExtractToc(html), parent));
+            pages.Add(new DocPage(d.Slug, d.Title, GroupOf(d, byDefinition), d.Description, html, ExtractToc(html), parent, d.Reading ?? ""));
         }
 
         // 別のページにある見出しへの同じページ内リンク（#見出し）を、そのページへのリンクに直す
@@ -139,6 +139,8 @@ public sealed partial class ContentService
         {
             if (d.Parent is null) throw new InvalidOperationException($"pages.json: {d.Slug} の parent に null は使えません（親が無いページは、parent の行を消してください）");
             if (d.Group is null) throw new InvalidOperationException($"pages.json: {d.Slug} の group に null は使えません（空にするか、行を消してください）");
+            if (d.Reading is not null && !Regex.IsMatch(d.Reading, @"^[ぁ-ゖー]*$"))
+                throw new InvalidOperationException($"pages.json: {d.Slug} の reading は、ひらがなと「ー」だけにしてください: {d.Reading}");
         }
         var bySlug = definitions.ToDictionary(d => d.Slug);
         foreach (var d in definitions)
@@ -182,7 +184,7 @@ public sealed partial class ContentService
         var entries = new List<SearchEntry>();
         foreach (var page in _pages)
         {
-            entries.Add(new SearchEntry("page", page.Title, page.Title, page.Group, page.Url, page.Description));
+            entries.Add(new SearchEntry("page", page.Title, page.Title, page.Group, page.Url, page.Description, page.Reading.Length > 0 ? page.Reading : null));
             var headings = HeadingPattern().Matches(page.Html).Where(m => m.Groups[1].Value is "2" or "3").ToList();
             var introEnd = headings.Count > 0 ? headings[0].Index : page.Html.Length;
             var intro = PlainText(page.Html[..introEnd]);

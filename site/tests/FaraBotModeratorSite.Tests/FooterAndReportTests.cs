@@ -1,5 +1,6 @@
 using FaraBotModeratorSite.Components.Layout;
 using FaraBotModeratorSite.Components.Pages;
+using FaraBotModeratorSite.Components.Shared;
 using FaraBotModeratorSite.Data;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
@@ -182,6 +183,60 @@ public class FooterAndReportTests
         Assert.Matches(@"\.site-footer-line > \* \{ white-space: nowrap; \}", css);
         // 狭い画面では区切りを隠す（PC は残す）
         Assert.Matches(@"@media \(max-width: 899\.98px\) \{[^@]*\.site-footer-sep \{ display: none; \}", css);
+    }
+
+    [Fact]
+    public void Footer_stays_at_the_bottom_of_the_screen_and_clears_the_home_bar()
+    {
+        var css = File.ReadAllText(FindUp("wwwroot/css/site.css"));
+        Assert.Matches(@"(?s)\.site-footer\s*\{[^}]*?position:\s*sticky;[^}]*?bottom:\s*0;", css);
+        Assert.Contains("env(safe-area-inset-bottom", css);
+    }
+
+    [Fact]
+    public void Japanese_text_wraps_at_phrases_and_not_inside_a_word()
+    {
+        var css = File.ReadAllText(FindUp("wwwroot/css/site.css"));
+        var body = System.Text.RegularExpressions.Regex.Match(css, @"(?s)(?<![\w-])body\s*\{(?<decl>[^}]*)\}").Groups["decl"].Value;
+        Assert.Matches(@"word-break:\s*auto-phrase\s*;", body);
+        Assert.Matches(@"line-break:\s*strict\s*;", body);
+        Assert.Matches(@"overflow-wrap:\s*break-word\s*;", body);
+        Assert.Matches(@"text-wrap:\s*pretty\s*;", body);
+    }
+
+    [Fact]
+    public async Task Privacy_items_sit_in_one_grid_so_the_reading_order_stays_row_by_row()
+    {
+        var html = await RenderAsync<Privacy>();
+        Assert.Contains("<div class=\"policy-grid\">", html);
+        // 項目は、見出しごとに 1 つ（順に並ぶ。段組みは CSS の grid だけ）
+        Assert.Equal(7, System.Text.RegularExpressions.Regex.Matches(html, "class=\"policy-item\"").Count);
+        var css = File.ReadAllText(FindUp("wwwroot/css/site.css"));
+        Assert.Matches(@"(?s)@media \(min-width: 1200px\) \{\s*\.policy-grid \{ grid-template-columns: repeat\(2, minmax\(0, 1fr\)\);", css);
+    }
+
+    [Fact]
+    public void Page_uses_viewport_fit_cover_for_the_safe_area_insets()
+    {
+        var app = File.ReadAllText(FindUp("Components/App.razor"));
+        Assert.Contains("viewport-fit=cover", app);
+    }
+
+    [Fact]
+    public void Narrow_screens_wrap_table_text_instead_of_scrolling_the_table_out_of_view()
+    {
+        var css = File.ReadAllText(FindUp("wwwroot/css/site.css"));
+        Assert.Matches(@"(?s)@media \(max-width: 899\.98px\) \{.*?\.prose td \{ min-width: 0; \}", css);
+        Assert.Matches(@"(?s)@media \(max-width: 899\.98px\) \{.*?\.prose th \{ white-space: normal; \}", css);
+    }
+
+    [Fact]
+    public async Task Not_found_shows_the_large_404_with_a_home_button()
+    {
+        var html = await RenderAsync<NotFoundContent>();
+        Assert.Contains("<p class=\"not-found-code\" aria-hidden=\"true\">404</p>", html);
+        Assert.Contains("<h1>ページが見つかりません</h1>", html);
+        Assert.Contains("<a class=\"button\" href=\"/\">ホームへ戻る", html);
     }
 
     [Fact]

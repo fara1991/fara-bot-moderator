@@ -3,6 +3,7 @@
 // ↑↓ で選んで Enter、Esc で閉じる。どのページでも Ctrl+K（Mac は ⌘K）か「/」で、見えている検索欄に移る。
 // 日本語は単語区切りがないので、形態素解析はせず、スペースで区切った語が「すべて含まれる」ものを一致とする。全角・半角の違いは NFKC で、カタカナはひらがなにそろえる（あどおん・アドオンのどちらでも探せる）。
 // ローマ字（adoon）も、ひらがな（あどおん）にした形で探す。
+// ページの題名に漢字があるものは、Content/pages.json の reading（ひらがなの読み）でも探す（例: komando・こまんどじっこう → コマンド実行）。
 (function () {
     "use strict";
     var MAX = 10;
@@ -14,7 +15,7 @@
                 if (!r.ok) throw new Error("search index " + r.status);
                 return r.json();
             }).then(function (list) {
-                list.forEach(function (e) { e._t = norm(e.title); e._p = norm(e.page); e._x = norm(e.text); });
+                list.forEach(prepare);
                 return list;
             }).catch(function (err) { indexPromise = null; throw err; });
         }
@@ -66,6 +67,13 @@
         var c = s[i];
         if (c === "-") { out += "ー"; i++; continue; }
         if (c === "'") { i++; continue; }
+        // 「nn」は「ん」1 つ（kennri → けんり、kann → かん）。後ろが母音・y なら、最初の n だけが「ん」で、2 つ目は次の音（konnichiha → こんにちは、kanni → かんに）
+        if (c === "n" && i + 1 < n && s[i + 1] === "n") {
+            var after = i + 2 < n ? s[i + 2] : "";
+            out += "ん";
+            i += after !== "" && "aiueoy".indexOf(after) >= 0 ? 1 : 2;
+            continue;
+        }
         // 促音: 同じ子音が続く（n と母音は除く）
         if (i + 1 < n && s[i + 1] === c && "aiueon".indexOf(c) < 0) { out += "っ"; i++; continue; }
         var hit = false;
@@ -111,11 +119,43 @@
     }
     function escapeRegExp(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
 
+    // 読みの比べ方（pokemon の LooseKana と同じ規則）: 長音の「ー」を除き、おう・おお の書き方を 1 つにそろえる（ほうき・ほき、おおきい・おきい）。
+    // え段＋い（ていき・けいさん）は、長音と区別できないので、そろえない。
+    var LONG_O = "おこそとのほもよろごぞどぼぽょぉ";
+    function looseKana(s) {
+        var t = String(s).replace(/ー/g, ""), out = "";
+        for (var i = 0; i < t.length; i++) {
+            var c = t[i], prev = i > 0 ? t[i - 1] : "";
+            if (c === "う" && prev && LONG_O.indexOf(prev) >= 0) continue;
+            if (c === "お" && prev === "お") continue;
+            out += c;
+        }
+        return out;
+    }
+
+    /** 読みでの点数。完全一致 30・前方一致は 3 文字以上で 15（2 文字だけなら 5）・途中の一致は 3 文字以上だけ 10。2 文字のかなは、読みの途中には当てない（「あい」が途中に偶然当たらないように） */
+    function readingScore(reading, t) {
+        if (!reading) return 0;
+        var key = looseKana(t), r = looseKana(reading);
+        if (key.length < 2) return 0;
+        if (r === key) return 30;
+        if (r.indexOf(key) === 0) return key.length >= 3 ? 15 : 5;
+        return key.length >= 3 && r.indexOf(key) > 0 ? 10 : 0;
+    }
+
+    /** 索引の 1 件に、検索用の形（正規化した題名・ページ名・本文・読み）を付ける */
+    function prepare(e) {
+        e._t = norm(e.title); e._p = norm(e.page); e._x = norm(e.text); e._r = looseKana(norm(e.reading || ""));
+        return e;
+    }
+
     /** 1 つの語の点数（含まれなければ 0） */
     function scoreOf(e, t) {
         if (e._t === t) return 30;
         if (e._t.indexOf(t) === 0) return 15;
         if (e._t.indexOf(t) >= 0) return 10;
+        var reading = readingScore(e._r, t);
+        if (reading) return reading;
         if (e._p.indexOf(t) >= 0) return 4;
         if (e._x.indexOf(t) >= 0) return 1;
         return 0;
@@ -191,6 +231,10 @@
             var ts = terms(q);
             var html = hits.slice(0, MAX).map(function (h, i) {
                 var e = h.entry, where = escapeHtml(e.group) + " › " + escapeHtml(e.page) + (e.type === "section" && e.title !== e.page ? " › " + highlight(e.title, ts) : "");
+                // 題名に一致しないで、読みだけで当たったページには、その読みを小さく添える（どの語で当たったかが分かるように）
+                var byReading = e.type === "page" && e._r && !ts.some(function (t) { return e._t.indexOf(t) >= 0; }) &&
+                    termGroups(q).every(function (g) { return g.some(function (t) { return readingScore(e._r, t) > 0; }); });
+                if (byReading) where += '<span class="site-search-reading">読み: ' + escapeHtml(e.reading) + "</span>";
                 return '<a class="site-search-item" role="option" id="' + list.id + "-" + i + '" href="' + escapeHtml(e.url) + '" aria-selected="false">' +
                     '<span class="site-search-title">' + highlight(e.title, ts) + (e.type === "page" ? '<span class="site-search-badge">ページ</span>' : "") + "</span>" +
                     '<span class="site-search-where">' + where + "</span>" +
@@ -276,6 +320,11 @@
             e.preventDefault();
             visible.faraFocus();
         });
+    }
+
+    // テスト用（ブラウザには module が無いので、何もしない）。tests/js/search.test.mjs が読み込む
+    if (typeof module !== "undefined" && module.exports) {
+        module.exports = { norm: norm, looseKana: looseKana, romajiToHiragana: romajiToHiragana, alternatives: alternatives, readingScore: readingScore, scoreOf: scoreOf, search: search, prepare: prepare };
     }
 
     if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start);

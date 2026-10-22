@@ -2,6 +2,7 @@
   {
     "slug": "overview",
     "title": "はじめに・動作環境",
+    "reading": "はじめにどうさかんきょう",
     "group": "はじめに",
     "description": "FaraBotModerator でできること、起動方法、必要なソフトウェアとアカウント。",
     "sections": [
@@ -12,6 +13,7 @@
   {
     "slug": "main-settings",
     "title": "初期設定（Main Settings）",
+    "reading": "しょきせってい",
     "group": "設定",
     "description": "Twitch との連携設定。Client 設定、Twitch Developer アプリケーションの作成と認証、棒読みちゃん連携、接続・切断。",
     "sections": [
@@ -30,6 +32,7 @@
   {
     "slug": "translate",
     "title": "翻訳（Translate）",
+    "reading": "ほんやく",
     "group": "自動ボット",
     "description": "DeepL API を使った、チャットの日英自動翻訳の設定。",
     "sections": [
@@ -39,6 +42,7 @@
   {
     "slug": "game",
     "title": "ゲーム設定（Game）",
+    "reading": "げーむせってい",
     "group": "自動ボット",
     "description": "Beat Saber・ポケモンシリーズなど、ゲームごとの設定。登録データの表示と一覧。",
     "sections": [
@@ -57,6 +61,7 @@
   {
     "slug": "windows",
     "title": "ウィンドウ設定",
+    "reading": "うぃんどうせってい",
     "group": "設定",
     "description": "チャットウィンドウとレイドリストウィンドウ。",
     "sections": [
@@ -66,6 +71,7 @@
   {
     "slug": "commands",
     "title": "コマンド実行",
+    "reading": "こまんどじっこう",
     "group": "コマンド実行",
     "description": "チャットからゲームごとのコマンドを実行できます。ゲームを選ぶと、そのゲームのコマンドの説明へ進みます。",
     "sections": []
@@ -83,6 +89,7 @@
   {
     "slug": "pokemon-my",
     "title": "育成ポケモン",
+    "reading": "いくせいぽけもん",
     "parent": "pokemon",
     "description": "育成済みポケモンの登録・更新・一覧・詳細・削除（add / set / ls / detail / rm -m）。",
     "sections": [
@@ -92,6 +99,7 @@
   {
     "slug": "pokemon-team",
     "title": "自分チーム",
+    "reading": "じぶんちーむ",
     "parent": "pokemon",
     "description": "チームの作成・使用チームの切り替え・一覧（add / use / unuse / ls / detail / rm -t）。",
     "sections": [
@@ -101,6 +109,7 @@
   {
     "slug": "pokemon-sync",
     "title": "データ共有（アクセスキー）",
+    "reading": "でーたきょうゆう",
     "parent": "pokemon",
     "description": "登録データをクラウドに保存し、サイトと共有するためのアクセスキーの発行・入力・作り直し・停止。",
     "sections": [
@@ -110,6 +119,7 @@
   {
     "slug": "pokemon-battle",
     "title": "対戦（dmg・scan・faster）",
+    "reading": "たいせん",
     "parent": "pokemon",
     "description": "ダメージ計算（dmg）、相手の振り方の推定（scan）、素早さ比較（faster）、試合の終了（end）。",
     "sections": [
@@ -119,6 +129,7 @@
   {
     "slug": "pokemon-rival",
     "title": "相手チームと履歴",
+    "reading": "あいてちーむとりれき",
     "parent": "pokemon",
     "description": "対戦中の相手チーム（-r）と、終わった試合の履歴（-h）の管理。",
     "sections": [
@@ -128,6 +139,7 @@
   {
     "slug": "pokemon-notes",
     "title": "注意事項",
+    "reading": "ちゅういじこう",
     "parent": "pokemon",
     "description": "権限（配信者・モデレーター）、連続実行の制限、対戦形式、データの取得元など。",
     "sections": [
@@ -148,6 +160,7 @@
   {
     "slug": "faq",
     "title": "よくある質問（FAQ）",
+    "reading": "よくあるしつもん",
     "group": "困ったときは",
     "description": "起動できない・チャットが取得できない・翻訳や読み上げが動かない、などの確認項目。",
     "sections": [
@@ -166,6 +179,7 @@
   {
     "slug": "changelog",
     "title": "更新履歴",
+    "reading": "こうしんりれき",
     "group": "困ったときは",
     "description": "FaraBotModerator のバージョンごとの変更点。",
     "sections": [
