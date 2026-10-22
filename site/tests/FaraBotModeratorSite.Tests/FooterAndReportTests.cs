@@ -167,8 +167,8 @@ public class FooterAndReportTests
     {
         var css = File.ReadAllText(FindUp("wwwroot/css/site.css"));
         // 見出し（太字）は 1 行目、本文は次の行（block にして改行する）
-        Assert.Contains(".maintenance-notice strong { display: block; }", css);
-        Assert.Contains("--notice-h: 3.7rem;", css);
+        Assert.Contains(".maintenance-notice-title, .maintenance-notice-text { display: block; }", css);
+        Assert.Contains("--notice-h: 3.75rem;", css);
     }
 
     [Fact]
