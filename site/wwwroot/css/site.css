@@ -247,7 +247,10 @@ a:hover { color: var(--accent); }
 }
 .site-footer a { color: var(--muted); text-decoration: underline; text-underline-offset: 2px; }
 .site-footer a:hover { color: var(--accent); }
-.site-footer-line { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 12px; }
+.site-footer { text-align: center; }
+.site-footer-line { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 4px 12px; text-align: center; }
+/* 狭い画面で折り返しても、中央に並ぶ。項目（サイト名・問い合わせ・プライバシーポリシー・© 年 Fara・SNS）は、文言の途中では改行しない（項目ごとに折り返す） */
+.site-footer-line > * { white-space: nowrap; }
 .site-footer-sep { opacity: 0.5; }
 /* フッターの SNS アイコン（© の右）。色はポートフォリオと同じ（.service-* の --brand） */
 .site-footer-socials { display: inline-flex; gap: 8px; margin-left: 4px; }
