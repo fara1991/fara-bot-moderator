@@ -49,7 +49,7 @@ jobs:
 
       - name: Report endpoint test
         working-directory: site
-        run: node --test worker/report.test.mjs worker/index.test.mjs
+        run: node --test worker/report.test.mjs worker/index.test.mjs worker/maintenance.test.mjs
 
       - name: Export static site
         working-directory: site

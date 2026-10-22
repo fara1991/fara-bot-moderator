@@ -69,3 +69,77 @@ test("/api/report は、同じサイトからでないと 403", async () => {
   }), env);
   assert.equal(res.status, 403);
 });
+
+// ---- メンテナンス（MAINTENANCE / MAINTENANCE_MESSAGE。worker/maintenance.js） ----
+// HTMLRewriter は Workers にだけあるので、<main> の先頭に足すだけの代わりを用意する
+globalThis.HTMLRewriter = class {
+  on(_selector, handlers) { this.handlers = handlers; return this; }
+  transform(response) {
+    const handlers = this.handlers;
+    const text = response.text();
+    return new Response(new ReadableStream({
+      async start(controller) {
+        let body = await text;
+        handlers.element({ prepend: (html) => { body = body.replace("<main>", `<main>${html}`); } });
+        controller.enqueue(new TextEncoder().encode(body));
+        controller.close();
+      },
+    }), response);
+  }
+};
+const pageEnv = (extra) => ({
+  ...env,
+  ASSETS: { fetch: async () => new Response("<html><main>本文</main></html>", { headers: { "Content-Type": "text/html; charset=utf-8" } }) },
+  ...extra,
+});
+const open = (path, e, accept = "text/html") => worker.fetch(new Request(HOST + path, { headers: { Accept: accept } }), e);
+
+test("MAINTENANCE=true: すべてのページが 503 のメンテナンス画面（文つき）", async () => {
+  for (const path of ["/", "/docs/overview", "/privacy"]) {
+    const res = await open(path, pageEnv({ MAINTENANCE: "true", MAINTENANCE_MESSAGE: "21:00 ごろ終了予定" }));
+    assert.equal(res.status, 503, path);
+    const html = await res.text();
+    assert.match(html, /ただいまメンテナンス中です/);
+    assert.match(html, /21:00 ごろ終了予定/);
+    assert.match(html, /twitter\.com\/game_fara/);
+    assert.ok(!html.includes("本文"));
+  }
+});
+
+test("MAINTENANCE=true: 報告の受け口も止まる（API は JSON の 503）", async () => {
+  const res = await open("/api/report/config", pageEnv({ MAINTENANCE: "true" }), "application/json");
+  assert.equal(res.status, 503);
+  assert.equal((await res.json()).error, "maintenance");
+});
+
+test("MAINTENANCE=notice: ページの先頭に、更新予定のお知らせ。ページ自体は 200", async () => {
+  const res = await open("/", pageEnv({ MAINTENANCE: "notice", MAINTENANCE_MESSAGE: "10月25日 20:00 ごろ" }));
+  assert.equal(res.status, 200);
+  const html = await res.text();
+  assert.match(html, /<main><div class="maintenance-notice"[^>]*><strong>お知らせ<\/strong> 10月25日 20:00 ごろ<\/div>本文/);
+  assert.equal(res.headers.get("Cache-Control"), "no-store");
+});
+
+test("MAINTENANCE=false（または未設定）: お知らせもメンテナンス画面も出ない。文が残っていても出ない", async () => {
+  for (const extra of [{ MAINTENANCE: "false", MAINTENANCE_MESSAGE: "10月25日 20:00 ごろ" }, { MAINTENANCE_MESSAGE: "x" }, {}]) {
+    const res = await open("/", pageEnv(extra));
+    assert.equal(res.status, 200);
+    const html = await res.text();
+    assert.ok(!html.includes("maintenance-notice"), JSON.stringify(extra));
+    assert.equal(html, "<html><main>本文</main></html>");
+  }
+});
+
+test("MAINTENANCE=notice でも、HTML でない応答（CSS など）には足さない", async () => {
+  const e = pageEnv({ MAINTENANCE: "notice", MAINTENANCE_MESSAGE: "x" });
+  e.ASSETS = { fetch: async () => new Response("body{}", { headers: { "Content-Type": "text/css" } }) };
+  assert.equal(await (await open("/css/site.css", e, "text/css")).text(), "body{}");
+});
+
+test("wrangler.toml は、ダッシュボードの変数を公開のたびに消さない（keep_vars。トップレベルだけが有効で、本番・確認用の両方に効く）", async () => {
+  const { readFileSync } = await import("node:fs");
+  const toml = readFileSync(new URL("../wrangler.toml", import.meta.url), "utf8");
+  const lines = [...toml.matchAll(/^keep_vars = true$/gm)];
+  assert.equal(lines.length, 1);
+  assert.ok(lines[0].index < toml.indexOf("[env."), "最初の [env.*] より前（トップレベル）");
+});

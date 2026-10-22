@@ -748,3 +748,6 @@ main:focus { outline: none; }
 
 .report-done[hidden], .report-form[hidden] { display: none; }
 .report-done { max-width: 42rem; margin-top: 20px; }
+
+/* メンテナンスのお知らせ（MAINTENANCE=notice。worker/maintenance.js が <main> の先頭に足す） */
+.maintenance-notice { padding: 0.5rem 1rem; background: #f59e0b; color: #1a0b33; font-size: 0.9rem; text-align: center; }
