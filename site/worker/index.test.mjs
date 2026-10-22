@@ -55,8 +55,10 @@ test("noindex は、Worker では付けない（確認用の noindex は、公�
   const yml = readFileSync(new URL("../../.github/workflows/site.yml", import.meta.url), "utf8");
   const step = yml.indexOf("Add noindex header (develop)");
   assert.ok(step > 0);
-  assert.match(yml.slice(step, step + 150), /if: github\.ref_name != 'master'/);
-  assert.match(yml, /X-Robots-Tag: noindex, nofollow/);
+  const next = yml.indexOf("- name:", step + 1);
+  const body = yml.slice(step, next > 0 ? next : undefined);
+  assert.match(body, /if: github\.ref_name != 'master'/);
+  assert.match(body, /X-Robots-Tag: noindex, nofollow/);
 });
 
 test("/api/report/config は報告の受け口へ（静的ファイルに任せない）", async () => {

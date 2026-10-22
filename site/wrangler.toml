@@ -5,7 +5,7 @@
 #   Worker 名は本番 fara-twitch-bot、develop は fara-twitch-bot-dev。
 #   ここの name はダッシュボードの Worker 名と一致させる（違うと別の Worker が新しく作られる）。
 #
-# すべてのリクエストが worker/index.js を通る（run_worker_first = true。セキュリティ用のヘッダーと、確認用ホストの noindex のため）。
+# すべてのリクエストが worker/index.js を通る（run_worker_first = true。セキュリティ用のヘッダー・メンテナンス表示・報告の受け口のため）。
 
 name = "fara-twitch-bot"
 main = "worker/index.js"
