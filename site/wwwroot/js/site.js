@@ -89,6 +89,8 @@
 
     window.addEventListener("scroll", schedule, { passive: true });
     window.addEventListener("resize", schedule);
+    // ページを移ったとき（router.js が本文を差し替えた後）。読み込みのイベントは出ないので、ここで合わせる
+    document.addEventListener("fara:navigated", schedule);
     document.addEventListener("DOMContentLoaded", update);
     window.addEventListener("load", update);
 })();

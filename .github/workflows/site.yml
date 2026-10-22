@@ -56,7 +56,7 @@ jobs:
 
       - name: Report endpoint test
         working-directory: site
-        run: node --test worker/report.test.mjs worker/index.test.mjs worker/maintenance.test.mjs
+        run: node --test worker/report.test.mjs worker/index.test.mjs worker/maintenance.test.mjs tests/js/router.test.mjs
 
       - name: Deploy gate test
         run: node --test .github/scripts/require-maintenance.test.mjs

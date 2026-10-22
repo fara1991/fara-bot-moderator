@@ -179,7 +179,9 @@
             input.blur();
             var toggle = document.getElementById("nav-toggle");
             if (toggle) toggle.checked = false;
-            location.href = href;
+            // 同じサイトのページは、読み直さずに移る（router.js）。使えないときは通常の移動
+            if (window.faraNavigate) window.faraNavigate(href);
+            else location.href = href;
         }
         function close() {
             list.hidden = true; active = -1;
