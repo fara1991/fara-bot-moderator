@@ -164,3 +164,20 @@ test("本番の公開は MAINTENANCE=notice を確かめてから行い、公開
   assert.match(yml, /SKIP_MAINTENANCE_CHECK: \$\{\{ inputs\.skip_maintenance_check \}\}/);
   assert.match(yml, /require-maintenance\.test\.mjs/, "CI で確認のスクリプトもテストする");
 });
+
+test("メンテナンスのお知らせの帯は sticky で上に残る。PC は固定ヘッダーの真下（top: 3.5rem）、重なりは固定ヘッダー（70）より下・隠したサイドバー（75）より下", async () => {
+  const { readFileSync } = await import("node:fs");
+  const css = readFileSync(new URL("../wwwroot/css/site.css", import.meta.url), "utf8");
+  const rule = css.match(/^\.maintenance-notice \{([^}]*)\}/m);
+  assert.ok(rule, "帯の基本の規則");
+  assert.match(rule[1], /position: sticky;/);
+  assert.match(rule[1], /(^|\s)top: 0;/);
+  const z = Number(rule[1].match(/z-index: (\d+);/)[1]);
+  assert.ok(z > 0 && z < 70, `z-index ${z} は 70（固定ヘッダー）より下`);
+  assert.ok(z < 75, "隠したサイドバーが広がったとき（75）の下");
+  const pc = css.match(/@media \(min-width: 900px\) \{[\s\S]*?\n\}/g).filter((b) => b.includes(".maintenance-notice"));
+  assert.equal(pc.length, 1, "PC の指定は 900px の 1 か所");
+  assert.match(pc[0], /\.maintenance-notice \{ top: 3\.5rem; \}/);
+  assert.match(css, /html:has\(\.maintenance-notice\) \{ scroll-padding-top: calc\(var\(--notice-h\) \+ 16px\); \}/, "スマホの見出しへのジャンプ");
+  assert.match(pc[0], /html:has\(\.maintenance-notice\) main \.doc-toc \{\s*top: calc\(3\.5rem \+ var\(--notice-h\) \+ 20px\);/, "PC の目次は帯の下");
+});
