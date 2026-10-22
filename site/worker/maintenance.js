@@ -44,7 +44,7 @@ export function maintenancePageHtml(siteName, message) {
 /** お知らせのバナー（各サイトの CSS の .maintenance-notice で見た目を付ける。CSP のため、インラインの style は使わない）。 */
 export function noticeHtml(message) {
   const text = message || "まもなくメンテナンスを行います。";
-  return `<div class="maintenance-notice" role="status"><strong>お知らせ</strong> ${escapeHtml(text)}</div>`;
+  return `<div class="maintenance-notice" role="status"><strong>【お知らせ】</strong><span class="maintenance-notice-text">${escapeHtml(text)}</span></div>`;
 }
 
 /**

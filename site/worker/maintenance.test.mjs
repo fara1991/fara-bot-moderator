@@ -86,6 +86,8 @@ test("noticeHtml: 文が無いときの既定の文、HTML は無害化", () => 
   assert.match(noticeHtml(""), /まもなくメンテナンスを行います/);
   assert.match(noticeHtml("<i>x</i>"), /&lt;i&gt;x&lt;\/i&gt;/);
   assert.match(noticeHtml("x"), /class="maintenance-notice" role="status"/);
+  // 1 行目は見出し「【お知らせ】」、本文は次の行（span）
+  assert.match(noticeHtml("x"), /<strong>【お知らせ】<\/strong><span class="maintenance-notice-text">x<\/span>/);
   assert.ok(!/style=/.test(noticeHtml("x")), "CSP のため、インラインの style は使わない");
 });
 

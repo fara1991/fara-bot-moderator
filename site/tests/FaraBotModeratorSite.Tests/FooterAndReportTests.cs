@@ -163,6 +163,15 @@ public class FooterAndReportTests
     }
 
     [Fact]
+    public void Notice_band_puts_the_heading_on_its_own_line_and_its_height_fits_two_lines()
+    {
+        var css = File.ReadAllText(FindUp("wwwroot/css/site.css"));
+        // 見出し（太字）は 1 行目、本文は次の行（block にして改行する）
+        Assert.Contains(".maintenance-notice strong { display: block; }", css);
+        Assert.Contains("--notice-h: 3.7rem;", css);
+    }
+
+    [Fact]
     public void Shipped_sns_urls_in_appsettings_match_the_portfolio_values()
     {
         var path = FindUp("appsettings.json");

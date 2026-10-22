@@ -761,9 +761,10 @@ main:focus { outline: none; }
 /* メンテナンスのお知らせ（MAINTENANCE=notice。worker/maintenance.js が <main> の先頭に足す） */
 /* 帯は、スクロールしても上に残る（sticky）。PC は固定ヘッダー（3.5rem）の真下、スマホはヘッダーが無いので上端。
    z-index 60 は、固定ヘッダー（70）より下、隠したサイドバーが広がったとき（75）より下。
-   --notice-h は帯の高さの目安（1 行のとき。0.9rem × 1.5 + 上下の余白 1rem ≈ 2.35rem）。2 行以上になると、
+   帯は、1 行目に見出し「【お知らせ】」、2 行目以降に本文（strong を block にして改行する）。
+   --notice-h は帯の高さの目安（見出し 1 行 + 本文 1 行。0.9rem × 1.5 × 2 + 上下の余白 1rem ≈ 3.7rem）。本文が 2 行以上になると、
    見出しへのジャンプと目次は、帯の下に数 rem 隠れることがある（帯の高さは可変のため、CSS だけでは合わせられない） */
-:root { --notice-h: 2.4rem; }
+:root { --notice-h: 3.7rem; }
 .maintenance-notice {
     position: sticky;
     top: 0;
@@ -776,6 +777,7 @@ main:focus { outline: none; }
     line-height: 1.5;
     text-align: center;
 }
+.maintenance-notice strong { display: block; }
 html:has(.maintenance-notice) { scroll-padding-top: calc(var(--notice-h) + 16px); }
 @media (min-width: 900px) {
     .maintenance-notice { top: 3.5rem; }
