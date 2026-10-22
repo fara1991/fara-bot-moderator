@@ -64,3 +64,31 @@
         }
     });
 })();
+
+// 画面のスクロール量の線（.scroll-progress）。どれだけ下に進んだかを 0〜1 で --progress に入れる。
+// 短くて、スクロールできないページは 0 のまま。scroll・resize のたびに、次の描画（requestAnimationFrame）で 1 回だけ更新する
+(function () {
+    "use strict";
+    var root = document.documentElement;
+    var queued = false;
+
+    function update() {
+        queued = false;
+        var bar = document.querySelector("[data-scroll-progress]");
+        if (!bar) return;
+        var max = root.scrollHeight - window.innerHeight;
+        var top = window.pageYOffset || root.scrollTop || 0;
+        var value = max > 0 ? top / max : 0;
+        bar.style.setProperty("--progress", String(Math.min(1, Math.max(0, value))));
+    }
+    function schedule() {
+        if (queued) return;
+        queued = true;
+        window.requestAnimationFrame(update);
+    }
+
+    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", schedule);
+    document.addEventListener("DOMContentLoaded", update);
+    window.addEventListener("load", update);
+})();
