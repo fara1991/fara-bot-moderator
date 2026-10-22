@@ -404,6 +404,45 @@ Auto Bot Settings > Game で「ポケモンシリーズ」を選び、「アク�
 - 計算ロジック: [fara-pokemon-battle-assistant](https://github.com/fara1991/fara-pokemon-battle-assistant)（ブラウザ版: https://pokemon.fara-labs.com/chat-commands ）
 - ポケモンのデータの取得元は同じ画面の「データの取得元」で切り替えます（本番: https://pokemon.fara-labs.com/api/game/ 、開発用: https://pokemon-dev.fara-labs.com/api/game/ 。接続中でもすぐ反映され、`secrets.json` の `pokemon.dataSource` に保存されます。1 日キャッシュ）
 
+### 5.5. Beat Saber コマンド（!bsr・!bomb）
+
+Beat Saber で使うチャットのコマンドです。曲リクエスト（`!bsr`）は、このアプリが読み上げ用の文に変換します。爆弾のコマンド（`!bomb` 系）は、Beat Saber の Mod（FaraBombRush）が処理します。
+
+#### 曲リクエスト（!bsr）
+
+`!bsr XXX` で、XXX に合った曲をリクエストできます。XXX に合った曲が選ばれ、プレイできます。
+
+チャットに流れる Beat Saber の返信文などは、棒読みちゃんで読み上げやすい文に変換されます。変換した文は、棒読みちゃん連携が有効なときに、発言者の名前に「さん」を付けて読み上げられます。変換の規則は、[5.2 ゲーム設定（Game）](#52-ゲーム設定game) の Beat Saber の表（正規表現パターン → 変換後テキスト）で編集できます。
+
+規則は表の上から順に見て、最初に合った行の文に変換します。既定の規則は次のとおりです。
+
+| 元の文（例） | 読み上げる文（既定） |
+|---|---|
+| `!bsr XXX` | から、ソングリクエストXXXを頂きました。 |
+| `Request 曲名 /…`（リクエスト登録） | リクエスト曲 曲名 が登録されました。 |
+| `… requested by … added to queue` | 読み上げません（空の文） |
+| `… already in queue`（既にリクエスト済み） | 既にリクエストされた曲です。 |
+| `曲名 / … requested by 名前 is next`（次の曲） | 次の曲は、名前さんがリクエストした曲名です。 |
+| `Queue is closed`（Queue の終了） | ソングリクエストを終了します。皆さんありがとう！ |
+| `Queue is open`（Queue の開始） | ソングリクエストを開始しました。リクエストお待ちしてます。 |
+| `map 曲名 not found`（曲が見つからない） | リクエスト曲曲名は存在しません。 |
+| `No results found for request XXX` | XXXはリクエストにないよ。 |
+| `Request for XXX produces N results`（検索結果の件数） | XXX で検索したら N 曲あったよ。絞り込んでみてね。 |
+
+#### 爆弾（!bomb・!bombline・!bombreset）
+
+爆弾は、Beat Saber の Mod「[FaraBombRush](https://github.com/fara1991/FaraBombRush)」が出します。ゲームの Mod 設定で Play Mode を「Interactive」にすると、Twitch チャットのコマンドで曲中に爆弾を出せます。チャットの読み取りには ChatPlexSDK を使うため、BeatSaberPlus が必要です。
+
+| コマンド | 内容 |
+|---|---|
+| `!bomb` / `!bomb 1〜12` | 爆弾を 1 個出します。位置を省くとランダムです |
+| `!bombline` / `!bombline 1〜12` | 同じ位置に、1 拍（ビート）ずつずらして 5 個の爆弾を出します。位置を省くとランダムです |
+| `!bombreset` / `!bombreset 1〜12` | 指定した位置によって、上段か下段の 4 か所に同じタイミングで爆弾を出します（リセット用の配置）。位置を省くとランダムです |
+
+- 位置は 1〜12 の数字で指定します。範囲の外や数字でない指定は無視されます
+- コマンドは Twitch のチャットからだけ受け付けます
+- `!bomb` を含む発言は、このアプリの読み上げ・翻訳の対象にしません
+
 ---
 
 ## 6. ウィンドウ設定（Windows Settings）

@@ -28,7 +28,7 @@
 ## その他
 
 - `external/fara-pokemon-battle-assistant`（submodule）は、ポケモン側の変更のたびに `develop` の最新へ更新する（PR を出す）。
-- Beat Saber のコマンドの説明は、ユーザーが後で書く。`/docs/beatsaber` は `pages.json` から外してある。`Manual.md` に節を書いてから、`parent: commands` の子ページを足す。
+- Beat Saber のコマンドの説明は `/docs/beatsaber`（`Manual.md` の「5.5. Beat Saber コマンド」の節と、`pages.json` の `parent: commands` の子ページ）。ゲームのコマンドを増やすときも、先に `Manual.md` に節を書き、`parent: commands` の子ページを足す。
 
 ## 見た目（BeerCSS）
 
