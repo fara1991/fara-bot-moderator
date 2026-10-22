@@ -134,6 +134,12 @@ public sealed partial class ContentService
     /// </summary>
     public static void ValidateTree(IReadOnlyList<PageDefinition> definitions)
     {
+        // JSON の null は、既定値（""）を上書きして null になる。ここで止めて、後の処理で NullReferenceException にしない
+        foreach (var d in definitions)
+        {
+            if (d.Parent is null) throw new InvalidOperationException($"pages.json: {d.Slug} の parent に null は使えません（親が無いページは、parent の行を消してください）");
+            if (d.Group is null) throw new InvalidOperationException($"pages.json: {d.Slug} の group に null は使えません（空にするか、行を消してください）");
+        }
         var bySlug = definitions.ToDictionary(d => d.Slug);
         foreach (var d in definitions)
         {

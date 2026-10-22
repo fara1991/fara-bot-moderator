@@ -135,13 +135,6 @@
     ]
   },
   {
-    "slug": "beatsaber",
-    "title": "Beat Saber",
-    "parent": "commands",
-    "description": "ソングリクエストのメッセージを読み上げ用に変換する設定（ゲーム設定の Beat Saber）。コマンドの説明は、まだ用意していません。",
-    "sections": []
-  },
-  {
     "slug": "faq",
     "title": "よくある質問（FAQ）",
     "group": "困ったときは",

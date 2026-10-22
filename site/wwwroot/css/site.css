@@ -183,7 +183,10 @@ a:hover { color: var(--accent); }
 }
 .sidebar .nav-item { padding: 0.1rem 1rem; font-size: 0.9rem; }
 /* 子ページ（親の下に入れ子で出す）は、段ごとに字下げして、少し小さく */
-.sidebar .nav-item.nav-child { padding-left: calc(1rem + var(--depth, 1) * 0.9rem); font-size: 0.85rem; }
+.sidebar .nav-item.nav-child { font-size: 0.85rem; }
+.sidebar .nav-item.nav-depth-1 { padding-left: 1.9rem; }
+.sidebar .nav-item.nav-depth-2 { padding-left: 2.6rem; }
+.sidebar .nav-item.nav-depth-3 { padding-left: 3.3rem; }
 .sidebar .nav-link {
     display: flex;
     align-items: center;

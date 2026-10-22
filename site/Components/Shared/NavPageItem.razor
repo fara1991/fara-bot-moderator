@@ -1,17 +1,32 @@
 @inject ContentService Content
 
-@* サイドメニューの 1 項目。子ページがあれば、その下に入れ子で出す（Depth は字下げの段）。 *@
-<div class="nav-item@(Depth > 0 ? " nav-child" : "")" style="--depth:@Depth">
+@* サイドメニューの 1 項目。子ページがあれば、その下に入れ子で出す。
+   字下げは段ごとの class（nav-depth-N）で CSS に任せる。style 属性は、CSP（style-src 'self'）で止められるので使わない。 *@
+<div class="@ItemClass">
     <NavLink class="nav-link" href="@Page.Url"><NavIcon Name="@IconOf(Page.Slug)" /><span>@Page.Title</span></NavLink>
 </div>
-@foreach (var child in Content.Children(Page))
+@if (children.Count > 0)
 {
-    <NavPageItem Page="child" Depth="Depth + 1" />
+    <div class="nav-children" role="group" aria-label="@Page.Title の下のページ">
+        @foreach (var child in children)
+        {
+            <NavPageItem Page="child" Depth="Depth + 1" />
+        }
+    </div>
 }
 
 @code {
+    /// <summary>字下げの class を用意する最大の段（これより深い段も、同じ字下げにする）。site.css の nav-depth-N と合わせる。</summary>
+    private const int MaxDepthClass = 3;
+
     [Parameter, EditorRequired] public DocPage Page { get; set; } = default!;
     [Parameter] public int Depth { get; set; }
+
+    private IReadOnlyList<DocPage> children = Array.Empty<DocPage>();
+
+    private string ItemClass => Depth > 0 ? $"nav-item nav-child nav-depth-{Math.Min(Depth, MaxDepthClass)}" : "nav-item";
+
+    protected override void OnParametersSet() => children = Content.Children(Page);
 
     /// <summary>ページごとのアイコン（Shared/NavIcon.razor の名前）。新しいページを足したら、ここにも書く（無ければ、アイコンなしで出る）。</summary>
     private static string IconOf(string slug) => slug switch
@@ -24,7 +39,6 @@
         "game" => "gamepad",
         "timer" => "clock",
         "commands" => "terminal",
-        "beatsaber" => "gamepad",
         "pokemon" => "terminal",
         "pokemon-my" => "ball",
         "pokemon-team" => "users",

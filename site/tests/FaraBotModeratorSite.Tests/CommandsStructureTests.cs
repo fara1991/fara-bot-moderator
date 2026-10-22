@@ -70,7 +70,8 @@ public class CommandsStructureTests
     {
         var content = LoadContent();
         var hub = content.Find("commands")!;
-        Assert.Equal(new[] { "pokemon", "beatsaber" }, content.Children(hub).Select(p => p.Slug));
+        // Beat Saber は、チャットのコマンドの説明が無いので入れていない（PR 本文を参照）
+        Assert.Equal(new[] { "pokemon" }, content.Children(hub).Select(p => p.Slug));
         Assert.Equal(new[] { "pokemon-my", "pokemon-team", "pokemon-sync", "pokemon-battle", "pokemon-rival", "pokemon-notes" },
             content.Children(content.Find("pokemon")!).Select(p => p.Slug));
         Assert.Equal(new[] { "commands", "pokemon" }, content.Ancestors(content.Find("pokemon-my")!).Select(p => p.Slug));
@@ -103,10 +104,9 @@ public class CommandsStructureTests
         Assert.Equal("pokemon", prev!.Slug);
         Assert.Equal("pokemon-team", next!.Slug);
 
-        var (beforeBeatSaber, afterBeatSaber) = content.Neighbors(content.Find("pokemon-notes")!);
-        Assert.Equal("pokemon-rival", beforeBeatSaber!.Slug);
-        Assert.Equal("beatsaber", afterBeatSaber!.Slug);
-        Assert.Equal("faq", content.Neighbors(content.Find("beatsaber")!).Next!.Slug);
+        var (beforeFaq, afterFaq) = content.Neighbors(content.Find("pokemon-notes")!);
+        Assert.Equal("pokemon-rival", beforeFaq!.Slug);
+        Assert.Equal("faq", afterFaq!.Slug);
     }
 
     [Fact]
@@ -114,7 +114,6 @@ public class CommandsStructureTests
     {
         var urls = LoadContent().BuildSearchIndex().Select(e => e.Url).ToHashSet();
         Assert.Contains("/docs/commands", urls);
-        Assert.Contains("/docs/beatsaber", urls);
         Assert.Contains("/docs/pokemon-my", urls);
     }
 
@@ -124,7 +123,6 @@ public class CommandsStructureTests
         var content = LoadContent();
         var html = await RenderAsync<Doc>(content, new Dictionary<string, object?> { ["Slug"] = "commands" });
         Assert.Contains("href=\"/docs/pokemon\"", html);
-        Assert.Contains("href=\"/docs/beatsaber\"", html);
         Assert.DoesNotContain("href=\"/docs/pokemon-my\"", html);   // 子の子は、入口ではなく、ポケモンのページに出す
     }
 
@@ -139,13 +137,26 @@ public class CommandsStructureTests
     }
 
     [Fact]
-    public async Task Sidebar_nests_games_under_the_hub()
+    public async Task Sidebar_nests_games_under_the_hub_with_depth_classes_and_no_inline_style()
     {
         var content = LoadContent();
         var html = await RenderAsync<NavPageItem>(content, new Dictionary<string, object?> { ["Page"] = content.Find("commands") });
-        Assert.Contains("href=\"/docs/beatsaber\"", html);
-        Assert.Contains("nav-child", html);
+        Assert.Contains("class=\"nav-item\"", html);                                  // 入口は字下げなし
+        Assert.Contains("nav-item nav-child nav-depth-1", html);                         // ポケモン（段 1）
+        Assert.Contains("nav-item nav-child nav-depth-2", html);                         // 育成ポケモンなど（段 2）
+        Assert.Contains("role=\"group\"", html);                                       // 子の一覧は、階層として読める
         Assert.Contains("href=\"/docs/pokemon-battle\"", html);
+        // CSP（worker/index.js の style-src 'self'）で style 属性は止まるので、使わない
+        Assert.DoesNotContain("style=", html);
+    }
+
+    [Fact]
+    public void Stylesheet_indents_each_depth_class()
+    {
+        var css = File.ReadAllText(Path.Combine(SiteDir, "wwwroot", "css", "site.css"));
+        Assert.Contains(".sidebar .nav-item.nav-depth-1 {", css);
+        Assert.Contains(".sidebar .nav-item.nav-depth-2 {", css);
+        Assert.Contains(".sidebar .nav-item.nav-depth-3 {", css);
     }
 
     [Fact]
@@ -159,6 +170,18 @@ public class CommandsStructureTests
         Assert.Throws<InvalidOperationException>(() => ContentService.ValidateTree(new[] { Def("a", parent: "a") }));
         Assert.Throws<InvalidOperationException>(() => ContentService.ValidateTree(new[] { Def("a") }));
         ContentService.ValidateTree(new[] { Def("a", group: "g"), Def("b", parent: "a") });
+    }
+
+    [Fact]
+    public void Null_parent_or_group_in_pages_json_is_a_validation_error_not_a_crash()
+    {
+        static PageDefinition Def(string slug, string? parent, string? group) =>
+            new() { Slug = slug, Title = slug, Parent = parent!, Group = group! };
+
+        Assert.Throws<InvalidOperationException>(() => ContentService.ValidateTree(new[] { Def("a", parent: null, group: "g") }));
+        Assert.Throws<InvalidOperationException>(() => ContentService.ValidateTree(new[] { Def("a", parent: "", group: null) }));
+        Assert.Throws<InvalidOperationException>(() => ContentService.ValidateTree(new[] { Def("a", parent: "", group: "g"), Def("b", parent: null, group: null) }));
+        Assert.Throws<InvalidOperationException>(() => ContentService.ValidateTree(new[] { Def("a", parent: "b", group: "g"), Def("b", parent: null, group: "g") }));
     }
 
     [Fact]
