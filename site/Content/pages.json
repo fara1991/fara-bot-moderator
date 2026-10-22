@@ -135,6 +135,17 @@
     ]
   },
   {
+    "slug": "beatsaber",
+    "title": "Beat Saber コマンド（!bsr・!bomb）",
+    "parent": "commands",
+    "description": "曲リクエスト（!bsr）と、読み上げ用の変換の規則。爆弾のコマンド（!bomb・!bombline・!bombreset）の説明。",
+    "sections": [
+      { "heading": "5.5. Beat Saber コマンド（!bsr・!bomb）", "own": true },
+      { "heading": "曲リクエスト（!bsr）" },
+      { "heading": "爆弾（!bomb・!bombline・!bombreset）" }
+    ]
+  },
+  {
     "slug": "faq",
     "title": "よくある質問（FAQ）",
     "group": "困ったときは",

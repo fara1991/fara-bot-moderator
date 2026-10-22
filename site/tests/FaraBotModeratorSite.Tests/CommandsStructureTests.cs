@@ -70,8 +70,7 @@ public class CommandsStructureTests
     {
         var content = LoadContent();
         var hub = content.Find("commands")!;
-        // Beat Saber は、チャットのコマンドの説明が無いので入れていない（PR 本文を参照）
-        Assert.Equal(new[] { "pokemon" }, content.Children(hub).Select(p => p.Slug));
+        Assert.Equal(new[] { "pokemon", "beatsaber" }, content.Children(hub).Select(p => p.Slug));
         Assert.Equal(new[] { "pokemon-my", "pokemon-team", "pokemon-sync", "pokemon-battle", "pokemon-rival", "pokemon-notes" },
             content.Children(content.Find("pokemon")!).Select(p => p.Slug));
         Assert.Equal(new[] { "commands", "pokemon" }, content.Ancestors(content.Find("pokemon-my")!).Select(p => p.Slug));
@@ -104,8 +103,12 @@ public class CommandsStructureTests
         Assert.Equal("pokemon", prev!.Slug);
         Assert.Equal("pokemon-team", next!.Slug);
 
-        var (beforeFaq, afterFaq) = content.Neighbors(content.Find("pokemon-notes")!);
-        Assert.Equal("pokemon-rival", beforeFaq!.Slug);
+        var (beforeBeatSaber, afterBeatSaber) = content.Neighbors(content.Find("pokemon-notes")!);
+        Assert.Equal("pokemon-rival", beforeBeatSaber!.Slug);
+        Assert.Equal("beatsaber", afterBeatSaber!.Slug);
+
+        var (beforeFaq, afterFaq) = content.Neighbors(content.Find("beatsaber")!);
+        Assert.Equal("pokemon-notes", beforeFaq!.Slug);
         Assert.Equal("faq", afterFaq!.Slug);
     }
 
@@ -115,6 +118,17 @@ public class CommandsStructureTests
         var urls = LoadContent().BuildSearchIndex().Select(e => e.Url).ToHashSet();
         Assert.Contains("/docs/commands", urls);
         Assert.Contains("/docs/pokemon-my", urls);
+        Assert.Contains("/docs/beatsaber", urls);
+    }
+
+    [Fact]
+    public async Task Beat_Saber_page_has_breadcrumb_to_the_hub_and_its_sections()
+    {
+        var content = LoadContent();
+        var html = await RenderAsync<Doc>(content, new Dictionary<string, object?> { ["Slug"] = "beatsaber" });
+        Assert.Contains("href=\"/docs/commands\"", html);
+        Assert.Contains("!bsr", html);
+        Assert.Contains("!bombreset", html);
     }
 
     [Fact]
@@ -123,6 +137,7 @@ public class CommandsStructureTests
         var content = LoadContent();
         var html = await RenderAsync<Doc>(content, new Dictionary<string, object?> { ["Slug"] = "commands" });
         Assert.Contains("href=\"/docs/pokemon\"", html);
+        Assert.Contains("href=\"/docs/beatsaber\"", html);
         Assert.DoesNotContain("href=\"/docs/pokemon-my\"", html);   // 子の子は、入口ではなく、ポケモンのページに出す
     }
 
