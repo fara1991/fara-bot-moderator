@@ -22,17 +22,6 @@
 </section>
 
 <section class="page-section">
-    <h2>更新履歴</h2>
-    <ul class="changelog-recent">
-        @foreach (var e in Content.Changelog.Take(RecentCount))
-        {
-            <li><span class="changelog-date">@e.Date.ToString("MM/dd")</span> @e.Title</li>
-        }
-    </ul>
-    <p><a href="/changelog">すべて見る →</a></p>
-</section>
-
-<section class="page-section">
     <h2>できること</h2>
     <div class="card-grid">
         <article class="card">
@@ -120,6 +109,17 @@
         <a class="button" href="/docs/main-settings">初期設定の手順を見る</a>
         <a class="button ghost" href="/docs">ドキュメント一覧</a>
     </p>
+</section>
+
+<section class="page-section">
+    <h2>更新履歴</h2>
+    <ul class="changelog-recent">
+        @foreach (var e in Content.Changelog.Take(RecentCount))
+        {
+            <li><span class="changelog-date">@e.Date.ToString("MM/dd")</span> @e.Title</li>
+        }
+    </ul>
+    <p><a href="/changelog">すべて見る →</a></p>
 </section>
 
 @code {
