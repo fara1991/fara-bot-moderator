@@ -6,7 +6,8 @@
 // - /report は、ページごとに CSP（Turnstile のための許可）が違い、報告フォームの script は差し替えでは動かないので、移動せず通常どおり読み直す
 // - 取得に失敗したとき・HTML でないとき・本文に script があるときは、通常の移動に戻す（location.assign。読み直し）
 // - 同じページの中の #見出し（目次・スキップリンク）は、ブラウザの通常の動きに任せる
-// - 戻る・進むは、スクロールの位置を覚えていて戻す。履歴の状態（history.state.y）に、この画面のスクロール位置を保存する
+// - 戻る・進むは、スクロールの位置を戻す。位置は履歴の項目（id）ごとに、メモリと sessionStorage に覚える。
+//   スクロールのたびに history を書き換えると、ブラウザがその書き換えを間引いて、移動できなくなることがあるため、history は項目を作るときだけ書く
 // - 移動したら document に fara:navigated を出す（site.js が、スクロールの線を合わせる）
 // 外部ファイルだけを使う（CSP は変えない）。書き方は他の js（site.js など）にそろえた ES5 風。
 (function () {
@@ -60,15 +61,44 @@
 
     // ---- 表示中のページ ----
     var current = 0;                                              // 最後に始めた移動の番号（古い応答は捨てる）
-    var busy = false;                                             // 差し替えの最中は、スクロールの位置を保存しない
+    var busy = false;                                             // 差し替えの最中は、スクロールの位置を覚えない
     var renderedKey = window.location.pathname + window.location.search;
+    var entrySeq = 0;
+    // 履歴の項目（id）ごとの、スクロール位置。メモリに持つ（history には書かない。ブラウザは history の書き換えを間引くため、スクロールのたびに書くと、移動できなくなることがある）
+    var positions = {};
 
-    /** いまのスクロール位置を、この履歴の状態に保存する（戻る・進むで戻すため） */
-    function saveScroll() {
-        if (busy) return;
+    function newEntryId() {
+        entrySeq++;
+        return Date.now().toString(36) + "-" + entrySeq;
+    }
+
+    /** いまの履歴の項目の id（無ければ付ける）。この画面が表示している項目 */
+    function currentEntry() {
+        var st = window.history.state;
+        if (st && st.id) return st.id;
+        var id = newEntryId();
+        try { window.history.replaceState(Object.assign({}, st, { id: id }), ""); } catch (e) { /* 履歴に書けない環境 */ }
+        return id;
+    }
+    var entry = currentEntry();
+
+    // 再読み込みで戻すための保存先: sessionStorage（このタブの中だけ。履歴は書き換えない。pagehide の中の書き込みは反映されないことがあるため、スクロールのたびに書く）
+    var POS_PREFIX = "fara-router-pos:";
+    function storePos(id, y) {
+        try { window.sessionStorage.setItem(POS_PREFIX + id, String(y)); } catch (e) { /* 使えない環境では、再読み込みで戻さない */ }
+    }
+    function loadPos(id) {
         try {
-            window.history.replaceState(Object.assign({}, window.history.state, { y: window.pageYOffset }), "");
-        } catch (e) { /* 履歴に書けない環境では、戻ったときの位置は覚えない */ }
+            var v = window.sessionStorage.getItem(POS_PREFIX + id);
+            return v === null ? null : Number(v);
+        } catch (e) { return null; }
+    }
+
+    /** いまのスクロール位置を、この項目の位置として覚える（履歴の書き換えはしない） */
+    function rememberScroll() {
+        if (busy) return;
+        positions[entry] = window.pageYOffset;
+        storePos(entry, window.pageYOffset);
     }
 
     /** #見出し のある場所へ。無ければ先頭へ */
@@ -122,15 +152,11 @@
      * 移動する。mode は "push"（新しい履歴を積む）・"replace"（同じ場所）・"pop"（戻る・進む）。
      * 失敗したら、通常の読み直しに任せる（pop のときは、いまの URL を読み直す）。
      */
-    function navigate(href, mode) {
+    function navigate(href, mode, popY) {
         var seq = ++current;
+        popY = typeof popY === "number" ? popY : null;
         var url = new URL(href, window.location.href);
-        var popY = null;
-        if (mode === "pop") {
-            popY = window.history.state && typeof window.history.state.y === "number" ? window.history.state.y : null;
-        } else {
-            saveScroll();   // 出ていく前に、いまの位置を覚える
-        }
+        if (mode !== "pop") rememberScroll();   // 出ていく前に、いまの位置を覚える
 
         fetch(url.href, { headers: { Accept: "text/html" }, credentials: "same-origin" })
             .then(function (res) {
@@ -147,8 +173,8 @@
                 }
                 var key = dest.pathname + dest.search;
                 var target = dest.pathname + dest.search + dest.hash;
-                if (mode === "push" && dest.href !== window.location.href) window.history.pushState({ y: 0 }, "", target);
-                else if (mode !== "pop") window.history.replaceState({ y: 0 }, "", target);
+                if (mode === "push" && dest.href !== window.location.href) window.history.pushState({ id: newEntryId() }, "", target);
+                entry = currentEntry();
 
                 busy = true;
                 try {
@@ -158,7 +184,7 @@
                 } finally {
                     busy = false;
                 }
-                saveScroll();
+                rememberScroll();
             })
             .catch(function () {
                 if (seq !== current) return;
@@ -180,23 +206,28 @@
 
     // 戻る・進む。同じ画面の #見出し への移動（履歴の状態が無い）は、位置を戻すだけ
     window.addEventListener("popstate", function () {
+        ++current;   // 進行中の移動があれば、その応答は捨てる
+        var st = window.history.state || {};
         var key = window.location.pathname + window.location.search;
-        var y = window.history.state && typeof window.history.state.y === "number" ? window.history.state.y : null;
+        // 戻る・進む先の位置: この画面で覚えていれば、それ。無ければ、再読み込みのときに書いた位置
+        var y = st.id && positions[st.id] !== undefined ? positions[st.id] : (st.id ? loadPos(st.id) : null);
         if (key === renderedKey) {
+            entry = currentEntry();
             if (y !== null) window.scrollTo(0, y);
             else scrollToHashOrTop(window.location.hash);
             return;
         }
-        navigate(window.location.href, "pop");
+        navigate(window.location.href, "pop", y);
     });
 
-    // 位置の保存は、スクロールのたびに（1 フレームに 1 回）。戻る・進むで、同じ場所に戻れるように
+    // 位置は、スクロールのたびに（1 フレームに 1 回）メモリへ覚える。履歴への書き込みはしない
     var savePending = false;
     window.addEventListener("scroll", function () {
         if (savePending) return;
         savePending = true;
-        window.requestAnimationFrame(function () { savePending = false; saveScroll(); });
+        window.requestAnimationFrame(function () { savePending = false; rememberScroll(); });
     }, { passive: true });
+
 
     // 検索の結果など、ほかの部品からの移動（search.js の go）。移動できないリンクは通常どおり開く
     window.faraNavigate = function (href) {
@@ -207,8 +238,10 @@
 
     // ブラウザが戻ったときの位置は、ここで戻す（自動の復元は、差し替えと合わないので止める）
     if ("scrollRestoration" in window.history) window.history.scrollRestoration = "manual";
-    if (window.history.state && typeof window.history.state.y === "number" && !window.location.hash) {
-        window.scrollTo(0, window.history.state.y);
+    var startY = loadPos(entry);
+    if (startY !== null && !isNaN(startY) && !window.location.hash) {
+        window.scrollTo(0, startY);
+        positions[entry] = startY;
     }
 
     window.FaraRouter = {
