@@ -40,6 +40,8 @@ Twitch配信者向けの多機能BOTツールです。WPF (C# / .NET 8) で構�
 ### ビルド方法
 リポジトリをサブモジュールごとクローンし、PowerShellスクリプトを使用してビルドおよびパッケージングが可能です。
 
+ビルドには .NET 10 SDK が必要です（`global.json` で指定。アプリ本体の対象は `net8.0-windows` のままなので、実行には .NET 8 Runtime が必要です）。
+
 ```powershell
 git clone --recursive https://github.com/fara1991/fara-bot-moderator.git
 # クローン済みの場合
