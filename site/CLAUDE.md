@@ -10,7 +10,7 @@
 
 ## CSP の方針（必ず守る）
 
-1. 通常のページは、同じオリジン（`'self'`）のスクリプトとスタイルだけを許可する。インラインのスクリプト・スタイル（`<script>…</script>`、`onclick` などのイベント属性、`<style>`、`style` 属性、JS が実行時に付ける `style` 属性）は使わない。
+1. 通常のページは、同じオリジン（`'self'`）のスクリプトとスタイルだけを許可する。インラインのスクリプト・スタイル（`<script>…</script>`、`onclick` などのイベント属性、`<style>`、`style` 属性のマークアップ）は使わない。CSSOM 経由（`element.style.setProperty(…)`・`element.style.width = …` など）は CSP に抵触しないので可。`setAttribute("style", …)`・`innerHTML` での `style` 属性・文字列からの `<style>` は使わない。
 2. 例外は、必要なページだけに限り、ホスト名を限定して許可する（現状は `/report` の Cloudflare Turnstile=`challenges.cloudflare.com` のみ。`worker/index.js` の `REPORT_PAGE_CONTENT_SECURITY_POLICY`）。
 3. `'unsafe-inline'` と `'unsafe-eval'` は許可しない。
 4. WebAssembly が必要になったときだけ `'wasm-unsafe-eval'` を検討する（現状は使っていない）。
@@ -29,6 +29,14 @@
 
 - `external/fara-pokemon-battle-assistant`（submodule）は、ポケモン側の変更のたびに `develop` の最新へ更新する（PR を出す）。
 - Beat Saber のコマンドの説明は、ユーザーが後で書く。`/docs/beatsaber` は `pages.json` から外してある。`Manual.md` に節を書いてから、`parent: commands` の子ページを足す。
+
+## 見た目（BeerCSS）
+
+- 取り込み: `node tools/vendor-beercss.mjs`（BeerCSS 5.0.3 の `beer.min.css` を取り、`@font-face` を外す。md5 を確かめる）。版・md5・パッチ内容は `wwwroot/css/vendor/README.md`。`beer.min.js` は取り込まない
+- 部品は BeerCSS のクラス（`.button`・`.button.border`・`.card`・`nav` の `a.active`）を使い、色・寸法は `wwwroot/css/site.css` で合わせる。`ui()`（テーマ切り替え）と BeerCSS の JS は使わない（DOM を書き換えて、Blazor と site.js の処理と衝突するため）
+- BeerCSS の既定は、ページの要素名に対しても効く（`body`・`header`・`nav`・`article`・`main`・`pre`・`blockquote`・`label`）。新しい要素を足したら、site.css で上書きする
+- 名前の衝突に注意: BeerCSS は `.page`（開くとき `opacity: 0`）・`.field`・`.border`・`.button` などの名前を持つ。レイアウトの名前は `site-page`・`report-field` のように、BeerCSS と被らない名前にする
+- 色トークンは `wwwroot/css/site.css` の `:root`（既定はダーク）と `@media (prefers-color-scheme: light)`・`:root[data-theme="light"]`（ライト）。BeerCSS の変数名（`--primary`・`--surface`・`--on-surface` など）に合わせている
 
 ## 確認
 

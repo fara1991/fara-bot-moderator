@@ -30,7 +30,7 @@ public class ScrollProgressTests
         var razor = ReadProjectFile("Components/Layout/MainLayout.razor");
         var bar = razor.IndexOf("<div class=\"scroll-progress\" data-scroll-progress aria-hidden=\"true\"></div>", StringComparison.Ordinal);
         Assert.True(bar > 0, "scroll-progress の要素が MainLayout にない");
-        Assert.True(bar > razor.IndexOf("<div class=\"page\">", StringComparison.Ordinal));
+        Assert.True(bar > razor.IndexOf("<div class=\"site-page\">", StringComparison.Ordinal));
         Assert.True(bar < razor.IndexOf("<header class=\"app-header\">", StringComparison.Ordinal));
         // 中身は空（線は CSS で描く）。JS は data-scroll-progress で見つける
         Assert.Single(Regex.Matches(razor, "data-scroll-progress"));

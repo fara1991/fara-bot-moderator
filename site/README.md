@@ -29,6 +29,12 @@ dotnet run
 
 開発中は、`Manual.md` と `Content/pages.json` を保存してブラウザをリロードするだけで反映されます。
 
+## 見た目（BeerCSS）
+
+- 部品の土台は BeerCSS 5.0.3（CSS のみ。`wwwroot/css/vendor/beer.min.css`）。配布物にパッチ（フォントの外部 URL を外す）を当てたもので、手順は `wwwroot/css/vendor/README.md` と `tools/vendor-beercss.mjs` にある。版を上げるときは、このスクリプトを直す
+- 色・形は `wwwroot/css/site.css` の `:root` の変数（Material 3 の役割名）。ライト・ダークは端末の設定かスイッチで切り替える
+- アイコンは線だけのインライン SVG（`Components/Shared/NavIcon.razor`）。アイコンフォントは使わない（CSP のため）
+
 ## 静的サイトとして書き出す
 
 ```bash
