@@ -3,6 +3,7 @@
 // 確認用（env.dev の NOINDEX、または *-dev のホスト）には、検索エンジン向けの noindex も付ける。
 
 import { handleReport } from "./report.js";
+import { getMaintenance, maintenanceResponse, withNotice } from "./maintenance.js";
 
 // 外部のスクリプト・スタイル・フォントは使っていないので、すべて同じオリジンだけを許可する。
 const CONTENT_SECURITY_POLICY = [
@@ -34,6 +35,9 @@ export const isReportPage = (pathname) => pathname === "/report" || pathname ===
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+    // メンテナンス（Worker の変数 MAINTENANCE。worker/maintenance.js）。true の間は、すべて 503 のメンテナンス画面
+    const maintenance = getMaintenance(env);
+    if (maintenance.state === "on") return maintenanceResponse(request, maintenance, "FaraBotModerator");
     // 作者への報告の受け口（worker/report.js）
     if (url.pathname === "/api/report" || url.pathname === "/api/report/config") {
       let res;
@@ -45,7 +49,8 @@ export default {
       res.headers.set("X-Content-Type-Options", "nosniff");
       return res;
     }
-    const res = await env.ASSETS.fetch(request);
+    // お知らせ（MAINTENANCE=notice）のときは、HTML の先頭に「更新予定」のバナーを足す
+    const res = withNotice(await env.ASSETS.fetch(request), maintenance);
     const out = new Response(res.body, res);
     out.headers.set("Content-Security-Policy", isReportPage(url.pathname) ? REPORT_PAGE_CONTENT_SECURITY_POLICY : CONTENT_SECURITY_POLICY);
     out.headers.set("X-Content-Type-Options", "nosniff");
