@@ -122,6 +122,14 @@ public class CommandsStructureTests
     }
 
     [Fact]
+    public void Tables_in_the_docs_are_wrapped_so_they_can_scroll_on_narrow_screens()
+    {
+        var html = LoadContent().Find("beatsaber")!.Html;
+        Assert.Contains("<div class=\"table-wrap\"><table>", html);
+        Assert.DoesNotContain("<table>", html.Replace("<div class=\"table-wrap\"><table>", ""));
+    }
+
+    [Fact]
     public void Every_page_whose_title_has_kanji_has_a_hiragana_reading_for_search()
     {
         var pages = LoadContent().Pages;
