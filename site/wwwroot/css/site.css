@@ -22,6 +22,8 @@
     /* ボタンの背景（白い文字が 4.5:1 以上で読める濃さ）と、見出しの文字（暗い背景に映える明るさ） */
     --grad: #7c3aed;
     --grad-text: linear-gradient(135deg, #d1c4e9 0%, #b39ddb 45%, #9575cd 100%);
+    /* スクロール量の線（ヘッダーの上端・スマホは画面の最上部）。暗い背景でも明るい背景でも見える紫 */
+    --scroll-grad: linear-gradient(90deg, #a855f7 0%, #c084fc 55%, #818cf8 100%);
     --radius: 14px;
     --font: "Segoe UI", "Hiragino Sans", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
     --font-mono: ui-monospace, "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
@@ -751,3 +753,18 @@ main:focus { outline: none; }
 
 /* メンテナンスのお知らせ（MAINTENANCE=notice。worker/maintenance.js が <main> の先頭に足す） */
 .maintenance-notice { padding: 0.5rem 1rem; background: #f59e0b; color: #1a0b33; font-size: 0.9rem; font-weight: 700; text-align: center; }
+
+/* 画面のスクロール量の線（js/site.js が --progress を 0〜1 で入れる）。PC は固定ヘッダーの上端、スマホは画面の最上部。
+   表示だけ（クリックは受けない）。動きは transition を付けず、スクロールに合わせて即座に伸びる（動きを減らす設定でも同じ） */
+.scroll-progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 80;
+    height: 2px;
+    background: var(--scroll-grad);
+    transform-origin: left center;
+    transform: scaleX(var(--progress, 0));
+    pointer-events: none;
+}

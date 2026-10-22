@@ -4,6 +4,9 @@
 <a class="skip-link" href="#main-content">本文へスキップ</a>
 
 <div class="page">
+    @* 画面のスクロール量（0〜1）を、js/site.js が --progress に入れる。PC は固定ヘッダーの上端、スマホは画面の最上部に、細い線で伸びる *@
+    <div class="scroll-progress" data-scroll-progress aria-hidden="true"></div>
+
     @* PC の上に固定するヘッダー（ハンバーガーとサイト名）。ハンバーガーを押すたびに、サイドバーの表示・非表示を切り替える（処理は wwwroot/js/site.js）。
        スマホは、サイドバー上部のサイト名とメニューのボタンを使う。キーボードで最初に届くよう、サイドバーの前に置く *@
     <header class="app-header">
