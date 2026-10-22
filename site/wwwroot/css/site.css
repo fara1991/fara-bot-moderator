@@ -899,3 +899,24 @@ html:has(.maintenance-notice) { scroll-padding-top: calc(var(--notice-h) + 16px)
         pointer-events: none;
     }
 }
+
+/* ---- BeerCSS の既定の上書き（要素名に効く既定を、このサイトの見た目に戻す） ---- */
+/* 目次: BeerCSS は nav > ul を絶対配置（inset: 0）にするので、通常のフローに戻す */
+.doc-toc nav { display: block; padding: 0; margin: 0; }
+.doc-toc nav > ul { position: static; inset: auto; display: block; block-size: auto; inline-size: auto; margin: 0; padding: 0; list-style: none; }
+.doc-toc li { display: block; margin: 0; }
+/* ヘッダー・フッター: BeerCSS は min-block-size（4rem・5rem）を付けるので、このサイトの高さ（3.5rem。フッターは内容の高さ）に戻す */
+@media (min-width: 900px) {
+    .app-header { min-block-size: 0; block-size: 3.5rem; }
+}
+.site-footer { min-block-size: 0; }
+/* 本文・更新履歴: BeerCSS の article（背景・余白・角丸）は使わず、フラットな本文に戻す（移行前と同じ読み心地） */
+article.doc-main, article.changelog-entry {
+    background: none;
+    color: inherit;
+    padding: 0;
+    border-radius: 0;
+    box-shadow: none;
+}
+/* BeerCSS は code に white-space: pre-wrap を付けるので、コードのまとまりの中は折り返さず横スクロールにする */
+.prose pre code, .code-sample code { white-space: pre; }

@@ -10,7 +10,7 @@
 
 ## CSP の方針（必ず守る）
 
-1. 通常のページは、同じオリジン（`'self'`）のスクリプトとスタイルだけを許可する。インラインのスクリプト・スタイル（`<script>…</script>`、`onclick` などのイベント属性、`<style>`、`style` 属性、JS が実行時に付ける `style` 属性）は使わない。
+1. 通常のページは、同じオリジン（`'self'`）のスクリプトとスタイルだけを許可する。インラインのスクリプト・スタイル（`<script>…</script>`、`onclick` などのイベント属性、`<style>`、`style` 属性のマークアップ）は使わない。CSSOM 経由（`element.style.setProperty(…)`・`element.style.width = …` など）は CSP に抵触しないので可。`setAttribute("style", …)`・`innerHTML` での `style` 属性・文字列からの `<style>` は使わない。
 2. 例外は、必要なページだけに限り、ホスト名を限定して許可する（現状は `/report` の Cloudflare Turnstile=`challenges.cloudflare.com` のみ。`worker/index.js` の `REPORT_PAGE_CONTENT_SECURITY_POLICY`）。
 3. `'unsafe-inline'` と `'unsafe-eval'` は許可しない。
 4. WebAssembly が必要になったときだけ `'wasm-unsafe-eval'` を検討する（現状は使っていない）。
