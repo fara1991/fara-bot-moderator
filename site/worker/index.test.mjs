@@ -136,8 +136,10 @@ test("MAINTENANCE=notice でも、HTML でない応答（CSS など）には足�
   assert.equal(await (await open("/css/site.css", e, "text/css")).text(), "body{}");
 });
 
-test("wrangler.toml は、ダッシュボードの変数を公開のたびに消さない（keep_vars。本番・確認用とも）", async () => {
+test("wrangler.toml は、ダッシュボードの変数を公開のたびに消さない（keep_vars。トップレベルだけが有効で、本番・確認用の両方に効く）", async () => {
   const { readFileSync } = await import("node:fs");
   const toml = readFileSync(new URL("../wrangler.toml", import.meta.url), "utf8");
-  assert.ok((toml.match(/^keep_vars = true$/gm) ?? []).length >= 3, "トップ・production・dev の 3 か所");
+  const lines = [...toml.matchAll(/^keep_vars = true$/gm)];
+  assert.equal(lines.length, 1);
+  assert.ok(lines[0].index < toml.indexOf("[env."), "最初の [env.*] より前（トップレベル）");
 });
