@@ -29,9 +29,7 @@
             <div class="nav-section">@group.Name</div>
             @foreach (var p in group.Pages)
             {
-                <div class="nav-item">
-                    <NavLink class="nav-link" href="@p.Url"><NavIcon Name="@IconOf(p.Slug)" /><span>@p.Title</span></NavLink>
-                </div>
+                <NavPageItem Page="p" />
             }
         }
 
@@ -64,28 +62,3 @@
     </nav>
 
 </div>
-
-@code {
-    /// <summary>ページごとのアイコン（Shared/NavIcon.razor の名前）。新しいページを足したら、ここにも書く（無ければ、アイコンなしで出る）。</summary>
-    private static string IconOf(string slug) => slug switch
-    {
-        "overview" => "book",
-        "main-settings" => "sliders",
-        "reaction-events" => "bell",
-        "windows" => "window",
-        "translate" => "translate",
-        "game" => "gamepad",
-        "timer" => "clock",
-        "pokemon" => "terminal",
-        "pokemon-my" => "ball",
-        "pokemon-team" => "users",
-        "pokemon-sync" => "key",
-        "pokemon-battle" => "bolt",
-        "pokemon-rival" => "history",
-        "pokemon-notes" => "alert",
-        "faq" => "help",
-        "troubleshooting" => "wrench",
-        "changelog" => "file",
-        _ => "list",
-    };
-}

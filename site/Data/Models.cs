@@ -33,8 +33,8 @@ public sealed class ChangelogEntry
 /// <summary>ページ内の見出し（右側の「このページの目次」に出す）。</summary>
 public sealed record TocItem(string Id, string Text, int Level);
 
-/// <summary>1 つの説明ページ。</summary>
-public sealed record DocPage(string Slug, string Title, string Group, string Description, string Html, IReadOnlyList<TocItem> Toc)
+/// <summary>1 つの説明ページ。Parent は親ページの slug（親が無いページは null）。子ページは親のグループに入る。</summary>
+public sealed record DocPage(string Slug, string Title, string Group, string Description, string Html, IReadOnlyList<TocItem> Toc, string? Parent = null)
 {
     public string Url => $"/docs/{Slug}";
 }
@@ -42,12 +42,16 @@ public sealed record DocPage(string Slug, string Title, string Group, string Des
 /// <summary>サイドバーの 1 グループ。</summary>
 public sealed record PageGroup(string Name, IReadOnlyList<DocPage> Pages);
 
-/// <summary>Content/pages.json の 1 ページ分の定義。</summary>
+/// <summary>
+/// Content/pages.json の 1 ページ分の定義。Parent は親ページの slug。親を書いたページは、親のグループに入り、
+/// サイドメニューでは親の下に入れ子で出る（Group は親のものを使うので、子には書かなくてよい）。
+/// </summary>
 public sealed class PageDefinition
 {
     public string Slug { get; set; } = "";
     public string Title { get; set; } = "";
     public string Group { get; set; } = "";
+    public string Parent { get; set; } = "";
     public string Description { get; set; } = "";
     public List<SectionDefinition> Sections { get; set; } = new();
 }

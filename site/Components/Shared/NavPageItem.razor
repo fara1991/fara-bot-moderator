@@ -1,0 +1,40 @@
+@inject ContentService Content
+
+@* サイドメニューの 1 項目。子ページがあれば、その下に入れ子で出す（Depth は字下げの段）。 *@
+<div class="nav-item@(Depth > 0 ? " nav-child" : "")" style="--depth:@Depth">
+    <NavLink class="nav-link" href="@Page.Url"><NavIcon Name="@IconOf(Page.Slug)" /><span>@Page.Title</span></NavLink>
+</div>
+@foreach (var child in Content.Children(Page))
+{
+    <NavPageItem Page="child" Depth="Depth + 1" />
+}
+
+@code {
+    [Parameter, EditorRequired] public DocPage Page { get; set; } = default!;
+    [Parameter] public int Depth { get; set; }
+
+    /// <summary>ページごとのアイコン（Shared/NavIcon.razor の名前）。新しいページを足したら、ここにも書く（無ければ、アイコンなしで出る）。</summary>
+    private static string IconOf(string slug) => slug switch
+    {
+        "overview" => "book",
+        "main-settings" => "sliders",
+        "reaction-events" => "bell",
+        "windows" => "window",
+        "translate" => "translate",
+        "game" => "gamepad",
+        "timer" => "clock",
+        "commands" => "terminal",
+        "beatsaber" => "gamepad",
+        "pokemon" => "terminal",
+        "pokemon-my" => "ball",
+        "pokemon-team" => "users",
+        "pokemon-sync" => "key",
+        "pokemon-battle" => "bolt",
+        "pokemon-rival" => "history",
+        "pokemon-notes" => "alert",
+        "faq" => "help",
+        "troubleshooting" => "wrench",
+        "changelog" => "file",
+        _ => "list",
+    };
+}

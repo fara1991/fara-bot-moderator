@@ -15,7 +15,8 @@ Cloudflare の Worker 名は本番 `fara-twitch-bot`、確認用 `fara-twitch-bo
 - 公開時は静的サイトとして書き出し、Cloudflare Workers（Static Assets）でホスティング
 - 外部のフォント・スタイル・スクリプトは使いません（Worker が付ける CSP も同じオリジンだけを許可）
 - 説明ページの本文は、リポジトリ直下の `Manual.md` を見出しで切り分けたものです。**文章を直すときは `Manual.md` を直します**（アプリに同梱する操作説明書と同じ内容になります）
-- どの見出しをどのページにするか、ページの題名・グループ・説明は `Content/pages.json` に書きます。見出しの名前を変えたときは、`pages.json` の `heading` も合わせてください（見つからないとビルドが失敗します）
+- どの見出しをどのページにするか、ページの題名・グループ・説明は `Content/pages.json` に書きます。
+- 親ページを持つページ（`parent` に親の slug）は、親のグループに入り、サイドメニューでは親の下に入れ子で出ます。ゲームのコマンドは、「コマンド実行」（`commands`）の子として `pokemon` や `beatsaber` のように書きます見出しの名前を変えたときは、`pages.json` の `heading` も合わせてください（見つからないとビルドが失敗します）
 - 画面は `Components/`、見た目は `wwwroot/css/site.css`（色は `:root` の変数）
 
 ## ローカルで見る

@@ -33,7 +33,9 @@ public sealed partial class ContentService
         Reload();
     }
 
+    /// <summary>すべてのページ（子ページも含む。定義の順）。</summary>
     public IReadOnlyList<DocPage> Pages => _pages;
+    /// <summary>サイドメニューとドキュメント一覧に出すグループ（親ページだけ。子ページは親の下に入る）。</summary>
     public IReadOnlyList<PageGroup> Groups => _groups;
     /// <summary>更新履歴（新しい順）。Content/changelog.json。</summary>
     public IReadOnlyList<ChangelogEntry> Changelog => _changelog;
@@ -63,10 +65,22 @@ public sealed partial class ContentService
 
     public DocPage? Find(string slug) => _bySlug.GetValueOrDefault(slug);
 
-    /// <summary>前後のページ（グループの順に、上から読む順）。</summary>
+    /// <summary>そのページの直下の子ページ（定義の順）。</summary>
+    public IReadOnlyList<DocPage> Children(DocPage page) => _pages.Where(p => p.Parent == page.Slug).ToList();
+
+    /// <summary>親ページをたどった先頭（一番上の親）から、直上の親までの並び。親が無ければ空。パンくずに使う。</summary>
+    public IReadOnlyList<DocPage> Ancestors(DocPage page)
+    {
+        var list = new List<DocPage>();
+        for (var current = page; current.Parent is { } parent && _bySlug.TryGetValue(parent, out var up); current = up)
+            list.Insert(0, up);
+        return list;
+    }
+
+    /// <summary>前後のページ（グループの順に、親から子へ、上から読む順）。</summary>
     public (DocPage? Previous, DocPage? Next) Neighbors(DocPage page)
     {
-        var ordered = _groups.SelectMany(g => g.Pages).ToList();
+        var ordered = _groups.SelectMany(g => g.Pages).SelectMany(Subtree).ToList();
         var i = ordered.FindIndex(p => p.Slug == page.Slug);
         return (i > 0 ? ordered[i - 1] : null, i >= 0 && i < ordered.Count - 1 ? ordered[i + 1] : null);
     }
@@ -84,6 +98,8 @@ public sealed partial class ContentService
             if (!Regex.IsMatch(d.Slug, "^[a-z0-9-]+$")) throw new InvalidOperationException($"pages.json の slug は、小文字の英数字とハイフンだけにしてください: {d.Slug}");
         if (definitions.Select(d => d.Slug).Distinct().Count() != definitions.Count) throw new InvalidOperationException("pages.json に、同じ slug が重複しています");
 
+        ValidateTree(definitions);
+        var byDefinition = definitions.ToDictionary(d => d.Slug);
         var pages = new List<DocPage>();
         // ページの題名にしたため本文に出さない見出し（1 つ目の見出し）へのリンクは、そのページ自体へ向ける
         var headingPage = new Dictionary<string, string>();
@@ -93,7 +109,8 @@ public sealed partial class ContentService
         {
             var markdown = string.Join("\n", d.Sections.Select((s, i) => manual.Extract(s.Heading, s.Own, includeHeading: i > 0)));
             var html = Markdown.ToHtml(markdown, Pipeline);
-            pages.Add(new DocPage(d.Slug, d.Title, d.Group, d.Description, html, ExtractToc(html)));
+            var parent = d.Parent.Length > 0 ? d.Parent : null;
+            pages.Add(new DocPage(d.Slug, d.Title, GroupOf(d, byDefinition), d.Description, html, ExtractToc(html), parent));
         }
 
         // 別のページにある見出しへの同じページ内リンク（#見出し）を、そのページへのリンクに直す
@@ -108,7 +125,46 @@ public sealed partial class ContentService
 
         _pages = pages;
         _bySlug = pages.ToDictionary(p => p.Slug);
-        _groups = pages.GroupBy(p => p.Group).Select(g => new PageGroup(g.Key, g.ToList())).ToList();
+        _groups = pages.Where(p => p.Parent is null).GroupBy(p => p.Group).Select(g => new PageGroup(g.Key, g.ToList())).ToList();
+    }
+
+    /// <summary>
+    /// pages.json の親子関係を確かめる。親の slug が無い・自分が親になる・親をたどって循環する、
+    /// 親ページにグループが無い、のときは例外（ビルド・書き出し・テストで気づけるようにする）。
+    /// </summary>
+    public static void ValidateTree(IReadOnlyList<PageDefinition> definitions)
+    {
+        var bySlug = definitions.ToDictionary(d => d.Slug);
+        foreach (var d in definitions)
+        {
+            var current = d;
+            for (var steps = 0; current.Parent.Length > 0; steps++)
+            {
+                if (!bySlug.TryGetValue(current.Parent, out var parent))
+                    throw new InvalidOperationException($"pages.json: {current.Slug} の parent が見つかりません: {current.Parent}");
+                if (steps >= definitions.Count) throw new InvalidOperationException($"pages.json: {d.Slug} の親子関係が循環しています");
+                current = parent;
+            }
+            if (string.IsNullOrWhiteSpace(current.Group))
+                throw new InvalidOperationException($"pages.json: グループのないページがあります（親ページには group を書いてください）: {current.Slug}");
+        }
+    }
+
+    /// <summary>子ページは親のグループに入るので、一番上の親の group を使う。</summary>
+    private static string GroupOf(PageDefinition d, IReadOnlyDictionary<string, PageDefinition> byDefinition)
+    {
+        var current = d;
+        while (current.Parent.Length > 0) current = byDefinition[current.Parent];
+        return current.Group;
+    }
+
+    /// <summary>ページと、その子・孫（定義の順、親の次に子）。</summary>
+    private IEnumerable<DocPage> Subtree(DocPage page)
+    {
+        yield return page;
+        foreach (var child in Children(page))
+            foreach (var descendant in Subtree(child))
+                yield return descendant;
     }
 
     /// <summary>

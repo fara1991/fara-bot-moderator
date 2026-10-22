@@ -16,10 +16,35 @@ else
 
     <div class="doc-layout">
         <article class="doc-main">
-            <p class="breadcrumb"><a href="/docs">ドキュメント</a> <span aria-hidden="true">/</span> @doc.Group</p>
+            <p class="breadcrumb"><a href="/docs">ドキュメント</a>
+                @if (ancestors.Count == 0)
+                {
+                    <span aria-hidden="true">/</span> @doc.Group
+                }
+                @foreach (var a in ancestors)
+                {
+                    <span aria-hidden="true">/</span> <a href="@a.Url">@a.Title</a>
+                }
+            </p>
             <h1>@doc.Title</h1>
             <p class="doc-description">@doc.Description</p>
             <div class="prose">@((MarkupString)doc.Html)</div>
+
+            @if (children.Count > 0)
+            {
+                <section class="child-pages" aria-label="このページに含まれるページ">
+                    <h2>含まれるページ</h2>
+                    <div class="card-grid">
+                        @foreach (var c in children)
+                        {
+                            <a class="card link-card" href="@c.Url">
+                                <h3>@c.Title</h3>
+                                <p>@c.Description</p>
+                            </a>
+                        }
+                    </div>
+                </section>
+            }
 
             <nav class="doc-pager" aria-label="前後のページ">
                 @if (previous is not null)
@@ -58,6 +83,8 @@ else
     private DocPage? doc;
     private DocPage? previous;
     private DocPage? next;
+    private IReadOnlyList<DocPage> ancestors = Array.Empty<DocPage>();
+    private IReadOnlyList<DocPage> children = Array.Empty<DocPage>();
 
     protected override void OnParametersSet()
     {
@@ -69,5 +96,7 @@ else
             return;
         }
         (previous, next) = Content.Neighbors(doc);
+        ancestors = Content.Ancestors(doc);
+        children = Content.Children(doc);
     }
 }
