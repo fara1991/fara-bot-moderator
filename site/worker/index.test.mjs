@@ -143,3 +143,17 @@ test("wrangler.toml は、ダッシュボードの変数を公開のたびに消
   assert.equal(lines.length, 1);
   assert.ok(lines[0].index < toml.indexOf("[env."), "最初の [env.*] より前（トップレベル）");
 });
+
+test("本番の公開は MAINTENANCE=notice を確かめてから行い、公開と同時に MAINTENANCE=true にする（site.yml）", async () => {
+  const { readFileSync } = await import("node:fs");
+  const yml = readFileSync(new URL("../../.github/workflows/site.yml", import.meta.url), "utf8");
+  assert.match(yml, /node \.github\/scripts\/require-maintenance\.mjs fara-twitch-bot/);
+  const gate = yml.indexOf("Require MAINTENANCE=notice (production)");
+  assert.ok(gate > 0);
+  assert.match(yml.slice(gate, gate + 200), /if: github\.ref_name == 'master'/, "確認用の develop は確かめない");
+  assert.ok(gate < yml.indexOf("cloudflare/wrangler-action@v3"), "確認は公開より前");
+  assert.match(yml, /--var MAINTENANCE:true/);
+  assert.match(yml, /!inputs\.skip_maintenance_check/);
+  assert.match(yml, /SKIP_MAINTENANCE_CHECK: \$\{\{ inputs\.skip_maintenance_check \}\}/);
+  assert.match(yml, /require-maintenance\.test\.mjs/, "CI で確認のスクリプトもテストする");
+});

@@ -13,13 +13,20 @@ on:
       - "Manual.md"
       - "global.json"
       - ".github/workflows/site.yml"
+      - ".github/scripts/**"
   pull_request:
     paths:
       - "site/**"
       - "Manual.md"
       - "global.json"
       - ".github/workflows/site.yml"
+      - ".github/scripts/**"
   workflow_dispatch:
+    inputs:
+      skip_maintenance_check:
+        description: "MAINTENANCE=notice の確認を飛ばして公開する（緊急の修正用。お知らせなしで公開され、メンテナンス画面にもならない）"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -50,6 +57,9 @@ jobs:
       - name: Report endpoint test
         working-directory: site
         run: node --test worker/report.test.mjs worker/index.test.mjs worker/maintenance.test.mjs
+
+      - name: Deploy gate test
+        run: node --test .github/scripts/require-maintenance.test.mjs
 
       - name: Export static site
         working-directory: site
@@ -88,10 +98,21 @@ jobs:
             X-Robots-Tag: noindex, nofollow
           HEADERS
 
+      # 本番（master）の公開は、Cloudflare の Worker の変数 MAINTENANCE が notice（更新予定のお知らせを出している）のときだけ行う。
+      # 確認できないとき・notice でないときは、ここで止める（手動実行の skip_maintenance_check で飛ばせる）。確認用（develop）は確認しない
+      - name: Require MAINTENANCE=notice (production)
+        if: github.ref_name == 'master'
+        run: node .github/scripts/require-maintenance.mjs fara-twitch-bot
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          SKIP_MAINTENANCE_CHECK: ${{ inputs.skip_maintenance_check }}
+
       - uses: cloudflare/wrangler-action@v3
         with:
           wranglerVersion: "4.149.0"
           workingDirectory: site
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
-          command: deploy --env ${{ github.ref_name == 'master' && 'production' || 'dev' }}
+          # 本番は、公開と同時に MAINTENANCE=true（メンテナンス画面）にする。作業が終わったら、Cloudflare で false に戻す（お知らせも一緒に消える）。確認を飛ばしたときは、メンテナンス画面にしない
+          command: deploy --env ${{ github.ref_name == 'master' && 'production' || 'dev' }}${{ github.ref_name == 'master' && !inputs.skip_maintenance_check && ' --var MAINTENANCE:true' || '' }}
