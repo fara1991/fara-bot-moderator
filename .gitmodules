@@ -1,3 +1,4 @@
 [submodule "external/fara-pokemon-battle-assistant"]
 	path = external/fara-pokemon-battle-assistant
 	url = https://github.com/fara1991/fara-pokemon-battle-assistant.git
+	branch = develop
