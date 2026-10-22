@@ -87,13 +87,16 @@ public class FooterAndReportTests
     public async Task Report_page_has_the_form_the_script_expects()
     {
         var html = await RenderAsync<Report>();
-        foreach (var id in new[] { "report-form", "report-category", "report-message", "report-contact", "report-website", "report-count", "report-status", "report-submit", "report-turnstile" })
+        foreach (var id in new[] { "report-form", "report-category", "report-message", "report-contact", "report-website", "report-count", "report-status", "report-submit", "report-turnstile", "report-done", "report-again" })
             Assert.Contains($"id=\"{id}\"", html);
         // 種類の ID は、サーバー（worker/report.js の CATEGORIES）と同じ
         Assert.Contains("value=\"bug\"", html);
         Assert.Contains("value=\"request\"", html);
         Assert.Contains("value=\"other\"", html);
         Assert.Contains("src=\"/js/report.js\"", html);
+        // 送信後のお礼は、最初は隠れていて、フォームの外にある（report.js が入力欄と入れ替える）
+        Assert.Matches("id=\"report-done\"[^>]*hidden", html);
+        Assert.True(html.IndexOf("</form>", StringComparison.Ordinal) < html.IndexOf("id=\"report-done\"", StringComparison.Ordinal));
         Assert.Contains("maxlength=\"2000\"", html);
         Assert.Contains("report-trap", html);
         Assert.Contains("tabindex=\"-1\"", html);
