@@ -1,14 +1,14 @@
 @page "/report"
 @inject IOptions<SiteOptions> Site
 
-<PageTitle>作者へ報告 | @Site.Value.Title</PageTitle>
+<PageTitle>問い合わせ | @Site.Value.Title</PageTitle>
 <HeadContent>
     <meta name="description" content="@Site.Value.Title の不具合・要望・ご意見を、作者に直接送るフォームです。" />
     <meta name="robots" content="noindex" />
 </HeadContent>
 
 <section class="page-section narrow">
-    <h1>作者へ報告</h1>
+    <h1>問い合わせ</h1>
     <p class="lead">不具合・要望・ご意見を、作者に直接送れます。いただいた内容は、作者に通知されます（公開はされません）。</p>
     @if (!string.IsNullOrEmpty(Site.Value.RepositoryUrl))
     {

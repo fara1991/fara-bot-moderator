@@ -249,8 +249,15 @@ a:hover { color: var(--accent); }
 .site-footer a:hover { color: var(--accent); }
 .site-footer-line { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 12px; }
 .site-footer-sep { opacity: 0.5; }
+/* フッターの SNS アイコン（© の右）。色はポートフォリオと同じ（.service-* の --brand） */
+.site-footer-socials { display: inline-flex; gap: 8px; margin-left: 4px; }
+.site-footer-socials a { display: inline-grid; place-items: center; width: 30px; height: 30px; border-radius: 9px; color: #fff; background: var(--brand, var(--accent)); text-decoration: none; }
+.site-footer-socials a:hover { color: #fff; box-shadow: 0 6px 16px -6px var(--brand, var(--accent)); }
+.service-github { --brand: #6e40c9; }
+.service-twitter { --brand: #1d9bf0; }
+.service-twitch { --brand: #9146ff; }
 
-/* 作者へ報告・プライバシーポリシー */
+/* 問い合わせ・プライバシーポリシー */
 .report-form { margin-top: 20px; }
 .report-form .field { margin-bottom: 16px; }
 .report-form label { display: block; margin-bottom: 6px; font-weight: 600; }
@@ -293,7 +300,6 @@ main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
         padding: 0 12px;
         color: #fff;
         background: linear-gradient(90deg, #140a26 0%, #241243 100%);
-        border-bottom: 2px solid #c084fc;
     }
     /* サイドバーは、ヘッダーの下。サイドバー上部のサイト名とメニューのボタンは、ヘッダーがあるので出さない。
        中身（.sidebar-panel）は枠（.sidebar）の中に重ねて置く。隠している間は、枠を細くして（アイコンの列）、中身も同じ幅にする。
@@ -792,4 +798,19 @@ html:has(.maintenance-notice) { scroll-padding-top: calc(var(--notice-h) + 16px)
     transform-origin: left center;
     transform: scaleX(var(--progress, 0));
     pointer-events: none;
+}
+/* PC は、固定ヘッダーの下端（ヘッダーの下の 2px。前は、ヘッダーの border-bottom だった場所）に置く。
+   その下には、進んでいない部分の薄い線（トラック）を置く。スクロール 0 でも、下端の線が見える */
+@media (min-width: 900px) {
+    .scroll-progress { top: calc(3.5rem - 2px); }
+    .app-header::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 2px;
+        background: rgba(192, 132, 252, 0.22);
+        pointer-events: none;
+    }
 }

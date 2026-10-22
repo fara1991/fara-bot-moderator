@@ -54,6 +54,29 @@ public class ScrollProgressTests
     }
 
     [Fact]
+    public void On_pc_the_line_sits_on_the_header_bottom_edge_and_the_header_has_no_border()
+    {
+        var css = ReadProjectFile("wwwroot/css/site.css");
+        Assert.DoesNotContain("border-bottom: 2px solid #c084fc", css);
+        var pc = Regex.Match(css, @"@media \(min-width: 900px\) \{[^@]*?\.scroll-progress \{ top: calc\(3\.5rem - 2px\); \}");
+        Assert.True(pc.Success, "PC の線の位置（ヘッダーの下端）がない");
+    }
+
+    [Fact]
+    public void On_pc_a_faint_track_sits_under_the_header_so_the_bottom_edge_shows_at_zero()
+    {
+        var css = ReadProjectFile("wwwroot/css/site.css");
+        var track = Regex.Match(css, @"@media \(min-width: 900px\) \{[^@]*?\.app-header::after \{([^}]*)\}", RegexOptions.Singleline);
+        Assert.True(track.Success, "PC のトラック（.app-header::after）がない");
+        Assert.Contains("position: absolute;", track.Groups[1].Value);
+        Assert.Contains("bottom: 0;", track.Groups[1].Value);
+        Assert.Contains("height: 2px;", track.Groups[1].Value);
+        Assert.Contains("background: rgba(192, 132, 252, 0.22);", track.Groups[1].Value);
+        Assert.Contains("pointer-events: none;", track.Groups[1].Value);
+        Assert.DoesNotContain("transition", track.Groups[1].Value);
+    }
+
+    [Fact]
     public void The_gradient_is_defined_once_on_root_and_uses_the_accent_colors()
     {
         var css = ReadProjectFile("wwwroot/css/site.css");

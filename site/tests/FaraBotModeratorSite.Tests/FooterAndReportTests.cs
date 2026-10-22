@@ -10,7 +10,7 @@ using Xunit;
 
 namespace FaraBotModeratorSite.Tests;
 
-/// <summary>3 サイト共通の形のフッター（サイト名 | 作者へ報告 | プライバシーポリシー | © 公開年 Fara）と、報告・プライバシーポリシーのページ。</summary>
+/// <summary>3 サイト共通の形のフッター（サイト名 | 問い合わせ | プライバシーポリシー | © 公開年 Fara）と、報告・プライバシーポリシーのページ。</summary>
 public class FooterAndReportTests
 {
     private sealed class TestNav : NavigationManager
@@ -46,7 +46,7 @@ public class FooterAndReportTests
     public async Task Footer_has_the_agreed_parts_in_order()
     {
         var html = await RenderAsync<SiteFooter>();
-        Assert.Equal("FaraBotModerator | 作者へ報告 | プライバシーポリシー | © 2026 Fara", Text(html));
+        Assert.Equal("FaraBotModerator | 問い合わせ | プライバシーポリシー | © 2026 Fara", Text(html));
     }
 
     [Fact]
@@ -63,7 +63,7 @@ public class FooterAndReportTests
     public async Task Footer_follows_the_site_options()
     {
         var html = await RenderAsync<SiteFooter>(options: new SiteOptions { Title = "別の名前", PublishedYear = 2030, PortfolioUrl = "https://example.org/" });
-        Assert.Equal("別の名前 | 作者へ報告 | プライバシーポリシー | © 2030 Fara", Text(html));
+        Assert.Equal("別の名前 | 問い合わせ | プライバシーポリシー | © 2030 Fara", Text(html));
         Assert.Contains("href=\"https://example.org/\"", html);
     }
 
@@ -110,7 +110,7 @@ public class FooterAndReportTests
     public async Task Privacy_page_covers_the_topics_and_does_not_claim_services_the_site_does_not_use()
     {
         var text = Text(await RenderAsync<Privacy>());
-        foreach (var topic in new[] { "運営者", "ブラウザに保存する情報", "アクセス解析・広告", "作者へ報告で送る情報", "Turnstile", "Discord", "外部のサービス", "第三者への提供", "Windows アプリ" })
+        foreach (var topic in new[] { "運営者", "ブラウザに保存する情報", "アクセス解析・広告", "問い合わせで送る情報", "Turnstile", "Discord", "外部のサービス", "第三者への提供", "Windows アプリ" })
             Assert.Contains(topic, text);
         // このサイトは外部のフォント・CDN を使わない（CSP が同じオリジンだけ）ので、載せない
         Assert.DoesNotContain("Google Fonts", text);
@@ -128,6 +128,64 @@ public class FooterAndReportTests
         var site = doc.RootElement.GetProperty("Site");
         Assert.Equal(2026, site.GetProperty("PublishedYear").GetInt32());
         Assert.Equal("https://fara-labs.com/", site.GetProperty("PortfolioUrl").GetString());
+    }
+
+    [Fact]
+    public async Task Footer_shows_the_sns_icons_with_the_portfolio_urls_and_hides_empty_ones()
+    {
+        var html = await RenderAsync<SiteFooter>(options: new SiteOptions
+        {
+            Title = "FaraBotModerator", PublishedYear = 2026,
+            GitHubUrl = "https://github.com/fara1991",
+            TwitterUrl = "https://twitter.com/game_fara",
+            TwitchUrl = "https://twitch.tv/game_fara",
+        });
+        Assert.Contains("<a class=\"service-github\" href=\"https://github.com/fara1991\" target=\"_blank\" rel=\"noopener noreferrer\" aria-label=\"GitHub\"", html);
+        Assert.Contains("<a class=\"service-twitter\" href=\"https://twitter.com/game_fara\" target=\"_blank\" rel=\"noopener noreferrer\" aria-label=\"Twitter\"", html);
+        Assert.Contains("<a class=\"service-twitch\" href=\"https://twitch.tv/game_fara\" target=\"_blank\" rel=\"noopener noreferrer\" aria-label=\"Twitch\"", html);
+        // 空の URL（Discord）は出さない。アイコンは装飾なので aria-hidden
+        Assert.DoesNotContain("Discord", html);
+        Assert.Equal(3, System.Text.RegularExpressions.Regex.Matches(html, "<svg class=\"social-icon\"[^>]*aria-hidden=\"true\"").Count);
+        // アイコンの中には文字がない（読み上げ・本文のテキストに出ない）
+        Assert.Equal("FaraBotModerator | 問い合わせ | プライバシーポリシー | © 2026 Fara", Text(html));
+    }
+
+    [Fact]
+    public async Task Footer_has_no_sns_icons_when_no_url_is_set()
+    {
+        var html = await RenderAsync<SiteFooter>();
+        Assert.DoesNotContain("site-footer-socials", html);
+        Assert.DoesNotContain("social-icon", html);
+    }
+
+    [Fact]
+    public void Shipped_sns_urls_in_appsettings_match_the_portfolio_values()
+    {
+        var path = FindUp("appsettings.json");
+        using var doc = System.Text.Json.JsonDocument.Parse(File.ReadAllText(path));
+        var site = doc.RootElement.GetProperty("Site");
+        // ポートフォリオの wwwroot/data/profile.json（socials）と同じ。Discord は URL が決まるまで空（出さない）
+        Assert.Equal("https://github.com/fara1991", site.GetProperty("GitHubUrl").GetString());
+        Assert.Equal("https://twitter.com/game_fara", site.GetProperty("TwitterUrl").GetString());
+        Assert.Equal("https://twitch.tv/game_fara", site.GetProperty("TwitchUrl").GetString());
+    }
+
+    [Fact]
+    public void Side_menu_has_the_inquiry_and_privacy_links_at_the_bottom()
+    {
+        var nav = File.ReadAllText(FindUp("Components/Layout/NavMenu.razor"));
+        var section = nav.IndexOf("<div class=\"nav-section\">このサイト</div>", StringComparison.Ordinal);
+        Assert.True(section > nav.IndexOf("Fara のポートフォリオ", StringComparison.Ordinal));
+        Assert.Contains("<NavLink class=\"nav-link\" href=\"/report\"><NavIcon Name=\"mail\" /><span>問い合わせ</span></NavLink>", nav[section..]);
+        Assert.Contains("<NavLink class=\"nav-link\" href=\"/privacy\"><NavIcon Name=\"shield\" /><span>プライバシーポリシー</span></NavLink>", nav[section..]);
+    }
+
+    [Fact]
+    public void The_visible_label_is_問い合わせ_everywhere_in_the_components()
+    {
+        foreach (var file in new[] { "Components/Layout/SiteFooter.razor", "Components/Layout/NavMenu.razor", "Components/Pages/Report.razor", "Components/Pages/Privacy.razor" })
+            Assert.DoesNotContain("作者へ報告", File.ReadAllText(FindUp(file)));
+        Assert.Contains("<PageTitle>問い合わせ | @Site.Value.Title</PageTitle>", File.ReadAllText(FindUp("Components/Pages/Report.razor")));
     }
 
     private static string FindUp(string relative)

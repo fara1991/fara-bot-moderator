@@ -16,7 +16,7 @@ const CONTENT_SECURITY_POLICY = [
   "frame-ancestors 'none'",
 ].join("; ");
 
-// 作者へ報告のページ（/report）だけ、ボット判定（Cloudflare Turnstile）のために challenges.cloudflare.com を許可する。
+// 問い合わせのページ（/report）だけ、ボット判定（Cloudflare Turnstile）のために challenges.cloudflare.com を許可する。
 const REPORT_PAGE_CONTENT_SECURITY_POLICY = [
   "default-src 'self'",
   "img-src 'self' data:",
