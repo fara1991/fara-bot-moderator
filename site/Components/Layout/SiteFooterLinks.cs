@@ -20,11 +20,12 @@ public static class SiteFooterLinks
             : "/report";
     }
 
-    /// <summary>SNS のアイコン（URL が空のものは出さない）。順番は GitHub・Twitter・Twitch。</summary>
+    /// <summary>SNS のアイコン（URL が空のものは出さない）。順番は GitHub・Twitter・Twitch・Discord。</summary>
     public static IReadOnlyList<SocialLink> Socials(SiteOptions options) => new[]
     {
         new SocialLink("github", "GitHub", options.GitHubUrl),
         new SocialLink("twitter", "Twitter", options.TwitterUrl),
         new SocialLink("twitch", "Twitch", options.TwitchUrl),
+        new SocialLink("discord", "Discord", options.DiscordUrl),
     }.Where(s => !string.IsNullOrWhiteSpace(s.Url)).ToList();
 }

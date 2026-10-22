@@ -13,6 +13,7 @@ public sealed class SiteOptions
     public string GitHubUrl { get; set; } = "";
     public string TwitterUrl { get; set; } = "";
     public string TwitchUrl { get; set; } = "";
+    public string DiscordUrl { get; set; } = "";
     /// <summary>説明の元になる Manual.md の場所（プロジェクトのフォルダからの相対パス）。</summary>
     public string ManualPath { get; set; } = "../Manual.md";
     /// <summary>フッターの © に出す、サイトを公開した年。</summary>

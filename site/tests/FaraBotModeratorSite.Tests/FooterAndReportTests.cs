@@ -139,13 +139,17 @@ public class FooterAndReportTests
             GitHubUrl = "https://github.com/fara1991",
             TwitterUrl = "https://twitter.com/game_fara",
             TwitchUrl = "https://twitch.tv/game_fara",
+            DiscordUrl = "https://discord.com/invite/B38eCSYyk5",
         });
         Assert.Contains("<a class=\"service-github\" href=\"https://github.com/fara1991\" target=\"_blank\" rel=\"noopener noreferrer\" aria-label=\"GitHub\"", html);
         Assert.Contains("<a class=\"service-twitter\" href=\"https://twitter.com/game_fara\" target=\"_blank\" rel=\"noopener noreferrer\" aria-label=\"Twitter\"", html);
         Assert.Contains("<a class=\"service-twitch\" href=\"https://twitch.tv/game_fara\" target=\"_blank\" rel=\"noopener noreferrer\" aria-label=\"Twitch\"", html);
-        // 空の URL（Discord）は出さない。アイコンは装飾なので aria-hidden
-        Assert.DoesNotContain("Discord", html);
-        Assert.Equal(3, System.Text.RegularExpressions.Regex.Matches(html, "<svg class=\"social-icon\"[^>]*aria-hidden=\"true\"").Count);
+        Assert.Contains("<a class=\"service-discord\" href=\"https://discord.com/invite/B38eCSYyk5\" target=\"_blank\" rel=\"noopener noreferrer\" aria-label=\"Discord\"", html);
+        // 並びは GitHub・Twitter・Twitch・Discord。アイコンは装飾なので aria-hidden
+        var order = new[] { "service-github", "service-twitter", "service-twitch", "service-discord" }.Select(c => html.IndexOf(c, StringComparison.Ordinal)).ToArray();
+        Assert.All(order, i => Assert.True(i > 0));
+        Assert.Equal(order.OrderBy(i => i), order);
+        Assert.Equal(4, System.Text.RegularExpressions.Regex.Matches(html, "<svg class=\"social-icon\"[^>]*aria-hidden=\"true\"").Count);
         // アイコンの中には文字がない（読み上げ・本文のテキストに出ない）
         Assert.Equal("FaraBotModerator | 問い合わせ | プライバシーポリシー | © 2026 Fara", Text(html));
     }
@@ -164,10 +168,20 @@ public class FooterAndReportTests
         var path = FindUp("appsettings.json");
         using var doc = System.Text.Json.JsonDocument.Parse(File.ReadAllText(path));
         var site = doc.RootElement.GetProperty("Site");
-        // ポートフォリオの wwwroot/data/profile.json（socials）と同じ。Discord は URL が決まるまで空（出さない）
+        // GitHub・Twitter・Twitch は、ポートフォリオの wwwroot/data/profile.json（socials）と同じ。Discord は作者の招待 URL
         Assert.Equal("https://github.com/fara1991", site.GetProperty("GitHubUrl").GetString());
         Assert.Equal("https://twitter.com/game_fara", site.GetProperty("TwitterUrl").GetString());
         Assert.Equal("https://twitch.tv/game_fara", site.GetProperty("TwitchUrl").GetString());
+        Assert.Equal("https://discord.com/invite/B38eCSYyk5", site.GetProperty("DiscordUrl").GetString());
+    }
+
+    [Fact]
+    public void Socials_skip_the_empty_urls_and_keep_the_order()
+    {
+        var all = SiteFooterLinks.Socials(new SiteOptions { GitHubUrl = "https://g.example/", TwitterUrl = "https://t.example/", TwitchUrl = "https://w.example/", DiscordUrl = "https://d.example/" });
+        Assert.Equal(new[] { "github", "twitter", "twitch", "discord" }, all.Select(s => s.Service).ToArray());
+        var noDiscord = SiteFooterLinks.Socials(new SiteOptions { GitHubUrl = "https://g.example/", TwitchUrl = "https://w.example/", DiscordUrl = "" });
+        Assert.Equal(new[] { "github", "twitch" }, noDiscord.Select(s => s.Service).ToArray());
     }
 
     [Fact]
