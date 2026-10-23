@@ -59,7 +59,8 @@ function walk(dir) {
 const wwwroot = join(publishDir, "wwwroot");
 const all = walk(wwwroot);
 const bytes = (files) => files.reduce((n, f) => n + statSync(f).size, 0);
+const beforeBytes = bytes(all);
 for (const f of all.filter((f) => /\.(br|gz)$/.test(f))) rmSync(f);
 const after = walk(wwwroot);
-console.log(`\n事前圧縮（.br・.gz）を除外: ${all.length} 件 ${(bytes(all) / 1048576).toFixed(1)} MB → ${after.length} 件 ${(bytes(after) / 1048576).toFixed(1)} MB`);
+console.log(`\n事前圧縮（.br・.gz）を除外: ${all.length} 件 ${(beforeBytes / 1048576).toFixed(1)} MB → ${after.length} 件 ${(bytes(after) / 1048576).toFixed(1)} MB`);
 console.log(`\n完了:${join(publishDir, "wwwroot")}（${env}）`);
