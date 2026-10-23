@@ -41,6 +41,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: true
 
       - uses: actions/setup-dotnet@v4
         with:
@@ -54,11 +56,18 @@ jobs:
         working-directory: site
         run: |
           dotnet test tests/FaraBotModeratorSite.Content.Tests -c Release --nologo
+          dotnet test tests/FaraBotModeratorSite.Shared.Tests -c Release --nologo
+          dotnet test tests/FaraBotModeratorSite.Web.Tests -c Release --nologo
           dotnet test tests/FaraBotModeratorSite.Tests -c Release --nologo
 
       - name: Node tests (worker and page navigation)
         working-directory: site
-        run: node --test worker/report.test.mjs worker/index.test.mjs worker/maintenance.test.mjs tests/js/nav.test.mjs tests/js/site-nav.test.mjs tests/js/search.test.mjs
+        run: node --test worker/report.test.mjs worker/index.test.mjs worker/maintenance.test.mjs tests/js/nav.test.mjs tests/js/site-nav.test.mjs tests/js/search.test.mjs tests/js/site-init.test.mjs
+
+      # Blazor WebAssembly 版（切り替えの PR まで、公開はしない。ビルドが通ることだけ確かめる）
+      - name: Build WebAssembly site (check only)
+        working-directory: site
+        run: node tools/build-site.mjs --env develop
 
       - name: Deploy gate test
         run: node --test .github/scripts/require-maintenance.test.mjs
