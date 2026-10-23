@@ -11,42 +11,42 @@ Cloudflare の Worker 名は本番 `fara-twitch-bot`、確認用 `fara-twitch-bo
 
 ## 作り
 
-- .NET 8 の Blazor Web App（静的サーバーサイドレンダリング。SignalR 接続なし）
-- 公開時は静的サイトとして書き出し、Cloudflare Workers（Static Assets）でホスティング
-- 外部のフォント・スタイル・スクリプトは使いません（Worker が付ける CSP も同じオリジンだけを許可）。CSP の方針は `site/CLAUDE.md` を見てください
-- 説明ページの本文は、リポジトリ直下の `Manual.md` を見出しで切り分けたものです。**文章を直すときは `Manual.md` を直します**（アプリに同梱する操作説明書と同じ内容になります）
-- どの見出しをどのページにするか、ページの題名・グループ・説明は `Content/pages.json` に書きます。
-- 見出しの名前を変えたときは、`pages.json` の `heading` も合わせてください（見つからないとビルドが失敗します）
-- 題名に漢字があるページには `reading`（題名のひらがなの読み。長音は「ー」）を書きます（例: `"reading": "こまんどじっこう"`）。サイト内検索で、ローマ字（komando・kenri）やかなの読みでも探せるようにするためです。読みは、ひらがなと「ー」だけにします（テストで確かめます）
+- .NET 10 の Blazor WebAssembly + MudBlazor。ヘッダー・サイドバー・フッター・テーマ・問い合わせフォーム・404・お知らせは、共通部品 [fara-site-kit](https://github.com/fara1991/fara-site-kit)（`external/fara-site-kit`、v0.2.1）
+- 公開物（`publish/wwwroot`）は、アプリ（WebAssembly）と、ページごとの**本文入りの静的 HTML**（検索エンジンと、JavaScript が使えない環境のため。ブラウザは起動すると、同じ内容の画面に置き換える）。Cloudflare Workers（Static Assets）でホスティング
+- 説明ページの本文は、リポジトリ直下の `Manual.md` を見出しで切り分けたものです。**文章を直すときは `Manual.md` を直します**（アプリに同梱する操作説明書と同じ内容になります）。ビルドが `data/site.json` に変換するので、ブラウザは Markdown を読みません
+- どの見出しをどのページにするか、ページの題名・グループ・説明は `Content/pages.json` に書きます。見出しの名前を変えたときは、`pages.json` の `heading` も合わせてください（見つからないとビルドが失敗します）
+- 題名に漢字があるページには `reading`（題名のひらがなの読み。長音は「ー」）を書きます（例: `"reading": "こまんどじっこう"`）。サイト内検索で、ローマ字（komando・kenri）やかなの読みでも探せるようにするためです。読みは、ひらがなと「ー」だけにします（ビルドとテストで確かめます）
 - 親ページを持つページ（`parent` に親の slug を書く）は、親のグループに入り、サイドメニューでは親の下に入れ子で出ます。ゲームのコマンドは、「コマンド実行」（`commands`）の子として `pokemon` のように書きます（`parent` や `group` に `null` は使えません）
-- 画面は `Components/`、見た目は `wwwroot/css/site.css`（色は `:root` の変数）
+- 更新履歴は `Content/changelog.json`
+- サイト内検索は C#（`src/FaraBotModeratorSite.Shared/Search`）。ひらがな・カタカナ・全角・ローマ字（nn→ん など）で探せます
+- 画面は `src/FaraBotModeratorSite.Pages`（ページ）と `src/FaraBotModeratorSite.Web`（レイアウト）、本文の見た目は `src/FaraBotModeratorSite.Web/wwwroot/css/site.css`（色は `:root` の変数）。構成と注意は `CLAUDE.md`
 
 ## ローカルで見る
 
 ```bash
 cd site
-dotnet run
+npm install
+npm run build:site            # publish/wwwroot を作る（Build → dotnet publish → build-pages）
+npx wrangler dev --env dev    # Cloudflare と同じ動き（Worker 経由）で http://localhost:8787 に
 ```
 
-開発中は、`Manual.md` と `Content/pages.json` を保存してブラウザをリロードするだけで反映されます。
+`Manual.md` や `Content/*.json` を変えたら、`npm run build:site` をやり直します（`dotnet watch` の開発サーバーでは `data/site.json` と静的な本文は作られません）。
 
-## 見た目（BeerCSS）
+## CSP
 
-- 部品の土台は BeerCSS 5.0.3（CSS のみ。`wwwroot/css/vendor/beer.min.css`）。配布物にパッチ（フォントの外部 URL を外す）を当てたもので、手順は `wwwroot/css/vendor/README.md` と `tools/vendor-beercss.mjs` にある。版を上げるときは、このスクリプトを直す
-- 色・形は `wwwroot/css/site.css` の `:root` の変数（Material 3 の役割名）。ライト・ダークは端末の設定かスイッチで切り替える
-- アイコンは線だけのインライン SVG（`Components/Shared/NavIcon.razor`）。アイコンフォントは使わない（CSP のため）
+`_headers` の `Content-Security-Policy` は、`build/site.json` の `csp` から kit が作ります（Worker は付けません）。以前の静的サイトとの違い:
 
-## 静的サイトとして書き出す
-
-```bash
-cd site
-dotnet run -c Release --no-launch-profile -- --export dist
-npx wrangler@4.149.0 dev --env dev   # Cloudflare と同じ動きで確認
-```
+- `script-src` に `'wasm-unsafe-eval'`（Blazor WebAssembly に必要）。`'unsafe-inline'`・`'unsafe-eval'` は許可しません
+- `style-src` に `'unsafe-inline'`（MudBlazor と、起動の前に当てる読み込み表示の CSS のため）
+- `challenges.cloudflare.com`（問い合わせの Turnstile）を、`/report` だけでなく全ページで許可（`/report` へは画面の移動で行き、ドキュメントを取り直さないため、ページごとの CSP にできない）
+- 外部のフォント・スクリプト・画像は、引き続き使いません
 
 ## 公開
 
-`.github/workflows/site.yml` が、`master` / `develop` への push（`site/` か `Manual.md` を変えたとき）で、書き出して Cloudflare にデプロイします。PR ではビルドだけ行います。
+`.github/workflows/site.yml` が、`master` / `develop` への push（`site/`・`Manual.md`・`external/fara-site-kit` などを変えたとき）で、ビルド・テストして Cloudflare にデプロイします。PR ではビルドとテストだけ行います。
+
+- 本番（master）の公開は、Worker の変数 `MAINTENANCE` が `notice` のときだけ行い、公開と同時に `true`（メンテナンス画面）にします。作業が終わったら、Cloudflare で `false` に戻します（お知らせも一緒に消える）
+- お知らせ（`MAINTENANCE=notice`）の帯は、アプリが `/api/maintenance` を読んで出します（以前の、Worker が HTML に差し込む方式はやめました）
 
 GitHub のリポジトリに、次の設定が必要です（ポケモンサイトなど、ほかのサイトと同じ値）。
 

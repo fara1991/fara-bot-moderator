@@ -14,6 +14,8 @@ on:
       - "global.json"
       - ".github/workflows/site.yml"
       - ".github/scripts/**"
+      - ".gitmodules"
+      - "external/fara-site-kit"
   pull_request:
     paths:
       - "site/**"
@@ -21,6 +23,8 @@ on:
       - "global.json"
       - ".github/workflows/site.yml"
       - ".github/scripts/**"
+      - ".gitmodules"
+      - "external/fara-site-kit"
   workflow_dispatch:
     inputs:
       skip_maintenance_check:
@@ -37,7 +41,7 @@ concurrency:
 
 jobs:
   build:
-    name: Build static site
+    name: Build site
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -48,38 +52,39 @@ jobs:
         with:
           global-json-file: global.json
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
       - name: Build
         working-directory: site
-        run: dotnet build -c Release --nologo
+        run: dotnet build FaraBotModeratorSite.sln -c Release --nologo
 
       - name: Test
         working-directory: site
         run: |
-          dotnet test tests/FaraBotModeratorSite.Content.Tests -c Release --nologo
-          dotnet test tests/FaraBotModeratorSite.Shared.Tests -c Release --nologo
-          dotnet test tests/FaraBotModeratorSite.Web.Tests -c Release --nologo
-          dotnet test tests/FaraBotModeratorSite.Tests -c Release --nologo
+          dotnet test tests/FaraBotModeratorSite.Content.Tests -c Release --no-build --nologo
+          dotnet test tests/FaraBotModeratorSite.Shared.Tests -c Release --no-build --nologo
+          dotnet test tests/FaraBotModeratorSite.Web.Tests -c Release --no-build --nologo
 
-      - name: Node tests (worker and page navigation)
+      - name: Node tests (worker and page scripts)
         working-directory: site
-        run: node --test worker/report.test.mjs worker/index.test.mjs worker/maintenance.test.mjs tests/js/nav.test.mjs tests/js/site-nav.test.mjs tests/js/search.test.mjs tests/js/site-init.test.mjs
-
-      # Blazor WebAssembly 版（切り替えの PR まで、公開はしない。ビルドが通ることだけ確かめる）
-      - name: Build WebAssembly site (check only)
-        working-directory: site
-        run: node tools/build-site.mjs --env develop
+        run: |
+          node --test worker/index.test.mjs tests/js/site-init.test.mjs
+          node --test ../external/fara-site-kit/worker/report.test.mjs ../external/fara-site-kit/worker/maintenance.test.mjs
 
       - name: Deploy gate test
         run: node --test .github/scripts/require-maintenance.test.mjs
 
-      - name: Export static site
+      # 公開物（Blazor WebAssembly + 本文入りの静的 HTML + _headers）を作る。本番（master）は本番のホストの canonical、それ以外は確認用のホスト
+      - name: Build site (publish/wwwroot)
         working-directory: site
-        run: dotnet run -c Release --no-build --no-launch-profile -- --export dist
+        run: node tools/build-site.mjs --env ${{ github.ref_name == 'master' && 'production' || 'develop' }}
 
       - uses: actions/upload-artifact@v4
         with:
           name: site
-          path: site/dist
+          path: site/publish/wwwroot
           retention-days: 7
 
   deploy:
@@ -94,17 +99,19 @@ jobs:
       url: ${{ github.ref_name == 'master' && 'https://twitch-bot.fara-labs.com' || 'https://twitch-bot-dev.fara-labs.com' }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: true
 
       - uses: actions/download-artifact@v4
         with:
           name: site
-          path: site/dist
+          path: site/publish/wwwroot
 
-      # 確認用（develop）が検索結果に載らないようにする（ポケモンのサイトと同じ。worker/index.js も確認用のホストに付ける）
+      # 確認用（develop）が検索結果に載らないようにする（ポケモンのサイトと同じ。kit の build-pages も X-Robots-Tag: noindex を付けるが、従来どおり nofollow も付けるため、ここで追記する）
       - name: Add noindex header (develop)
         if: github.ref_name != 'master'
         run: |
-          cat >> site/dist/_headers <<'HEADERS'
+          cat >> site/publish/wwwroot/_headers <<'HEADERS'
           /*
             X-Robots-Tag: noindex, nofollow
           HEADERS

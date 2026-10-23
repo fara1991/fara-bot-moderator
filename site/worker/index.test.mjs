@@ -1,58 +1,49 @@
-// worker/index.js のテスト。  node --test worker/index.test.mjs
-// ページごとの Content-Security-Policy（/report だけ Turnstile のために緩める）と、/api/report の振り分けを確かめる。
+// worker/index.js のテスト。  node --test worker/index.test.mjs（site/ で）
+// /api/maintenance・メンテナンス画面（503）・/api/report の振り分け・CSP を Worker から付けないこと・公開の設定を確かめる。
+// 報告の中身（検証・Turnstile・Discord）とメンテナンスの部品は、kit のテスト（external/fara-site-kit/worker/*.test.mjs）が確かめる。
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import worker, { isReportPage } from "./index.js";
+import { readFileSync } from "node:fs";
+import worker from "./index.js";
 
 const HOST = "https://twitch-bot.example";
+const read = (path) => readFileSync(new URL(path, import.meta.url), "utf8");
+const page = "<html><body>本文</body></html>";
 const env = {
-  ASSETS: { fetch: async () => new Response("<html></html>", { status: 200, headers: { "Content-Type": "text/html" } }) },
+  ASSETS: { fetch: async () => new Response(page, { status: 200, headers: { "Content-Type": "text/html; charset=utf-8", "Content-Security-Policy": "default-src 'self'" } }) },
   TURNSTILE_SITE_KEY: "site-key",
   TURNSTILE_SECRET: "secret-value",
   DISCORD_WEBHOOK_URL: "https://discord.example/hook",
 };
+const open = (path, e = env, accept = "text/html") => worker.fetch(new Request(HOST + path, { headers: { Accept: accept } }), e);
 
-const csp = async (path, e = env) => (await worker.fetch(new Request(HOST + path), e)).headers.get("Content-Security-Policy");
-
-test("isReportPage は /report と /report/ だけ", () => {
-  assert.equal(isReportPage("/report"), true);
-  assert.equal(isReportPage("/report/"), true);
-  for (const p of ["/", "/privacy", "/reports", "/report/x", "/docs/report", "/api/report"]) assert.equal(isReportPage(p), false, p);
+test("kit の共有 JS を使う（Worker の中に、報告・メンテナンスの写しを持たない）", () => {
+  const source = read("./index.js");
+  assert.match(source, /from "\.\.\/\.\.\/external\/fara-site-kit\/worker\/report\.js"/);
+  assert.match(source, /from "\.\.\/\.\.\/external\/fara-site-kit\/worker\/maintenance\.js"/);
+  assert.ok(!/withNotice\(/.test(source), "お知らせは、アプリの MaintenanceBanner が出す（HTML に差し込むと二重になる）");
 });
 
-test("/report だけ challenges.cloudflare.com を許可する", async () => {
-  for (const path of ["/report", "/report/"]) {
-    const policy = await csp(path);
-    assert.match(policy, /script-src 'self' https:\/\/challenges\.cloudflare\.com/);
-    assert.match(policy, /frame-src https:\/\/challenges\.cloudflare\.com/);
-    assert.match(policy, /connect-src 'self' https:\/\/challenges\.cloudflare\.com/);
-  }
-});
-
-test("ほかのページは、これまでどおり同じオリジンだけ", async () => {
-  for (const path of ["/", "/privacy", "/docs/overview", "/search"]) {
-    const policy = await csp(path);
-    assert.ok(!policy.includes("challenges.cloudflare.com"), path);
-    assert.match(policy, /script-src 'self'(;|$)/);
-    assert.match(policy, /default-src 'self'/);
-    assert.match(policy, /frame-ancestors 'none'/);
-  }
+test("CSP は Worker から付けない（静的アセットの _headers が唯一の情報源。応答に付いているものは、そのまま通す）", async () => {
+  const res = await open("/");
+  assert.equal(res.headers.get("Content-Security-Policy"), "default-src 'self'");
+  assert.ok(!/headers\.set\(\s*"Content-Security-Policy"/.test(read("./index.js")));
 });
 
 test("全ページに nosniff と Referrer-Policy が付く", async () => {
-  const res = await worker.fetch(new Request(HOST + "/"), env);
+  const res = await open("/");
   assert.equal(res.headers.get("X-Content-Type-Options"), "nosniff");
   assert.equal(res.headers.get("Referrer-Policy"), "strict-origin-when-cross-origin");
+  assert.equal(await res.text(), page);
 });
 
-test("noindex は、Worker では付けない（確認用の noindex は、公開のワークフローが dist/_headers に付ける）。変数 NOINDEX も使わない", async () => {
-  const { readFileSync } = await import("node:fs");
+test("noindex は、Worker では付けない（確認用の noindex は、build-pages と公開のワークフローが _headers に付ける）。変数 NOINDEX も使わない", async () => {
   for (const host of ["https://twitch-bot-dev.fara-labs.com/", HOST + "/"]) {
     const res = await worker.fetch(new Request(host), { ...env, NOINDEX: "true" });
     assert.equal(res.headers.get("X-Robots-Tag"), null, host);
   }
-  assert.ok(!readFileSync(new URL("../wrangler.toml", import.meta.url), "utf8").includes("NOINDEX"));
-  const yml = readFileSync(new URL("../../.github/workflows/site.yml", import.meta.url), "utf8");
+  assert.ok(!read("../wrangler.toml").includes("NOINDEX"));
+  const yml = read("../../.github/workflows/site.yml");
   const step = yml.indexOf("Add noindex header (develop)");
   assert.ok(step > 0);
   const next = yml.indexOf("- name:", step + 1);
@@ -62,7 +53,7 @@ test("noindex は、Worker では付けない（確認用の noindex は、公�
 });
 
 test("/api/report/config は報告の受け口へ（静的ファイルに任せない）", async () => {
-  const res = await worker.fetch(new Request(HOST + "/api/report/config"), env);
+  const res = await open("/api/report/config");
   assert.equal(res.status, 200);
   assert.deepEqual(await res.json(), { enabled: true, siteKey: "site-key" });
   assert.equal(res.headers.get("X-Content-Type-Options"), "nosniff");
@@ -77,34 +68,26 @@ test("/api/report は、同じサイトからでないと 403", async () => {
   assert.equal(res.status, 403);
 });
 
-// ---- メンテナンス（MAINTENANCE / MAINTENANCE_MESSAGE。worker/maintenance.js） ----
-// HTMLRewriter は Workers にだけあるので、<main> の先頭に足すだけの代わりを用意する
-globalThis.HTMLRewriter = class {
-  on(_selector, handlers) { this.handlers = handlers; return this; }
-  transform(response) {
-    const handlers = this.handlers;
-    const text = response.text();
-    return new Response(new ReadableStream({
-      async start(controller) {
-        let body = await text;
-        handlers.element({ prepend: (html) => { body = body.replace("<main>", `<main>${html}`); } });
-        controller.enqueue(new TextEncoder().encode(body));
-        controller.close();
-      },
-    }), response);
+test("/api/maintenance: 状態（state・message）を返す。キャッシュさせない", async () => {
+  for (const [vars, state, message] of [
+    [{}, "off", ""],
+    [{ MAINTENANCE: "false", MAINTENANCE_MESSAGE: "x" }, "off", ""],
+    [{ MAINTENANCE: "notice", MAINTENANCE_MESSAGE: "10月25日 20:00 ごろ" }, "notice", "10月25日 20:00 ごろ"],
+    [{ MAINTENANCE: "true", MAINTENANCE_MESSAGE: "21:00 ごろ終了予定" }, "on", "21:00 ごろ終了予定"],
+  ]) {
+    const res = await open("/api/maintenance", { ...env, ...vars }, "application/json");
+    assert.equal(res.status, 200, JSON.stringify(vars));
+    assert.deepEqual(await res.json(), { state, message });
+    assert.equal(res.headers.get("Cache-Control"), "no-store");
   }
-};
-const pageEnv = (extra) => ({
-  ...env,
-  ASSETS: { fetch: async () => new Response("<html><main>本文</main></html>", { headers: { "Content-Type": "text/html; charset=utf-8" } }) },
-  ...extra,
 });
-const open = (path, e, accept = "text/html") => worker.fetch(new Request(HOST + path, { headers: { Accept: accept } }), e);
 
-test("MAINTENANCE=true: すべてのページが 503 のメンテナンス画面（文つき）", async () => {
-  for (const path of ["/", "/docs/overview", "/privacy"]) {
-    const res = await open(path, pageEnv({ MAINTENANCE: "true", MAINTENANCE_MESSAGE: "21:00 ごろ終了予定" }));
+test("MAINTENANCE=true: すべてのページが 503 のメンテナンス画面（文つき）。検索エンジンには載せない", async () => {
+  for (const path of ["/", "/docs/overview", "/privacy", "/_framework/blazor.webassembly.js"]) {
+    const res = await open(path, { ...env, MAINTENANCE: "true", MAINTENANCE_MESSAGE: "21:00 ごろ終了予定" });
     assert.equal(res.status, 503, path);
+    assert.equal(res.headers.get("X-Robots-Tag"), "noindex");
+    if (path.endsWith(".js")) continue;
     const html = await res.text();
     assert.match(html, /ただいまメンテナンス中です/);
     assert.match(html, /21:00 ごろ終了予定/);
@@ -114,46 +97,41 @@ test("MAINTENANCE=true: すべてのページが 503 のメンテナンス画面
 });
 
 test("MAINTENANCE=true: 報告の受け口も止まる（API は JSON の 503）", async () => {
-  const res = await open("/api/report/config", pageEnv({ MAINTENANCE: "true" }), "application/json");
+  const res = await open("/api/report/config", { ...env, MAINTENANCE: "true" }, "application/json");
   assert.equal(res.status, 503);
   assert.equal((await res.json()).error, "maintenance");
 });
 
-test("MAINTENANCE=notice: ページの先頭に、更新予定のお知らせ。ページ自体は 200", async () => {
-  const res = await open("/", pageEnv({ MAINTENANCE: "notice", MAINTENANCE_MESSAGE: "10月25日 20:00 ごろ" }));
+test("MAINTENANCE=notice: ページは 200 のまま、HTML は書き換えない（お知らせはアプリが出す）", async () => {
+  const res = await open("/", { ...env, MAINTENANCE: "notice", MAINTENANCE_MESSAGE: "10月25日 20:00 ごろ" });
   assert.equal(res.status, 200);
-  const html = await res.text();
-  assert.match(html, /<main><div class="maintenance-notice"[^>]*><strong class="maintenance-notice-title">【お知らせ】<\/strong><span class="maintenance-notice-text">10月25日 20:00 ごろ<\/span><\/div>本文/);
-  assert.equal(res.headers.get("Cache-Control"), "no-store");
+  assert.equal(await res.text(), page);
 });
 
-test("MAINTENANCE=false（または未設定）: お知らせもメンテナンス画面も出ない。文が残っていても出ない", async () => {
+test("MAINTENANCE=false（または未設定）: メンテナンス画面は出ない", async () => {
   for (const extra of [{ MAINTENANCE: "false", MAINTENANCE_MESSAGE: "10月25日 20:00 ごろ" }, { MAINTENANCE_MESSAGE: "x" }, {}]) {
-    const res = await open("/", pageEnv(extra));
+    const res = await open("/", { ...env, ...extra });
     assert.equal(res.status, 200);
-    const html = await res.text();
-    assert.ok(!html.includes("maintenance-notice"), JSON.stringify(extra));
-    assert.equal(html, "<html><main>本文</main></html>");
+    assert.equal(await res.text(), page);
   }
 });
 
-test("MAINTENANCE=notice でも、HTML でない応答（CSS など）には足さない", async () => {
-  const e = pageEnv({ MAINTENANCE: "notice", MAINTENANCE_MESSAGE: "x" });
-  e.ASSETS = { fetch: async () => new Response("body{}", { headers: { "Content-Type": "text/css" } }) };
-  assert.equal(await (await open("/css/site.css", e, "text/css")).text(), "body{}");
+test("wrangler.toml: ダッシュボードの変数を公開のたびに消さない（keep_vars）、全リクエストが Worker を通る、404 は 404.html、公開物は publish/wwwroot", () => {
+  const toml = read("../wrangler.toml");
+  const keep = [...toml.matchAll(/^keep_vars = true$/gm)];
+  assert.equal(keep.length, 1);
+  assert.ok(keep[0].index < toml.indexOf("[env."), "最初の [env.*] より前（トップレベル）");
+  assert.equal([...toml.matchAll(/^run_worker_first = true$/gm)].length, 3, "本番・確認用・トップレベルのすべて");
+  assert.equal([...toml.matchAll(/^not_found_handling = "404-page"$/gm)].length, 3);
+  assert.equal([...toml.matchAll(/^directory = "\.\/publish\/wwwroot"$/gm)].length, 3);
+  assert.match(toml, /name = "fara-twitch-bot"/);
+  assert.match(toml, /name = "fara-twitch-bot-dev"/);
+  assert.match(toml, /twitch-bot\.fara-labs\.com/);
+  assert.match(toml, /twitch-bot-dev\.fara-labs\.com/);
 });
 
-test("wrangler.toml は、ダッシュボードの変数を公開のたびに消さない（keep_vars。トップレベルだけが有効で、本番・確認用の両方に効く）", async () => {
-  const { readFileSync } = await import("node:fs");
-  const toml = readFileSync(new URL("../wrangler.toml", import.meta.url), "utf8");
-  const lines = [...toml.matchAll(/^keep_vars = true$/gm)];
-  assert.equal(lines.length, 1);
-  assert.ok(lines[0].index < toml.indexOf("[env."), "最初の [env.*] より前（トップレベル）");
-});
-
-test("本番の公開は MAINTENANCE=notice を確かめてから行い、公開と同時に MAINTENANCE=true にする（site.yml）", async () => {
-  const { readFileSync } = await import("node:fs");
-  const yml = readFileSync(new URL("../../.github/workflows/site.yml", import.meta.url), "utf8");
+test("本番の公開は MAINTENANCE=notice を確かめてから行い、公開と同時に MAINTENANCE=true にする（site.yml）", () => {
+  const yml = read("../../.github/workflows/site.yml");
   assert.match(yml, /node \.github\/scripts\/require-maintenance\.mjs fara-twitch-bot/);
   const gate = yml.indexOf("Require MAINTENANCE=notice (production)");
   assert.ok(gate > 0);
@@ -163,21 +141,12 @@ test("本番の公開は MAINTENANCE=notice を確かめてから行い、公開
   assert.match(yml, /!inputs\.skip_maintenance_check/);
   assert.match(yml, /SKIP_MAINTENANCE_CHECK: \$\{\{ inputs\.skip_maintenance_check \}\}/);
   assert.match(yml, /require-maintenance\.test\.mjs/, "CI で確認のスクリプトもテストする");
+  assert.match(yml, /submodules: true/, "kit の submodule を取得する");
+  assert.match(yml, /external\/fara-site-kit/, "kit を上げたときも公開する（paths）");
 });
 
-test("メンテナンスのお知らせの帯は sticky で上に残る。PC は固定ヘッダーの真下（top: 3.5rem）、重なりは固定ヘッダー（70）より下・隠したサイドバー（75）より下", async () => {
-  const { readFileSync } = await import("node:fs");
-  const css = readFileSync(new URL("../wwwroot/css/site.css", import.meta.url), "utf8");
-  const rule = css.match(/^\.maintenance-notice \{([^}]*)\}/m);
-  assert.ok(rule, "帯の基本の規則");
-  assert.match(rule[1], /position: sticky;/);
-  assert.match(rule[1], /(^|\s)top: 0;/);
-  const z = Number(rule[1].match(/z-index: (\d+);/)[1]);
-  assert.ok(z > 0 && z < 70, `z-index ${z} は 70（固定ヘッダー）より下`);
-  assert.ok(z < 75, "隠したサイドバーが広がったとき（75）の下");
-  const pc = css.match(/@media \(min-width: 900px\) \{[\s\S]*?\n\}/g).filter((b) => b.includes(".maintenance-notice"));
-  assert.equal(pc.length, 1, "PC の指定は 900px の 1 か所");
-  assert.match(pc[0], /\.maintenance-notice \{ top: 3\.5rem; \}/);
-  assert.match(css, /html:has\(\.maintenance-notice\) \{ scroll-padding-top: calc\(var\(--notice-h\) \+ 16px\); \}/, "スマホの見出しへのジャンプ");
-  assert.match(pc[0], /html:has\(\.maintenance-notice\) main \.doc-toc \{\s*top: calc\(3\.5rem \+ var\(--notice-h\) \+ 20px\);/, "PC の目次は帯の下");
+test("package.json は wrangler のバージョンを固定する（site.yml と同じ）", () => {
+  const pkg = JSON.parse(read("../package.json"));
+  assert.match(pkg.devDependencies.wrangler, /^\d+\.\d+\.\d+$/);
+  assert.match(read("../../.github/workflows/site.yml"), new RegExp(`wranglerVersion: "${pkg.devDependencies.wrangler.replace(/\./g, "\\.")}"`));
 });
