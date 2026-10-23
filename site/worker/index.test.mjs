@@ -213,6 +213,16 @@ test("公開のステップ: 文面に記号・空白・引用符・コマンド
   assert.deepEqual(deployArgs({ DEPLOY_ENV: "dev", MAINTENANCE_MESSAGE_INPUT: text }), ["deploy", "--env", "dev", ...MSG(text)]);
 });
 
+test("concurrency: 本番（master）は実行を取り消さず待たせる。master 以外は新しい実行が古いものを取り消す（site.yml）", () => {
+  const yml = readYml();
+  const block = yml.slice(yml.indexOf("
+concurrency:"), yml.indexOf("
+jobs:"));
+  assert.ok(block.includes("group: site-${{ github.ref }}"), "ブランチごとのグループ");
+  assert.ok(block.includes("cancel-in-progress: ${{ github.ref_name != 'master' }}"));
+  assert.ok(!/cancel-in-progress: true/.test(yml), "master も取り消す固定の true にしない");
+});
+
 test("公開のステップ・サマリー・環境名の式（site.yml）", () => {
   const yml = readYml();
   const deploy = stepOf(yml, "Deploy to Cloudflare Workers");

@@ -44,9 +44,11 @@ on:
 permissions:
   contents: read
 
+# 同じブランチの実行は 1 つずつ。確認用（develop など）は新しい実行が古いものを取り消す。
+# 本番（master）は取り消さず、順番に待たせる（wrangler deploy の途中で止めると、中途半端な状態になり得るため。push の公開と、手動の maintenance_mode の実行が互いに取り消し合わない）
 concurrency:
   group: site-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.ref_name != 'master' }}
 
 jobs:
   build:
