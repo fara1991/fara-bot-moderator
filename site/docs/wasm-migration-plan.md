@@ -38,8 +38,8 @@
 develop に入るたびに確認用（twitch-bot-dev）へ公開されるので、**最後の「切り替え」まで、公開される中身は今の静的 SSR のまま**にする。
 
 1. **基盤**（この PR）: この計画書、kit の submodule（v0.2.1）、.NET 10 化、`Shared`（モデル・`SiteContent`・JSON）と `Content`（`ContentBuilder`）の切り出し、コンテンツのテストの移動。公開物は変わらない。
-2. **ビルドと検索**: `Build`（`data/site.json`・`pages.json`・`site.json` の生成）、`SearchEngine`・`Romaji` と、そのテスト。
-3. **Web プロジェクト**: `Pages`（Razor クラスライブラリ）、`Web`（Blazor WebAssembly）、レイアウト・ページ・CSS・`index.html`、静的な本文の生成（`HtmlRenderer`）、npm スクリプト。ここまでは公開しない。
+2. **検索（C# 版）**: `SearchText`・`Romaji`・`SearchIndex`（Shared）と、そのテスト。移行前の search.js と同じ結果になることを、実データの 863 件の検索語で確かめた。
+3. **ビルドと Web プロジェクト**: `Build`（`data/site.json`・kit 用の `pages.json`・`site.json` の生成）、`Pages`（Razor クラスライブラリ）、`Web`（Blazor WebAssembly）、レイアウト・ページ・CSS・`index.html`、静的な本文の生成（`HtmlRenderer`）、npm スクリプト。ここまでは公開しない。
 4. **切り替え**: Worker（kit の共有 JS・`/api/maintenance`・CSP を `_headers` へ）、`wrangler.toml`、`site.yml`、旧い SSR・BeerCSS・nav.js 一式の削除、`site/CLAUDE.md`・README・CSP の方針の書き直し、現行との比較ツール。
 
 ## 4. 検証
