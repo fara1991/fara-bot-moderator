@@ -1,15 +1,15 @@
-using FaraBotModeratorSite.Data;
+using FaraBotModeratorSite.Content;
 using Xunit;
 
-namespace FaraBotModeratorSite.Tests;
+namespace FaraBotModeratorSite.Content.Tests;
 
-/// <summary>更新履歴（Content/changelog.json と ContentService.ParseChangelog）。</summary>
+/// <summary>更新履歴（Content/changelog.json と ContentBuilder.ParseChangelog）。</summary>
 public class ChangelogTests
 {
     [Fact]
     public void ParseChangelog_returns_entries_newest_first_and_keeps_order_within_a_day()
     {
-        var list = ContentService.ParseChangelog("""
+        var list = ContentBuilder.ParseChangelog("""
             [
               { "date": "2026-10-01", "title": "古い" },
               { "date": "2026-10-20", "title": "同じ日の 1 つ目", "items": ["a", "b"] },
@@ -24,7 +24,7 @@ public class ChangelogTests
 
     [Fact]
     public void ParseChangelog_accepts_an_empty_list() =>
-        Assert.Empty(ContentService.ParseChangelog("[]"));
+        Assert.Empty(ContentBuilder.ParseChangelog("[]"));
 
     [Theory]
     [InlineData("""[ { "title": "日付なし" } ]""")]
@@ -34,13 +34,13 @@ public class ChangelogTests
     [InlineData("""[ null ]""")]
     [InlineData("<!doctype html>")]
     public void ParseChangelog_rejects_malformed_input(string json) =>
-        Assert.Throws<FormatException>(() => ContentService.ParseChangelog(json));
+        Assert.Throws<FormatException>(() => ContentBuilder.ParseChangelog(json));
 
     [Fact]
     public void Shipped_changelog_is_valid_newest_first_and_has_details()
     {
         var path = FindUp("Content/changelog.json");
-        var list = ContentService.ParseChangelog(File.ReadAllText(path));
+        var list = ContentBuilder.ParseChangelog(File.ReadAllText(path));
         Assert.True(list.Count >= 3, "ホームに出す件数（3）より少ない");
         Assert.Equal(list.OrderByDescending(e => e.Date).Select(e => e.Date), list.Select(e => e.Date));   // 新しい順に書く
         Assert.All(list, e => Assert.True(e.Title.Length <= 60, $"{e.Date} の見出しが長い（ホームでは見出しだけ出すので短く）: {e.Title}"));
