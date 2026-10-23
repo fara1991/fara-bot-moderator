@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>FaraBotModeratorSite</RootNamespace>
@@ -12,10 +12,15 @@
     <Compile Remove="tests\**" />
     <EmbeddedResource Remove="tests\**" />
     <None Remove="tests\**" />
+    <!-- Blazor WebAssembly 版の新しいプロジェクト群（src/）のソースも、この静的 SSR のプロジェクトに取り込まない -->
+    <Compile Remove="src\**" />
+    <EmbeddedResource Remove="src\**" />
+    <None Remove="src\**" />
+    <Content Remove="src\**" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Markdig" Version="0.38.0" />
+    <ProjectReference Include="src\FaraBotModeratorSite.Content\FaraBotModeratorSite.Content.csproj" />
   </ItemGroup>
 
 </Project>

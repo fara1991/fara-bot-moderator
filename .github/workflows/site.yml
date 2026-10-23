@@ -52,7 +52,9 @@ jobs:
 
       - name: Test
         working-directory: site
-        run: dotnet test tests/FaraBotModeratorSite.Tests -c Release --nologo
+        run: |
+          dotnet test tests/FaraBotModeratorSite.Content.Tests -c Release --nologo
+          dotnet test tests/FaraBotModeratorSite.Tests -c Release --nologo
 
       - name: Node tests (worker and page navigation)
         working-directory: site
