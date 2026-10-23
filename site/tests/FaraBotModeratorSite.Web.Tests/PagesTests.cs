@@ -59,7 +59,9 @@ public class PagesTests
         Assert.Contains("6 ランダム", Text(html));
         Assert.Contains("7 ランダム", Text(html));
         Assert.Contains("Play Mode", html);
-        Assert.DoesNotContain("BombLineCount を", html);
+        Assert.Contains("いまは常に 5 個", Text(html));
+        Assert.Contains("005", Text(html));
+        Assert.Contains("小文字の !bomb", Text(html));
         Assert.DoesNotContain("href=\"https://github.com/fara1991/FaraBombRush\"", html);
     }
 

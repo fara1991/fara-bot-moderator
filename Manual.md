@@ -410,16 +410,23 @@ Beat Saber で使うチャットのコマンドです。曲リクエスト（`!b
 
 #### 対応バージョンと導入
 
-FaraBombRush は、Beat Saber **1.29.1** と **1.40.8** に対応しています（v1.1.0 は 2026-10-24 公開）。zip は Beat Saber の版ごとに別です。自分の版のものだけを使い、混ぜないでください。
+FaraBombRush は、Beat Saber **1.29.1** と **1.40.8** に対応しています（v1.1.0 は 2026-10-24（JST）公開）。zip は Beat Saber の版ごとに別です。自分の版のものだけを使い、混ぜないでください。
 
-| Beat Saber | 配布ファイル（[Releases](https://github.com/fara1991/fara-bomb-rush/releases/tag/v1.1.0)） | 必要なもの |
-|---|---|---|
-| 1.29.1 | `FaraBombRush-v1.1.0-BS1.29.1.zip` | BSIPA 4.2.0 以降 |
-| 1.40.8 | `FaraBombRush-v1.1.0-BS1.40.8.zip` | BSIPA 4.2.0 以降、SiraUtil 3.1.0 以降、BeatSaberMarkupLanguage 1.12.0 以降（無いと Mod が読み込まれません） |
+| Beat Saber | 配布ファイル（[Releases](https://github.com/fara1991/fara-bomb-rush/releases/tag/v1.1.0)） |
+|---|---|
+| 1.29.1 | `FaraBombRush-v1.1.0-BS1.29.1.zip` |
+| 1.40.8 | `FaraBombRush-v1.1.0-BS1.40.8.zip` |
 
-1. [BSIPA](https://github.com/bsmg/BeatSaber-IPA-Reloaded) 4.2.0 以降を入れます
-2. zip を Beat Saber のフォルダに展開します（`Plugins/` と `UserData/FaraBombRush/` が入ります）
-3. Twitch チャットのコマンドを使うときは、BeatSaberPlus（ChatPlexSDK）も入れます。無い場合、チャットのコマンドは無効になります（1.29.1・1.40.8 とも同じです）
+必要なもの:
+
+- 共通: [BSIPA](https://github.com/bsmg/BeatSaber-IPA-Reloaded) 4.2.0 以上（4.x 系）
+- 1.40.8 のみ: SiraUtil 3.1.0 以上（3.x 系）と、BeatSaberMarkupLanguage 1.12.0 以上（1.x 系）。無いと Mod が読み込まれません
+- Twitch チャットのコマンドを使うとき（1.29.1・1.40.8 とも）: BeatSaberPlus（ChatPlexSDK）。無い場合、チャットは無効になる想定です（ゲーム内では未確認）
+
+導入の手順:
+
+1. 上の必要なものを入れます
+2. 自分の Beat Saber の版の zip を、Beat Saber のフォルダに展開します（`Plugins/` と `UserData/FaraBombRush/` が入ります）
 
 詳しくは [FaraBombRush の README](https://github.com/fara1991/fara-bomb-rush#readme) を参照してください。
 
@@ -444,13 +451,15 @@ FaraBombRush は、Beat Saber **1.29.1** と **1.40.8** に対応しています
 
 #### 爆弾（!bomb・!bombline・!bombreset）
 
-爆弾は、Beat Saber の Mod「[FaraBombRush](https://github.com/fara1991/fara-bomb-rush)」が出します。このアプリのボットは爆弾のコマンドを処理しません（Mod が Twitch チャットを直接読みます）。Play Mode が「Interactive」のとき、Twitch チャットのコマンドで爆弾を出せます。曲のプレイ中に使う想定です。
+爆弾は、Beat Saber の Mod「[FaraBombRush](https://github.com/fara1991/fara-bomb-rush)」が出します。このアプリのボットは爆弾のコマンドを処理しません（Mod が BeatSaberPlus 経由で Twitch チャットを読みます）。Play Mode が「Interactive」のとき、Twitch チャットのコマンドで爆弾を出せます。曲のプレイ中に使う想定です。
+
+いずれのコマンドも、後ろに半角スペースと 1〜12 の数字を付けて位置を指定できます（例: `!bomb 5`）。省くとランダムです。
 
 | コマンド | 内容 |
 |---|---|
-| `!bomb` / `!bomb 1〜12` | 爆弾を 1 個出します。位置を省くとランダムです |
-| `!bombline` / `!bombline 1〜12` | 同じ位置に、爆弾を 5 個の列にして出します。間隔は約 1 m で、ほぼ接しています。位置を省くとランダムです |
-| `!bombreset` / `!bombreset 1〜12` | 上段か下段の 4 か所に、同じタイミングで爆弾を出します（リセット用の配置）。どちらの段になるかは位置で決まります。位置を省くとランダムです |
+| <span class="nowrap">`!bomb`</span> | 爆弾を 1 個出します |
+| <span class="nowrap">`!bombline`</span> | 同じ位置に、爆弾を 5 個の列にして出します。間隔は約 1 m で、ほぼ接しています |
+| <span class="nowrap">`!bombreset`</span> | 上段か下段の 4 か所に、同じタイミングで爆弾を出します（リセット用の配置）。どちらの段になるかは位置で決まります |
 
 位置の番号と、ゲーム中の位置の対応は次のとおりです（プレイヤーから見て左から右の順。6・7 は位置を決められずランダム）。
 
@@ -460,9 +469,9 @@ FaraBombRush は、Beat Saber **1.29.1** と **1.40.8** に対応しています
 | 中段 | 5 | 6 ランダム | 7 ランダム | 8 |
 | 下段 | 9 | 10 | 11 | 12 |
 
-- 6 と 7 は、ノーツの来ない中央の 2 か所に当たるため、位置を決められません。指定すると、位置なしと同じランダムになります
+- 6 と 7 は、爆弾の位置として用意されていない中央の 2 か所です。指定すると、位置なしと同じランダムになります
 - ランダムは、実在する 10 か所（1〜5 と 8〜12）から同じ確率で選びます
-- `!bombline` の間隔は、曲の BPM に関係なく約 1 m です（以前の設定 BombLineCount は廃止されました）
+- `!bombline` の間隔は、曲の BPM に関係なく約 1 m です（以前は BombLineCount で個数を設定できましたが、いまは常に 5 個です）
 - `!bombreset` は、指定した位置で、リセットする段が決まります
 
 | 指定の位置 | リセットする段 |
@@ -471,8 +480,9 @@ FaraBombRush は、Beat Saber **1.29.1** と **1.40.8** に対応しています
 | 8〜12（中段の右と下段） | 下段（9〜12 の 4 か所） |
 | 6・7・省略 | 実在する 10 か所からランダムに選んだ位置の段（上段と下段は半々） |
 
-- 1〜12 以外の数字（0・13 など）と、数字でない指定は、爆弾を出しません。全角の数字（５）も出ません。先頭の 0（`05`）は使えます
+- 1〜12 以外の数字（0・13 など）と、数字でない指定は、爆弾を出しません。全角の数字（５）も出ません。数字は 2 桁までで、先頭の 0 は可です（`05` は可、`005` は不可）
 - `!bombs` や `!bomberman` のような、よく似た別の言葉には反応しません。大文字小文字は区別しません
+- `!bomb 5 おはよう` のように、コマンドと位置のほかに言葉が付くと反応しません
 - `@名前 !bomb 5` のような Twitch の返信でも反応します。7TV が付ける不可視文字は無視されます
 - コマンドは Twitch のチャットからだけ受け付けます
 
@@ -494,7 +504,8 @@ FaraBombRush は、Beat Saber **1.29.1** と **1.40.8** に対応しています
 
 #### このアプリでの扱い
 
-- `!bomb` を含む発言は、このアプリの翻訳と読み上げの対象にしません（`!bombs` など、文字列に含まれるだけの発言も同様です）
+- このアプリが翻訳と読み上げの対象から外すのは、小文字の `!bomb` を含む発言だけです（`!bombs` など、文字列に含まれるだけの発言も同様です）
+- Mod は大文字小文字の違いや、間に不可視文字が入った発言も受け付けます。そのような発言（`!BOMB 5` など）は、このアプリが翻訳・読み上げることがあります
 - `!bsr` の発言と、Beat Saber の返信文は、上の「曲リクエスト（!bsr）」の規則で読み上げ用に変換します
 
 ---
