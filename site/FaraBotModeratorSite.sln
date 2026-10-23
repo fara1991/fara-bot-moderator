@@ -17,6 +17,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FaraBotModeratorSite.Tests"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FaraBotModeratorSite.Content.Tests", "tests\FaraBotModeratorSite.Content.Tests\FaraBotModeratorSite.Content.Tests.csproj", "{92696E2B-A7E3-498E-97D4-C5A1E7D3EAB0}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FaraBotModeratorSite.Shared.Tests", "tests\FaraBotModeratorSite.Shared.Tests\FaraBotModeratorSite.Shared.Tests.csproj", "{15D7D12A-41CD-47A8-B299-4014ED8AF383}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -87,6 +89,18 @@ Global
 		{92696E2B-A7E3-498E-97D4-C5A1E7D3EAB0}.Release|x64.Build.0 = Release|Any CPU
 		{92696E2B-A7E3-498E-97D4-C5A1E7D3EAB0}.Release|x86.ActiveCfg = Release|Any CPU
 		{92696E2B-A7E3-498E-97D4-C5A1E7D3EAB0}.Release|x86.Build.0 = Release|Any CPU
+		{15D7D12A-41CD-47A8-B299-4014ED8AF383}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{15D7D12A-41CD-47A8-B299-4014ED8AF383}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{15D7D12A-41CD-47A8-B299-4014ED8AF383}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{15D7D12A-41CD-47A8-B299-4014ED8AF383}.Debug|x64.Build.0 = Debug|Any CPU
+		{15D7D12A-41CD-47A8-B299-4014ED8AF383}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{15D7D12A-41CD-47A8-B299-4014ED8AF383}.Debug|x86.Build.0 = Debug|Any CPU
+		{15D7D12A-41CD-47A8-B299-4014ED8AF383}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{15D7D12A-41CD-47A8-B299-4014ED8AF383}.Release|Any CPU.Build.0 = Release|Any CPU
+		{15D7D12A-41CD-47A8-B299-4014ED8AF383}.Release|x64.ActiveCfg = Release|Any CPU
+		{15D7D12A-41CD-47A8-B299-4014ED8AF383}.Release|x64.Build.0 = Release|Any CPU
+		{15D7D12A-41CD-47A8-B299-4014ED8AF383}.Release|x86.ActiveCfg = Release|Any CPU
+		{15D7D12A-41CD-47A8-B299-4014ED8AF383}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -96,5 +110,6 @@ Global
 		{EC288FB1-3C3C-4755-9810-27B4E47AB2B5} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{EA107F9F-2495-4424-A92D-97776417DB33} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{92696E2B-A7E3-498E-97D4-C5A1E7D3EAB0} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
+		{15D7D12A-41CD-47A8-B299-4014ED8AF383} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 	EndGlobalSection
 EndGlobal
