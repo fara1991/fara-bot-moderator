@@ -1,4 +1,4 @@
-@* メンテナンス中（MAINTENANCE=true）に、アプリの代わりに出す画面（Program.cs が、起動時に状態を読んで、この画面だけを動かす）。
+@* メンテナンス中（MAINTENANCE_MODE=true）に、アプリの代わりに出す画面（Program.cs が、起動時に状態を読んで、この画面だけを動かす）。
    画面そのものは kit の MaintenanceScreen。このサイト固有の連絡先（お知らせの場所）だけを渡す。
    Worker は、メンテナンス中は全ページに 503 のメンテナンス画面を返すので、ここに来るのは、メンテナンスが始まる前に読み込まれたキャッシュのアプリが起動したときだけ *@
 @inject MaintenanceInfo Info

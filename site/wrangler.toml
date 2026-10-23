@@ -10,7 +10,7 @@
 name = "fara-twitch-bot"
 main = "worker/index.js"
 compatibility_date = "2026-10-01"
-# ダッシュボードで足した変数（MAINTENANCE・MAINTENANCE_MESSAGE など）を、公開（wrangler deploy）のたびに消さない
+# ダッシュボードで足した変数（MAINTENANCE_MODE・MAINTENANCE_MESSAGE など）を、公開（wrangler deploy）のたびに消さない
 keep_vars = true
 # workers.dev と preview の URL は使わない（確認用は Cloudflare Access でカスタムドメインだけを守っているため、ほかの URL から見えないようにする）
 workers_dev = false

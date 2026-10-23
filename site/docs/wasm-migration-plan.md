@@ -1,6 +1,6 @@
 # 紹介サイトの Blazor WebAssembly + MudBlazor への移行計画
 
-`site/`（現状: .NET 静的 SSR + BeerCSS + nav.js + Worker）を、Blazor WebAssembly + MudBlazor（fara-site-kit v0.2.1）に移す。
+`site/`（現状: .NET 静的 SSR + BeerCSS + nav.js + Worker）を、Blazor WebAssembly + MudBlazor（fara-site-kit v0.3.0）に移す。
 手本は pokemon（kit 採用 #267・#269）、avatar の移行（#80〜#85、静的 HTML 本文入り + WASM の併用）、kit の `docs/usage.md` 8.12。
 
 ## 1. 方針（変えないもの）
@@ -11,7 +11,7 @@
 - フッターは画面の下に固定（kit の `SiteLayout` の既定。`MobilePageScroll` は false のまま）。`viewport-fit=cover` と safe-area。
 - プライバシー・更新履歴は PC で広く、`/report` のフォームは今の幅。改行の `word-break: auto-phrase`。表は 390 幅に収まる。
 - 検索のローマ字読み（nn→ん など #114 の仕様）、`Manual.md` 駆動のドキュメントページ。
-- localStorage のキー（`fara-bot-moderator-site.theme` / `.sidebar-hidden`）、Cloudflare の設定（Worker 名・ドメイン・`run_worker_first`・MAINTENANCE 変数）。
+- localStorage のキー（`fara-bot-moderator-site.theme` / `.sidebar-hidden`）、Cloudflare の設定（Worker 名・ドメイン・`run_worker_first`・MAINTENANCE_MODE 変数）。
 - Beat Saber コマンド（`/docs/beatsaber`）は 1.40.8 公開まで内容を変えない。見た目の移行だけ。
 
 変わるもの（kit の部品に替わる）は、ヘッダー・サイドバー・フッターの見た目（pokemon・avatar と同じ MudBlazor の外観）。
@@ -21,7 +21,7 @@
 
 | # | 決定 | 理由 |
 | --- | --- | --- |
-| D1 | `site/` を .NET 10 の Blazor WebAssembly にし、kit（`external/fara-site-kit`、v0.2.1 に固定）の `FaraSiteKit.Razor` を使う | kit は net10.0 だけ。SDK は `global.json` が 10.0.100 で、すでに揃っている |
+| D1 | `site/` を .NET 10 の Blazor WebAssembly にし、kit（`external/fara-site-kit`、v0.3.0 に固定）の `FaraSiteKit.Razor` を使う | kit は net10.0 だけ。SDK は `global.json` が 10.0.100 で、すでに揃っている |
 | D2 | すべての URL を「本文入りの静的 HTML」+「起動後に WASM が引き継ぐ同じ Razor ページ」にする。静的のままにするページは作らない | bot にはインタラクティブなページがほぼ無く（問い合わせだけ）、ドキュメントを静的のまま残すと、MPA と SPA でサイドバー・検索・テーマが二重になる。avatar が静的のまま残したのは、練習ページが WASM だけで動く別物だったから |
 | D3 | 静的の本文は、WASM と同じ Razor コンポーネントを、ビルド時に `HtmlRenderer` で描いて作る（kit の `build-pages` の `bodyHtml`） | 本文の情報源が 1 つ。静的と起動後の文章がずれない |
 | D4 | `Manual.md` → ページへの変換はビルド時に 1 回だけ行い（`ContentBuilder`、Markdig）、結果を `data/site.json` に書く。ブラウザは Markdown を読まない | WASM に `Manual.md` を読む仕組み（IWebHostEnvironment）は無い。Markdig を配らずに済む。見出しが無い・リンク切れ・pages.json の誤りは、従来どおりビルドで失敗させる |
