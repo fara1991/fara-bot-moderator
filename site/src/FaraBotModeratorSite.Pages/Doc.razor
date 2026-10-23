@@ -1,0 +1,91 @@
+@page "/docs/{Slug}"
+@inject SiteContent Content
+
+@if (doc is null)
+{
+    @* 存在しない説明ページ。ステータスの 404 は、Worker が 404.html で返す（静的な書き出しに、このページが無いため） *@
+    <NotFoundView HomeHref="/" />
+}
+else
+{
+    <PageTitle>@PageMeta.DocTitle(doc)</PageTitle>
+
+    <div class="doc-layout">
+        <article class="doc-main">
+            <p class="breadcrumb"><a href="/docs">ドキュメント</a>
+                @if (ancestors.Count == 0)
+                {
+                    <span aria-hidden="true">/</span> @doc.Group
+                }
+                @foreach (var a in ancestors)
+                {
+                    <span aria-hidden="true">/</span> <a href="@a.Url">@a.Title</a>
+                }
+            </p>
+            <h1>@doc.Title</h1>
+            <p class="doc-description">@doc.Description</p>
+            <div class="prose">@((MarkupString)doc.Html)</div>
+
+            @if (children.Count > 0)
+            {
+                <section class="child-pages" aria-label="このページに含まれるページ">
+                    <h2>含まれるページ</h2>
+                    <div class="card-grid">
+                        @foreach (var c in children)
+                        {
+                            <a class="card link-card" href="@c.Url">
+                                <h3>@c.Title</h3>
+                                <p>@c.Description</p>
+                            </a>
+                        }
+                    </div>
+                </section>
+            }
+
+            <nav class="doc-pager" aria-label="前後のページ">
+                @if (previous is not null)
+                {
+                    <a class="pager-prev" href="@previous.Url"><small>前のページ</small><span>@previous.Title</span></a>
+                }
+                @if (next is not null)
+                {
+                    <a class="pager-next" href="@next.Url"><small>次のページ</small><span>@next.Title</span></a>
+                }
+            </nav>
+        </article>
+
+        @if (doc.Toc.Count > 0)
+        {
+            <aside class="doc-toc">
+                <nav aria-label="このページの目次">
+                    <p class="doc-nav-title">このページの内容</p>
+                    <ul>
+                        @foreach (var item in doc.Toc.Where(t => t.Level <= 3))
+                        {
+                            <li class="@(item.Level == 3 ? "sub" : null)"><a href="@(doc.Url)#@item.Id">@item.Text</a></li>
+                        }
+                    </ul>
+                </nav>
+            </aside>
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public string Slug { get; set; } = "";
+
+    private DocPage? doc;
+    private DocPage? previous;
+    private DocPage? next;
+    private IReadOnlyList<DocPage> ancestors = Array.Empty<DocPage>();
+    private IReadOnlyList<DocPage> children = Array.Empty<DocPage>();
+
+    protected override void OnParametersSet()
+    {
+        doc = Content.Find(Slug);
+        if (doc is null) return;
+        (previous, next) = Content.Neighbors(doc);
+        ancestors = Content.Ancestors(doc);
+        children = Content.Children(doc);
+    }
+}

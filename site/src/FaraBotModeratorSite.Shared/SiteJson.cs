@@ -26,6 +26,10 @@ public static class SiteJson
     public static SiteContentData Deserialize(string json) =>
         JsonSerializer.Deserialize(json, SiteJsonContext.Default.SiteContentData) ?? new SiteContentData();
 
+    /// <summary>ストリームから読む（ブラウザが /data/site.json を取るとき。文字列にしないので、メモリを余分に使わない）。</summary>
+    public static async Task<SiteContentData> DeserializeAsync(Stream utf8Json, CancellationToken cancellationToken = default) =>
+        await JsonSerializer.DeserializeAsync(utf8Json, SiteJsonContext.Default.SiteContentData, cancellationToken) ?? new SiteContentData();
+
     /// <summary>changelog.json（[ { "date": "2026-10-22", "title": "...", "items": ["..."] } ]）を読む。</summary>
     public static List<ChangelogEntry> DeserializeChangelog(string json) =>
         JsonSerializer.Deserialize(json, SiteJsonContext.Default.ListChangelogEntry) ?? new();

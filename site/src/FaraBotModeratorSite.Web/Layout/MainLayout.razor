@@ -1,0 +1,28 @@
+@inherits LayoutComponentBase
+@inject MaintenanceInfo Maintenance
+
+@* 共通のレイアウト（fara-site-kit の SiteLayout）: MudBlazor の土台・ヘッダー・サイドバー（PC は Mini、スマホは一時的なメニュー）・本文・フッター・お知らせの帯。
+   ここでは、サイトの中身だけを渡す。
+   - ヘッダー（PC）: 検索欄とライト／ダークの切り替え。
+   - ヘッダー（スマホ）: 検索ボタン（下に開く検索欄は SearchSheet）。ライト／ダークの切り替えは、メニューの上のほうに出す（NavMenu.razor）。
+   - サイドバーの開閉・スマホの判定・検索欄の開閉は SiteLayout が持つ（PC の開閉は SiteInfo.SidebarKey に保存する）。
+   - フッターは本文の外（画面の下に固定）。MobilePageScroll は既定の false のまま（true にするとフッターがページの最後に出る） *@
+<SiteLayout Body="@Body" Maintenance="Maintenance" CustomTheme="Theme">
+    <SearchBox>
+        <SiteSearch />
+    </SearchBox>
+    <HeaderEnd>
+        <ThemeSwitch />
+    </HeaderEnd>
+    <SearchSheet Context="closeSearch">
+        @* スマホの検索欄（PC の検索欄と同じ部品）。× ・結果を開いたとき・Esc で、SiteLayout が閉じる *@
+        <SiteSearch Sheet="true" OnDone="closeSearch" />
+    </SearchSheet>
+    <DrawerContent>
+        <NavMenu />
+    </DrawerContent>
+</SiteLayout>
+
+@code {
+    private static readonly MudTheme Theme = BotTheme.Create();
+}
