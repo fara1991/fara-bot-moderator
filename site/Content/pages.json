@@ -150,11 +150,14 @@
     "slug": "beatsaber",
     "title": "Beat Saber コマンド（!bsr・!bomb）",
     "parent": "commands",
-    "description": "曲リクエスト（!bsr）と、読み上げ用の変換の規則。爆弾のコマンド（!bomb・!bombline・!bombreset）の説明。",
+    "description": "FaraBombRush v1.1.0 の対応バージョンと導入、曲リクエスト（!bsr）の読み上げ変換、爆弾のコマンド（!bomb・!bombline・!bombreset）と位置の表、Mod の設定。",
     "sections": [
       { "heading": "5.5. Beat Saber コマンド（!bsr・!bomb）", "own": true },
+      { "heading": "対応バージョンと導入" },
       { "heading": "曲リクエスト（!bsr）" },
-      { "heading": "爆弾（!bomb・!bombline・!bombreset）" }
+      { "heading": "爆弾（!bomb・!bombline・!bombreset）" },
+      { "heading": "Mod の設定" },
+      { "heading": "このアプリでの扱い" }
     ]
   },
   {
