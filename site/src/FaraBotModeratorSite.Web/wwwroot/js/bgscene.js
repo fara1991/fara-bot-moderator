@@ -1,7 +1,7 @@
 // 背景の飾り（見た目だけ）: Twitch のチャットのような、吹き出し（アイコン・名前・文章を表す線）が、下からゆっくり浮かび上がる。
 // 画面の後ろ（z-index: -1）に置いた canvas に描く。操作には関わらない。外部のファイルは読み込まない（CSP は同じオリジンだけ）。
 // - 動きを減らす設定（prefers-reduced-motion）のときは、止めた 1 枚だけを描く
-// - タブが裏に回ったら止める。負荷を抑えるため、描くのは 30fps まで、解像度の倍率は最大 1.5
+// - タブが裏に回ったら止める。負荷を抑えるため、描くのは 30fps まで（スマホは 20fps・吹き出しも減らす）、解像度の倍率は最大 1.5
 // - 色は、ライト・ダークのテーマ（html の data-bs-theme と、端末の設定）に合わせる
 (function () {
     "use strict";
@@ -17,6 +17,9 @@
     var reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
     var schemeLight = window.matchMedia("(prefers-color-scheme: light)");
     var W = 0, H = 0, dpr = 1, dark = true;
+    // スマホ（タッチ操作）では、吹き出しを減らし、20fps にして、発熱・電池の消費を抑える
+    var touch = window.matchMedia("(pointer: coarse)").matches;
+    var frameGap = touch ? 50 : 33;
 
     // 吹き出しの色（紫を中心に、少しだけピンク・青を混ぜる）
     var HUES = ["149,117,205", "179,157,219", "126,87,194", "186,104,200", "121,134,203", "149,117,205"];
@@ -51,6 +54,7 @@
         canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
         canvas.style.width = W + "px"; canvas.style.height = H + "px";
         var n = Math.max(10, Math.min(22, Math.round((W * H) / 90000)));
+        if (touch) n = Math.min(n, 10);
         if (bubbles.length !== n) { seed = 20261022; bubbles = []; for (var i = 0; i < n; i++) bubbles.push(make(true)); }
     }
 
@@ -66,7 +70,7 @@
     function drawBubble(b) {
         // 画面の上下の端で、すっと消える
         var edge = Math.min(1, Math.max(0, Math.min(b.y + b.h, H - b.y) / 160));
-        var k = (dark ? 0.7 : 0.5) * edge * (0.45 + 0.55 * (b.depth - 0.5));   // 文字の邪魔にならないよう、控えめに
+        var k = (dark ? 0.6 : 0.35) * edge * (0.45 + 0.55 * (b.depth - 0.5));   // 文字の邪魔にならないよう、控えめに
         if (k <= 0.01) return;
         var pad = 10 * b.depth, r = 12 * b.depth, ink = dark ? "255,255,255" : "70,40,120";
         ctx.globalAlpha = k;
@@ -81,7 +85,7 @@
         var tx = b.x + pad + cr * 2 + 8 * b.depth, lh = 5 * b.depth;
         ctx.fillStyle = "rgba(" + b.hue + ",0.95)";
         rrect(tx, b.y + pad, b.nameW, lh, lh / 2); ctx.fill();
-        ctx.fillStyle = "rgba(" + ink + ",0.3)";
+        ctx.fillStyle = "rgba(" + ink + ",0.2)";
         for (var i = 0; i < b.lines; i++) { rrect(tx, b.y + pad + (lh + 7 * b.depth) * (i + 1), Math.min(b.textW[i], b.w - (tx - b.x) - pad), lh, lh / 2); ctx.fill(); }
     }
 
@@ -100,7 +104,7 @@
 
     function frame(now) {
         raf = requestAnimationFrame(frame);
-        if (document.hidden || now - last < 33) return;
+        if (document.hidden || now - last < frameGap) return;
         var dt = Math.min(0.1, (now - (lastT || now)) / 1000);
         last = now; lastT = now;
         draw(dt);
