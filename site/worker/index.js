@@ -3,8 +3,8 @@
 // セキュリティ用のヘッダー（CSP など）は、静的アセットに付く _headers が唯一の情報源（fara-site-kit の csp/render-headers.mjs が書く。
 // Blazor WebAssembly の 'wasm-unsafe-eval' と、問い合わせの Turnstile を全ページで許可する。README の「CSP」）。ここでは CSP を付けない。
 // 共有の JS（報告の受け口・メンテナンス）は fara-site-kit（external/fara-site-kit）。
-//   - /api/maintenance: Worker の変数 MAINTENANCE / MAINTENANCE_MESSAGE の状態（{state, message}）。アプリが起動時に読んで、お知らせの帯を出す（Razor の MaintenanceBanner）
-//   - MAINTENANCE=true: /api/maintenance 以外は、すべて 503 のメンテナンス画面（検索エンジンには載せない）
+//   - /api/maintenance: Worker の変数 MAINTENANCE_MODE / MAINTENANCE_MESSAGE の状態（{state, message}）。アプリが起動時に読んで、お知らせの帯を出す（Razor の MaintenanceBanner）
+//   - MAINTENANCE_MODE=true: /api/maintenance 以外は、すべて 503 のメンテナンス画面（検索エンジンには載せない）
 //   - /api/report: 作者への報告（Turnstile → Discord）
 
 import { handleReport } from "../../external/fara-site-kit/worker/report.js";
@@ -35,7 +35,7 @@ export default {
       res.headers.set("X-Content-Type-Options", "nosniff");
       return res;
     }
-    // お知らせ（MAINTENANCE=notice）は、ここでは HTML に差し込まない（アプリの MaintenanceBanner が /api/maintenance を読んで出す。二重に出さない）
+    // お知らせ（MAINTENANCE_MODE=notice）は、ここでは HTML に差し込まない（アプリの MaintenanceBanner が /api/maintenance を読んで出す。二重に出さない）
     const res = await env.ASSETS.fetch(request);
     const out = new Response(res.body, res);
     out.headers.set("X-Content-Type-Options", "nosniff");

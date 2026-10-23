@@ -11,7 +11,7 @@ Cloudflare の Worker 名は本番 `fara-twitch-bot`、確認用 `fara-twitch-bo
 
 ## 作り
 
-- .NET 10 の Blazor WebAssembly + MudBlazor。ヘッダー・サイドバー・フッター・テーマ・問い合わせフォーム・404・お知らせは、共通部品 [fara-site-kit](https://github.com/fara1991/fara-site-kit)（`external/fara-site-kit`、v0.2.1）
+- .NET 10 の Blazor WebAssembly + MudBlazor。ヘッダー・サイドバー・フッター・テーマ・問い合わせフォーム・404・お知らせは、共通部品 [fara-site-kit](https://github.com/fara1991/fara-site-kit)（`external/fara-site-kit`、v0.3.0）
 - 公開物（`publish/wwwroot`）は、アプリ（WebAssembly）と、ページごとの**本文入りの静的 HTML**（検索エンジンと、JavaScript が使えない環境のため。ブラウザは起動すると、同じ内容の画面に置き換える）。Cloudflare Workers（Static Assets）でホスティング
 - 説明ページの本文は、リポジトリ直下の `Manual.md` を見出しで切り分けたものです。**文章を直すときは `Manual.md` を直します**（アプリに同梱する操作説明書と同じ内容になります）。ビルドが `data/site.json` に変換するので、ブラウザは Markdown を読みません
 - どの見出しをどのページにするか、ページの題名・グループ・説明は `Content/pages.json` に書きます。見出しの名前を変えたときは、`pages.json` の `heading` も合わせてください（見つからないとビルドが失敗します）
@@ -45,8 +45,9 @@ npx wrangler dev --env dev    # Cloudflare と同じ動き（Worker 経由）で
 
 `.github/workflows/site.yml` が、`master` / `develop` への push（`site/`・`Manual.md`・`external/fara-site-kit` などを変えたとき）で、ビルド・テストして Cloudflare にデプロイします。PR ではビルドとテストだけ行います。
 
-- 本番（master）の公開は、Worker の変数 `MAINTENANCE` が `notice` のときだけ行い、公開と同時に `true`（メンテナンス画面）にします。作業が終わったら、Cloudflare で `false` に戻します（お知らせも一緒に消える）
-- お知らせ（`MAINTENANCE=notice`）の帯は、アプリが `/api/maintenance` を読んで出します（以前の、Worker が HTML に差し込む方式はやめました）
+- 本番（master）の公開は、Worker の変数 `MAINTENANCE_MODE` が `notice` のときだけ行い、公開と同時に `true`（メンテナンス画面）にします。作業が終わったら、Cloudflare で `false` に戻します（お知らせも一緒に消える）
+- メンテナンス表示の切り替えは、Actions の「Run workflow」（確認用は `develop`、本番は `master` を選ぶ）で `maintenance_mode`（`true` / `notice` / `false`、空 = 変更しない）と `maintenance_message`（文面。空 = 変更しない）を入れて実行します。公開されるのは、選んだブランチの最新のコードです。mode を指定した本番の実行は、`notice` の確認を飛ばします。結果はジョブサマリーに出ます（手順は fara-site-kit の `docs/maintenance-cli.md`）
+- お知らせ（`MAINTENANCE_MODE=notice`）の帯は、アプリが `/api/maintenance` を読んで出します（以前の、Worker が HTML に差し込む方式はやめました）
 
 GitHub のリポジトリに、次の設定が必要です（ポケモンサイトなど、ほかのサイトと同じ値）。
 

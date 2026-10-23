@@ -18,7 +18,7 @@
 - `tools/build-site.mjs`: Build → `dotnet publish` → kit の `build-pages`。`tools/compare/`: 移行前後の比較（README あり）
 - 説明ページの本文は `Manual.md`（リポジトリ直下。アプリの操作説明書と同じ）。ページの題名・グループ・説明・親子・読みは `Content/pages.json`
 - Beat Saber のコマンドの説明は `/docs/beatsaber`（`Manual.md` の「5.5. Beat Saber コマンド」の節と、`pages.json` の `parent: commands` の子ページ）。ゲームのコマンドを増やすときも、先に `Manual.md` に節を書き、`parent: commands` の子ページを足す
-- `external/fara-site-kit`（submodule）は、使うタグに固定する（今は v0.2.1）。kit の develop の最新を追わない。上げるときは、kit のタグのコミットに上げる PR（develop 向け）を出し、確認用で確かめる
+- `external/fara-site-kit`（submodule）は、使うタグに固定する（今は v0.3.0）。kit の develop の最新を追わない。上げるときは、kit のタグのコミットに上げる PR（develop 向け）を出し、確認用で確かめる
 - `external/fara-pokemon-battle-assistant`（submodule）は、ポケモン側の変更のたびに `develop` の最新へ更新する（PR を出す）。kit とは別物
 
 ## CSP の方針（必ず守る）
