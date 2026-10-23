@@ -5,7 +5,7 @@
 // 3. build-pages（external/fara-site-kit）: ページごとの本文入りの静的 HTML・404.html・robots.txt・sitemap.xml・_headers を publish/wwwroot に書く
 // 書き出し前に publish と artifacts を消す（前回の古いファイルを残さない）。
 import { spawnSync } from "node:child_process";
-import { cpSync, existsSync, mkdirSync, rmSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, readdirSync, rmSync, statSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -52,4 +52,14 @@ run("node", [kitBuild,
     "--template", join(templateDir, "index.html"),
     "--out", join(publishDir, "wwwroot"),
     "--env", env]);
-console.log(`\n完了: ${join(publishDir, "wwwroot")}（${env}）`);
+// dotnet publish が作る事前圧縮のファイル（.br・.gz）は、公開物に含めない（Cloudflare が配信時に自分で圧縮する。含めると、アップロードが倍以上になる）
+function walk(dir) {
+    return readdirSync(dir, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(join(dir, e.name)) : [join(dir, e.name)]));
+}
+const wwwroot = join(publishDir, "wwwroot");
+const all = walk(wwwroot);
+const bytes = (files) => files.reduce((n, f) => n + statSync(f).size, 0);
+for (const f of all.filter((f) => /\.(br|gz)$/.test(f))) rmSync(f);
+const after = walk(wwwroot);
+console.log(`\n事前圧縮（.br・.gz）を除外: ${all.length} 件 ${(bytes(all) / 1048576).toFixed(1)} MB → ${after.length} 件 ${(bytes(after) / 1048576).toFixed(1)} MB`);
+console.log(`\n完了:${join(publishDir, "wwwroot")}（${env}）`);

@@ -78,19 +78,16 @@
 * { box-sizing: border-box; }
 
 /* 背景の飾り: 配信画面の照明のような、光のにじみ（右上に紫、左下に濃い紫）。固定して、スクロールしても動かさない。
-   html（画面全体の背景）に描く。body は透明にして、背景の吹き出し（#site-scene。z-index: -1）が、この上に見えるようにする */
-html {
+   body に描く（以前の静的サイトの見た目に合わせる）。背景の吹き出し（#site-scene。z-index: -1）は、この背景の後ろに回り、見えない
+   （以前も同じだった。吹き出しを見せたいときは、この背景を html に移し、body を透明にする。その場合は、本文の文字と重なって見える） */
+body {
+    margin: 0;
     background:
         radial-gradient(900px 520px at 85% -5%, var(--glow-1), transparent 65%),
         radial-gradient(800px 600px at -5% 105%, var(--glow-2), transparent 65%),
         radial-gradient(500px 360px at 50% 55%, var(--glow-3), transparent 70%),
         var(--surface);
     background-attachment: fixed;
-}
-
-body {
-    margin: 0;
-    background: transparent;
     color: var(--on-surface);
     font-family: var(--font);
     font-size: 16px;

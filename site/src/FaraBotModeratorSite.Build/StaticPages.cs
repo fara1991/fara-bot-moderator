@@ -52,7 +52,12 @@ public static class StaticPages
         "<h1>問い合わせ</h1>" +
         "<p class=\"fsk-muted\">不具合・要望・ご意見を、作者に直接送れます。いただいた内容は、作者に通知されます（公開はされません）。</p>" +
         "</section>" +
-        "<p class=\"fsk-page-column\">この送信フォームは、JavaScript を有効にすると使えます。</p>";
+        "<div class=\"fsk-page-column\">" +
+        "<p class=\"fsk-small fsk-muted\">アプリや説明の修正は、<a href=\"" + SiteInfo.RepositoryUrl + "\" target=\"_blank\" rel=\"noopener noreferrer\">GitHub</a> で提案していただくこともできます。</p>" +
+        "<p>項目: 種類（不具合・要望・提案・その他）／内容（5〜2000 文字）／連絡先（任意。返信が必要なときだけ、メールアドレス・Twitter の ID など）</p>" +
+        "<p class=\"fsk-small fsk-muted\">送信すると、<a href=\"/privacy\">プライバシーポリシー</a>に書いたとおり、内容が作者に通知されます。個人情報（パスワード・Twitch のトークンなど）は書かないでください。</p>" +
+        "<p>この送信フォームは、JavaScript を有効にすると使えます。</p>" +
+        "</div>";
 
     private static string ReportBody => Wrap(ReportBodyInner);
 
