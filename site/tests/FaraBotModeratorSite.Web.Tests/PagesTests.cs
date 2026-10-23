@@ -52,6 +52,17 @@ public class PagesTests
         Assert.Contains("href=\"/docs/commands\"", html);
         Assert.Contains("!bsr", html);
         Assert.Contains("!bombreset", html);
+        Assert.Contains("1.29.1", html);
+        Assert.Contains("1.40.8", html);
+        Assert.Contains("SiraUtil", html);
+        Assert.Contains("BeatSaberMarkupLanguage", html);
+        Assert.Contains("6 ランダム", Text(html));
+        Assert.Contains("7 ランダム", Text(html));
+        Assert.Contains("Play Mode", html);
+        Assert.Contains("いまは常に 5 個", Text(html));
+        Assert.Contains("005", Text(html));
+        Assert.Contains("小文字の !bomb", Text(html));
+        Assert.DoesNotContain("href=\"https://github.com/fara1991/FaraBombRush\"", html);
     }
 
     [Fact]
