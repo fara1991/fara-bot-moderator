@@ -7,11 +7,11 @@
     "bodyRootClass": "entry-static",
     "developRobots": "allow",
     "csp": {
-        "scriptSrc": ["https://challenges.cloudflare.com"],
+        "scriptSrc": ["https://static.cloudflareinsights.com", "https://challenges.cloudflare.com"],
         "styleSrc": [],
         "fontSrc": [],
         "imgSrc": [],
-        "connectSrc": ["https://challenges.cloudflare.com"],
+        "connectSrc": ["https://cloudflareinsights.com", "https://challenges.cloudflare.com"],
         "frameSrc": ["https://challenges.cloudflare.com"]
     }
 }

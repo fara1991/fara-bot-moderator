@@ -27,7 +27,7 @@ CSP は `build/site.json` の `csp` から kit の `csp/render-headers.mjs` が 
 
 1. インラインの script（`<script>…</script>`・`onclick` などのイベント属性）は使わない。script は同じオリジン（`'self'`）の外部ファイルだけ。テスト（`SiteTests`）が `.razor` と `index.html` を見る
 2. `script-src` に `'unsafe-inline'` と `'unsafe-eval'` は許可しない。`'wasm-unsafe-eval'`（Blazor WebAssembly）は kit が常に入れる。`style-src 'unsafe-inline'` は MudBlazor と読み込み表示のために kit が固定で入れる（以前の静的サイトは `style-src 'self'` だけだった。ゆるめた理由と範囲は README の「CSP」）
-3. 外部のホストは、使うものだけ `build/site.json` に書く。今は Cloudflare Turnstile（`challenges.cloudflare.com`）だけ。`/report` へは画面の移動（ドキュメントを取り直さない）で行くので、`/report` だけ別の CSP にはできず、全ページで許可している
+3. 外部のホストは、使うものだけ `build/site.json` に書く。今は Cloudflare Turnstile（`challenges.cloudflare.com`）と、Cloudflare Web Analytics のビーコン（script-src `static.cloudflareinsights.com`・connect-src `cloudflareinsights.com`。ゾーンの設定で自動に差し込まれる）だけ。`/report` へは画面の移動（ドキュメントを取り直さない）で行くので、`/report` だけ別の CSP にはできず、全ページで許可している
 4. 外部のスクリプト・スタイル・フォント（Google Fonts なし）・アイコンフォント・画像は使わない。アイコンは MudBlazor のインライン SVG（`Icons.Material.*`）か、インライン SVG
 5. 新しい UI ライブラリ・外部ライブラリは、同じ CSP の状態で試し、違反 0 件であることを採用の条件にする
 6. CSP を緩めた場合は、理由と範囲を README と `worker/index.js` のコメントに書く

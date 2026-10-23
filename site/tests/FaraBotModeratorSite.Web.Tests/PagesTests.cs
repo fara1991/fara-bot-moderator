@@ -86,7 +86,7 @@ public class PagesTests
     public async Task Privacy_page_covers_the_topics_and_does_not_claim_services_the_site_does_not_use()
     {
         var text = Text(await RenderAsync<Privacy>());
-        foreach (var topic in new[] { "運営者", "ブラウザに保存する情報", "アクセス解析・広告", "問い合わせで送る情報", "Turnstile", "Discord", "外部のサービス", "第三者への提供", "Windows アプリ" })
+        foreach (var topic in new[] { "運営者", "ブラウザに保存する情報", "アクセス解析・広告", "Web Analytics", "問い合わせで送る情報", "Turnstile", "Discord", "外部のサービス", "第三者への提供", "Windows アプリ" })
             Assert.Contains(topic, text);
         // このサイトは外部のフォント・CDN を使わない（CSP が同じオリジンだけ）ので、載せない
         Assert.DoesNotContain("Google Fonts", text);

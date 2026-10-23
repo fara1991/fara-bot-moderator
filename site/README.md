@@ -39,6 +39,7 @@ npx wrangler dev --env dev    # Cloudflare と同じ動き（Worker 経由）で
 - `script-src` に `'wasm-unsafe-eval'`（Blazor WebAssembly に必要）。`'unsafe-inline'`・`'unsafe-eval'` は許可しません
 - `style-src` に `'unsafe-inline'`（MudBlazor と、起動の前に当てる読み込み表示の CSS のため）
 - `challenges.cloudflare.com`（問い合わせの Turnstile）を、`/report` だけでなく全ページで許可（`/report` へは画面の移動で行き、ドキュメントを取り直さないため、ページごとの CSP にできない）
+- `static.cloudflareinsights.com`（script-src）と `cloudflareinsights.com`（connect-src）は、Cloudflare Web Analytics のビーコン用（ゾーンの設定で自動に差し込まれる）
 - 外部のフォント・スクリプト・画像は、引き続き使いません
 
 ## 公開

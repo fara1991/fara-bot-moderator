@@ -98,11 +98,11 @@ public class SiteTests
     }
 
     [Fact]
-    public void The_pipeline_config_declares_the_csp_hosts_for_turnstile_only()
+    public void The_pipeline_config_declares_the_csp_hosts_for_turnstile_and_web_analytics_only()
     {
         var json = File.ReadAllText(Path.Combine(SiteDir, "build", "site.json"));
         Assert.Contains("\"bodyRootClass\": \"entry-static\"", json);
         var hosts = Regex.Matches(json, "https://[a-z.-]+").Select(m => m.Value).Distinct().Order().ToArray();
-        Assert.Equal(new[] { "https://challenges.cloudflare.com", "https://twitch-bot-dev.fara-labs.com", "https://twitch-bot.fara-labs.com" }, hosts);
+        Assert.Equal(new[] { "https://challenges.cloudflare.com", "https://cloudflareinsights.com", "https://static.cloudflareinsights.com", "https://twitch-bot-dev.fara-labs.com", "https://twitch-bot.fara-labs.com" }, hosts);
     }
 }
