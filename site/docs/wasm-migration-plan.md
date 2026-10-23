@@ -40,7 +40,7 @@ develop に入るたびに確認用（twitch-bot-dev）へ公開されるので�
 1. **基盤**（この PR）: この計画書、kit の submodule（v0.2.1）、.NET 10 化、`Shared`（モデル・`SiteContent`・JSON）と `Content`（`ContentBuilder`）の切り出し、コンテンツのテストの移動。公開物は変わらない。
 2. **検索（C# 版）**: `SearchText`・`Romaji`・`SearchIndex`（Shared）と、そのテスト。移行前の search.js と同じ結果になることを、実データの 863 件の検索語で確かめた。
 3. **ビルドと Web プロジェクト**: `Build`（`data/site.json`・kit 用の `pages.json`・`site.json` の生成）、`Pages`（Razor クラスライブラリ）、`Web`（Blazor WebAssembly）、レイアウト・ページ・CSS・`index.html`、静的な本文の生成（`HtmlRenderer`）、npm スクリプト。ここまでは公開しない。
-4. **切り替え**: Worker（kit の共有 JS・`/api/maintenance`・CSP を `_headers` へ）、`wrangler.toml`、`site.yml`、旧い SSR・BeerCSS・nav.js 一式の削除、`site/CLAUDE.md`・README・CSP の方針の書き直し、現行との比較ツール。
+4. **切り替え**（公開が Blazor WebAssembly に変わる）: Worker（kit の共有 JS・`/api/maintenance`・CSP を `_headers` へ）、`wrangler.toml`、`site.yml`、旧い SSR・BeerCSS・nav.js 一式の削除、`site/CLAUDE.md`・README・CSP の方針の書き直し、現行との比較ツール。
 
 ## 4. 検証
 
@@ -50,10 +50,21 @@ develop に入るたびに確認用（twitch-bot-dev）へ公開されるので�
 - CSP 違反 0、コンソールエラー 0。`wrangler dev` で、CSP のヘッダーが 1 本だけで `wasm-unsafe-eval` を含むこと。
 - 最新コミットの CI（`check-runs`）が success。なお、base が develop でないスタックの PR では `ci.yml` は動かず、`site.yml` だけが動く。
 
-## 5. kit の不足（移行中に見つけたら追記）
+## 5. kit の不足（移行中に見つけたもの。kit は v0.2.1 のまま使い、このリポジトリでは直していない）
 
-- K1: 保存が無いときのテーマが、端末の設定に追従しない（常に light）。
-- K2: `ReportFormView` の見出しが `<h3>`（現行の問い合わせは `<h1>`）。末尾の注意書きが「アクセスキー」固定で、GitHub の案内を入れる場所が無い。
+- K1: 保存が無いときのテーマが、端末の設定に追従しない（常に light）。→ サイトの `site-init.js` で、端末がダークなら最初の 1 回だけ保存する（D7）
+- K2: `ReportFormView` の見出しが `<h3>`（現行の問い合わせは `<h1>`）。末尾の注意書きが「アクセスキー」固定（現行は「Twitch のトークン」）で、GitHub の案内を入れる場所が無い（フォームの下の段落に出した）。入力欄の例文・連絡先の説明はパラメーターで合わせた
+- K3: `SiteNavMenu` は平らな一覧だけで、子ページの入れ子（字下げ）が無い。→ サイト側で `MudNavLink` を直接並べた（pokemon と同じやり方）
+- K4: フッターの SNS アイコンが 22px の角丸の四角（現行は 32px の丸、スマホ 20px）。kit の統一の見た目として受け入れた
+- K5: 保存済みテーマの形式が JSON 固定。旧い文字だけの値を読めない（サイトで移行している）
+- K6: `fsk-content` が本文のスクロール枠のため、`#見出し` への移動（同じページ）で、Blazor の既定のスクロールが動かない。→ `search-keys.js` のクリック処理で補った
+
+## 5.1 現行の見た目との差
+
+- ヘッダー・サイドバー・フッター・お知らせの帯・スクロール量の線は kit の見た目（ヘッダーとサイドバーは、ライトでも濃い紫。サイドバーの選択中の項目は、面ではなく白い帯）。本文は同じ
+- 本文のスクロールは、ページ全体ではなく `.fsk-content` の中（フッターが常に見えるのは、そのため）
+- 404 のボタンの矢印はアイコン、問い合わせはフォームの部品（kit）
+- 現行の見た目の癖も、そのまま移した（「含まれるページ」の見出しが大きい・リンクカードの中央寄せ・ページ送りの間隔など。BeerCSS の既定の影響）。直す場合は別の PR
 
 ## 6. リスク
 

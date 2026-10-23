@@ -43,3 +43,22 @@ window.faraScrollIntoView = function (id) {
     var el = document.getElementById(id);
     if (el) el.scrollIntoView({ block: "nearest" });
 };
+
+// URL の #見出し の位置までスクロールする（下のクリックの処理が呼ぶ）
+window.faraScrollToHash = function () {
+    var id = decodeURIComponent((location.hash || "").slice(1));
+    var el = id ? document.getElementById(id) : null;
+    if (el) el.scrollIntoView({ block: "start" });
+};
+
+// 同じページの #見出し へのリンク（目次・本文の中のリンク）をクリックしたとき、その見出しまでスクロールする。
+// Blazor はこのリンクを自分で処理する（履歴に足すだけ）が、本文は .fsk-content の中だけがスクロールする作りで、既定のスクロールが動かないため
+document.addEventListener("click", function (e) {
+    var a = e.target && e.target.closest && e.target.closest("a[href]");
+    if (!a || e.defaultPrevented === undefined || e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+    var url;
+    try { url = new URL(a.href, location.href); } catch (err) { return; }
+    if (url.origin === location.origin && url.pathname === location.pathname && url.hash.length > 1) {
+        setTimeout(window.faraScrollToHash, 50);
+    }
+}, false);

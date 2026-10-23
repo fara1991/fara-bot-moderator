@@ -1,4 +1,0 @@
-# Cloudflare Workers にアップロードしないファイル（dist に対して効く）。
-.site-export
-.assetsignore
-css/vendor/README.md
