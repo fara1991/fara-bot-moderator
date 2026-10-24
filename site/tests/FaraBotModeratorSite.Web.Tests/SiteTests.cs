@@ -63,6 +63,33 @@ public class SiteTests
     }
 
     [Fact]
+    public async Task Every_page_has_an_og_image_that_exists_as_a_1200x630_png()
+    {
+        var json = await StaticPages.BuildPagesJsonAsync(new SiteContent(ContentBuilder.LoadFrom(SiteDir)));
+        foreach (var page in json["pages"]!.AsArray())
+            Assert.Equal(StaticPages.OgImagePath, (string?)page!["ogImage"]);
+        Assert.Matches(@"^/images/og-v\d+\.png$", StaticPages.OgImagePath);   // 差し替えるときは版を上げる
+        var png = File.ReadAllBytes(Path.Combine(WebDir, "wwwroot", StaticPages.OgImagePath.TrimStart('/')));
+        Assert.Equal(new byte[] { 0x89, 0x50, 0x4E, 0x47 }, png[..4]);
+        Assert.Equal(1200, (png[16] << 24) | (png[17] << 16) | (png[18] << 8) | png[19]);   // IHDR の幅
+        Assert.Equal(630, (png[20] << 24) | (png[21] << 16) | (png[22] << 8) | png[23]);    // IHDR の高さ
+    }
+
+    [Fact]
+    public void Favicons_are_linked_outside_the_seo_head_and_favicon_ico_sits_at_the_root()
+    {
+        var wwwroot = Path.Combine(WebDir, "wwwroot");
+        var html = File.ReadAllText(Path.Combine(wwwroot, "index.html"));
+        var outsideSeoHead = html[(html.IndexOf("SEO-HEAD:END", StringComparison.Ordinal))..];
+        foreach (var href in new[] { "favicon.svg", "favicon.ico", "favicon-32.png", "favicon-16.png", "apple-touch-icon.png" })
+        {
+            Assert.Contains($"href=\"{href}\"", outsideSeoHead);
+            Assert.True(File.Exists(Path.Combine(wwwroot, href)), href);   // favicon.ico が無いと、/favicon.ico は 404 ページになる
+        }
+        Assert.DoesNotContain("prefers-color-scheme", File.ReadAllText(Path.Combine(wwwroot, "favicon.svg")));   // Safari 非対応。PNG・ICO と見た目をそろえる
+    }
+
+    [Fact]
     public void Index_html_has_the_markers_build_pages_needs_and_no_external_hosts()
     {
         var html = File.ReadAllText(Path.Combine(WebDir, "wwwroot", "index.html"));
