@@ -14,6 +14,10 @@ namespace FaraBotModerator.Controllers;
 public static class SecretKeyController
 {
     private static readonly string SecretDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources");
+    /// <summary>
+    /// secrets.json の読み書きを 1 つずつにするロック（画面の保存とチャットの <c>format set</c> が同時に書いて、ファイルが壊れた状態を読まないため）
+    /// </summary>
+    private static readonly object FileLock = new();
     private static readonly string SecretFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "secrets.json");
 
     /// <summary>
@@ -22,11 +26,12 @@ public static class SecretKeyController
     /// <returns>読み込まれた設定情報モデル</returns>
     public static SecretKeyModel LoadKeys()
     {
-        if (!File.Exists(SecretFile)) CreateKeys();
-
         SecretKeyModel? secretKeys;
-        using (var file = File.OpenText(SecretFile))
+        lock (FileLock)
         {
+            if (!File.Exists(SecretFile)) CreateKeys();
+
+            using var file = File.OpenText(SecretFile);
             var jsonData = file.ReadToEnd();
             secretKeys = JsonSerializer.Deserialize<SecretKeyModel>(jsonData);
         }
@@ -44,6 +49,14 @@ public static class SecretKeyController
     /// <param name="secretKeys">保存する設定情報モデル</param>
     public static void SaveKeys(SecretKeyModel secretKeys)
     {
+        lock (FileLock)
+        {
+            WriteKeys(secretKeys);
+        }
+    }
+
+    private static void WriteKeys(SecretKeyModel secretKeys)
+    {
         using var writer = new StreamWriter(SecretFile, false, Encoding.UTF8);
         var options = new JsonSerializerOptions
         {
@@ -53,6 +66,34 @@ public static class SecretKeyController
         var jsonData = JsonSerializer.Serialize(secretKeys, options);
         // \003Cだけ変換できないので手動で変換
         writer.WriteLine(jsonData.Replace("\\u003C", "<"));
+    }
+
+    /// <summary>
+    /// ポケモンの登録形式（<c>pokemon.battleFormat</c>）だけを書き換えて保存します（null は未登録）。他の設定はファイルの内容のままです。
+    /// </summary>
+    /// <param name="battleFormat">"Singles" / "Doubles"。null で未登録に戻す</param>
+    public static void SavePokemonBattleFormat(string? battleFormat)
+    {
+        lock (FileLock)
+        {
+            var keys = LoadKeys();
+            SaveKeys(new SecretKeyModel
+            {
+                Twitch = keys.Twitch,
+                DeepL = keys.DeepL,
+                BouyomiChan = keys.BouyomiChan,
+                Event = keys.Event,
+                CycleMessage = keys.CycleMessage,
+                FixedMessage = keys.FixedMessage,
+                BeatSaber = keys.BeatSaber,
+                Pokemon = new PokemonModel
+                {
+                    BattleFormat = battleFormat,
+                    DataSource = keys.Pokemon.DataSource,
+                    SyncKey = keys.Pokemon.SyncKey
+                }
+            });
+        }
     }
 
     /// <summary>
@@ -137,7 +178,7 @@ public static class SecretKeyController
             },
             Pokemon = new PokemonModel
             {
-                BattleFormat = "Singles",
+                BattleFormat = null,
                 DataSource = "Production",
                 SyncKey = ""
             }

@@ -56,7 +56,7 @@ public class TwitchClientController
         _twitchTranslationController = new TwitchTranslationController(_secretKeys.DeepL.ApiKey);
         _uniqueChannelPointController = new UniqueChannelPointController(_secretKeys);
         _pokemonCommandController =
-            new PokemonCommandController(PokemonCommandController.ParseFormat(_secretKeys.Pokemon.BattleFormat),
+            new PokemonCommandController(PokemonCommandController.ParseRegisteredFormat(_secretKeys.Pokemon.BattleFormat),
                 PokemonCommandController.ParseDataSource(_secretKeys.Pokemon.DataSource), _secretKeys.Pokemon.SyncKey);
     }
 
@@ -449,13 +449,18 @@ public class TwitchClientController
     }
 
     /// <summary>
-    /// ポケモンのダメージ計算に使う対戦形式（"Singles" / "Doubles"）を切り替えます。
+    /// ポケモンの登録している対戦形式（"Singles" / "Doubles"。null は未登録でシングル扱い）を切り替えます。
     /// </summary>
-    /// <param name="format">対戦形式の文字列</param>
-    public void SetPokemonBattleFormat(string format)
+    /// <param name="format">対戦形式の文字列（未登録は null）</param>
+    public void SetPokemonBattleFormat(string? format)
     {
-        _pokemonCommandController.Format = PokemonCommandController.ParseFormat(format);
+        _pokemonCommandController.RegisteredFormat = PokemonCommandController.ParseRegisteredFormat(format);
     }
+
+    /// <summary>
+    /// ポケモンの登録している対戦形式（"Singles" / "Doubles"。未登録は null）を返します。
+    /// </summary>
+    public string? PokemonBattleFormat => _pokemonCommandController.RegisteredFormat?.ToString();
 
     /// <summary>
     /// ポケモンのデータの取得元（"Production" / "Develop"）を切り替えます。

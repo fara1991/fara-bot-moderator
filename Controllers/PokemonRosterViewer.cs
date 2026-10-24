@@ -60,7 +60,7 @@ public static class PokemonRosterViewer
 
             games.Add(new RosterGameView(key, info?.Name ?? key, info?.CommandPrefix ?? "",
                 roster.Pokemon.Select(p => ToRow(p, data)).ToList(),
-                roster.Teams.OrderBy(t => t.Number).Select(t => ToRow(t, roster, data)).ToList(),
+                roster.Teams.OrderBy(t => t.BattleFormat).ThenBy(t => t.Number).Select(t => ToRow(t, roster, data)).ToList(),
                 data is not null));
         }
 
@@ -89,8 +89,10 @@ public static class PokemonRosterViewer
             var item = slot.ItemId is { } itemId ? " @" + (data?.FindItem(itemId)?.Name ?? $"ID {itemId}") : "";
             return $"#{slot.EntryId} {name}{item}";
         });
+        // 番号はシングル・ダブルで別々なので、形式をつけて「シングル1」「ダブル1」と表す。使用中も形式ごとに 1 つ
         // 1 行に 1 匹ずつ並べる
-        return new RosterTeamRow($"チーム{team.Number}", roster.ActiveTeam == team.Number ? "使用中" : "",
+        return new RosterTeamRow($"{TeamFormats.Label(team.BattleFormat)}{team.Number}",
+            roster.ActiveNumber(team.BattleFormat) == team.Number ? "使用中" : "",
             string.Join(Environment.NewLine, members));
     }
 }
@@ -102,7 +104,7 @@ public static class PokemonRosterViewer
 /// <param name="Name">ゲーム名</param>
 /// <param name="CommandPrefix">チャットコマンドの接頭辞（例: pokech）</param>
 /// <param name="Pokemon">登録したポケモン</param>
-/// <param name="Teams">チーム</param>
+/// <param name="Teams">チーム（シングル → ダブルの順で、それぞれ番号順。番号は形式ごとなので「シングル1」「ダブル1」のように形式をつけて表す）</param>
 /// <param name="NamesResolved">特性・持ち物の名前を取得元のデータで引けたか（false なら ID で表示している）</param>
 public sealed record RosterGameView(string Key, string Name, string CommandPrefix,
     IReadOnlyList<RosterPokemonRow> Pokemon, IReadOnlyList<RosterTeamRow> Teams, bool NamesResolved)
@@ -124,6 +126,6 @@ public sealed record RosterGameView(string Key, string Name, string CommandPrefi
 public sealed record RosterPokemonRow(string Id, string Name, string Nature, string EVs, string Ability, string TeraType);
 
 /// <summary>
-/// チームの 1 行
+/// チームの 1 行（<paramref name="Number"/> は形式つきの番号。例: シングル1、ダブル2）
 /// </summary>
 public sealed record RosterTeamRow(string Number, string Active, string Members);
