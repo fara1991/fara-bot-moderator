@@ -83,7 +83,7 @@ public class SiteTests
         var outsideSeoHead = html[(html.IndexOf("SEO-HEAD:END", StringComparison.Ordinal))..];
         foreach (var href in new[] { "favicon.svg", "favicon.ico", "favicon-32.png", "favicon-16.png", "apple-touch-icon.png" })
         {
-            Assert.Contains($"href=\"{href}\"", outsideSeoHead);
+            Assert.Contains($"href=\"{href}?v=", outsideSeoHead);   // 差し替えるときは ?v= を上げる
             Assert.True(File.Exists(Path.Combine(wwwroot, href)), href);   // favicon.ico が無いと、/favicon.ico は 404 ページになる
         }
         Assert.DoesNotContain("prefers-color-scheme", File.ReadAllText(Path.Combine(wwwroot, "favicon.svg")));   // Safari 非対応。PNG・ICO と見た目をそろえる
