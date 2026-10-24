@@ -408,3 +408,15 @@ obj/
 Installer/WebView2RuntimeInstaller.exe
 
 # End of https://www.toptal.com/developers/gitignore/api/csharp,dotnetcore
+
+# 紹介サイトの書き出し先
+site/dist/
+
+# site/ (Blazor WebAssembly): ビルドが書き出す物
+site/src/FaraBotModeratorSite.Web/wwwroot/data/
+site/publish/
+site/artifacts/
+site/node_modules/
+
+# wrangler dev の一時ファイル
+.wrangler/

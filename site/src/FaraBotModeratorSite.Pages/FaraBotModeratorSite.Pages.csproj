@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <!--
+    ページの部品（ホーム・ドキュメント・更新履歴・プライバシー・問い合わせ）。
+    ブラウザ（Web）が表示するのと、ビルドツール（Build）が検索エンジン向けの静的 HTML の本文を作る（HtmlRenderer）のとで、同じ部品を使う。
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <RootNamespace>FaraBotModeratorSite.Pages</RootNamespace>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FaraBotModeratorSite.Shared\FaraBotModeratorSite.Shared.csproj" />
+    <ProjectReference Include="..\..\..\external\fara-site-kit\src\FaraSiteKit.Core\FaraSiteKit.Core.csproj" />
+    <ProjectReference Include="..\..\..\external\fara-site-kit\src\FaraSiteKit.Razor\FaraSiteKit.Razor.csproj" />
+  </ItemGroup>
+
+</Project>

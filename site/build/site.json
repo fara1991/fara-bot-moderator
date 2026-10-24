@@ -1,0 +1,17 @@
+{
+    "name": "FaraBotModerator",
+    "origin": "https://twitch-bot.fara-labs.com",
+    "devOrigin": "https://twitch-bot-dev.fara-labs.com",
+    "lang": "ja",
+    "locale": "ja_JP",
+    "bodyRootClass": "entry-static",
+    "developRobots": "allow",
+    "csp": {
+        "scriptSrc": ["https://static.cloudflareinsights.com", "https://challenges.cloudflare.com"],
+        "styleSrc": [],
+        "fontSrc": [],
+        "imgSrc": [],
+        "connectSrc": ["https://cloudflareinsights.com", "https://challenges.cloudflare.com"],
+        "frameSrc": ["https://challenges.cloudflare.com"]
+    }
+}

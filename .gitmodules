@@ -1,3 +1,7 @@
-[submodule "external/fara-pokemon-assistance"]
-	path = external/fara-pokemon-assistance
-	url = https://github.com/fara1991/fara-pokemon-assistance.git
+[submodule "external/fara-pokemon-battle-assistant"]
+	path = external/fara-pokemon-battle-assistant
+	url = https://github.com/fara1991/fara-pokemon-battle-assistant.git
+	branch = develop
+[submodule "external/fara-site-kit"]
+	path = external/fara-site-kit
+	url = https://github.com/fara1991/fara-site-kit.git

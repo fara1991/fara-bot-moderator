@@ -2,6 +2,10 @@
 
 Twitch配信者向けの多機能BOTツールです。WPF (C# / .NET 8) で構築されており、チャット管理、イベント通知、翻訳、棒読みちゃん連携などの機能を備えています。
 
+## 紹介サイト
+
+使い方や機能の紹介は、サイトでも読めます（本番: https://twitch-bot.fara-labs.com ）。サイトの中身は [Manual.md](Manual.md) をそのまま表示しているので、操作説明書を直すとサイトにも反映されます。作りと公開の手順は [site/README.md](site/README.md) を参照してください。
+
 ## 主な機能
 
 - **チャット連携**: Twitchチャットの取得、送信、表示。
@@ -11,7 +15,7 @@ Twitch配信者向けの多機能BOTツールです。WPF (C# / .NET 8) で構�
 - **API連携**: Twitch API (Helix) を使用したユーザー情報の取得や各種アクション。
 - **EventSub対応**: WebSocketを使用した低遅延なイベント受信。
 - **タイマー機能**: 定期的なメッセージ送信や指定日時での自動チャット。
-- **ポケモンコマンド**: チャットの `!pokech` / `!pokesv` / `!pokess` / `!poke` で育成済みポケモン・チームの登録、ダメージ計算（`dmg`）、努力値推定（`calc`）、素早さ比較（`diff`）。登録・削除・使用チーム変更は配信者本人とモデレーターのみ（`!poke cmd ls` で一覧）。
+- **ポケモンコマンド**: チャットの `!pokech` / `!pokesv` / `!pokess` / `!poke` で育成済みポケモン・チームの登録、ダメージ計算（`dmg`）、素早さ比較（`faster`）、対戦中の相手ポケモン（`-r`）と試合の履歴（`-h`）。登録・削除・使用チーム変更と、相手の努力値推定（`scan`、相手ポケモンを登録する）は配信者本人とモデレーターのみ（`!poke help` で一覧）。
 
 ## セットアップと使用方法
 
@@ -36,6 +40,8 @@ Twitch配信者向けの多機能BOTツールです。WPF (C# / .NET 8) で構�
 ### ビルド方法
 リポジトリをサブモジュールごとクローンし、PowerShellスクリプトを使用してビルドおよびパッケージングが可能です。
 
+ビルドには .NET 10 SDK が必要です（`global.json` で指定。アプリ本体の対象は `net8.0-windows` のままなので、実行には .NET 8 Runtime が必要です）。
+
 ```powershell
 git clone --recursive https://github.com/fara1991/fara-bot-moderator.git
 # クローン済みの場合
@@ -51,7 +57,7 @@ git submodule update --init
 - `FaraBotModerator`: アプリ本体 (WPF)
 - `Installer`: Inno Setup用スクリプトおよび関連ファイル
 - `Resources`: アイコンや画像リソース
-- `external/fara-pokemon-assistance`: `!poke` 系コマンドの計算ライブラリ（git submodule。`FaraPokemonAssistance.Core` を参照）
+- `external/fara-pokemon-battle-assistant`: `!poke` 系コマンドの計算ライブラリ（git submodule。`FaraPokemonBattleAssistant.Core` を参照）
 
 ## ライセンス
 本プロジェクトは開発中のプロトタイプです。
