@@ -63,8 +63,8 @@ public static class StaticPages
 
     private static string Wrap(string html) => $"<main class=\"{BodyRootClass}\">{html}</main>";
 
-    /// <summary>全ページ共通の OGP 画像（1200x630。ダーク版を既定にする）。ファイルを差し替えるときは、名前の版（-v1）を上げる（SNS が古い画像を覚えているため）。build-pages が origin をつけて og:image と twitter:card=summary_large_image にする。</summary>
-    public const string OgImagePath = "/images/og-v1.png";
+    /// <summary>全ページ共通の OGP 画像（1200x630。ダーク版を既定にする）。ファイルを差し替えるときは、?v= の数字を上げる（SNS が古い画像を覚えているため）。build-pages が origin をつけて og:image と twitter:card=summary_large_image にする。</summary>
+    public const string OgImagePath = "/og.png?v=1";
 
     private static JsonObject Page(string path, string title, string description, string bodyHtml, bool noindex = false)
     {
