@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using FaraPokemonBattleAssistant.Core.Data;
@@ -212,7 +213,16 @@ public class PokemonCommandController
     {
         cancellationToken.ThrowIfCancellationRequested();
         var text = format?.ToString();
-        SecretKeyController.SavePokemonBattleFormat(text);
+        try
+        {
+            SecretKeyController.SavePokemonBattleFormat(text);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException)
+        {
+            // 保存できなければ、登録形式は変えない（PokeCommand が「失敗しました: …」としてチャットに返す）
+            LogController.OutputLog($"<Error> Pokemon format save: {ex.Message}");
+            throw new IOException("保存できませんでした。もう一度お試しください", ex);
+        }
         RegisteredFormat = format;
         RegisteredFormatChanged?.Invoke(text);
         return Task.CompletedTask;

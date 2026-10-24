@@ -984,6 +984,9 @@ public partial class MainWindow : INotifyPropertyChanged
     private void MainWindow_Closed(object sender, EventArgs e)
     {
         PokemonCommandController.RegisteredFormatChanged -= OnPokemonRegisteredFormatChanged;
+        // チャットの format set が画面に反映される前に閉じても、古いコンボの値で上書きしないよう、最新の登録形式を画面に戻してから保存する
+        if (_twitchClientController is not null)
+            PokemonBattleFormatComboBox.SelectedIndex = PokemonBattleFormatIndex(_twitchClientController.PokemonBattleFormat);
         SaveSecretValue();
         _chatWindow?.Close();
         _raidListWindow?.Close();

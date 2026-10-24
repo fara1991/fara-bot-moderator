@@ -458,6 +458,11 @@ public class TwitchClientController
     }
 
     /// <summary>
+    /// ポケモンの登録している対戦形式（"Singles" / "Doubles"。未登録は null）を返します。
+    /// </summary>
+    public string? PokemonBattleFormat => _pokemonCommandController.RegisteredFormat?.ToString();
+
+    /// <summary>
     /// ポケモンのデータの取得元（"Production" / "Develop"）を切り替えます。
     /// </summary>
     /// <param name="dataSource">取得元の文字列</param>
