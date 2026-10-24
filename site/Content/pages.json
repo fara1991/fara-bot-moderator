@@ -101,7 +101,7 @@
     "title": "自分チーム",
     "reading": "じぶんちーむ",
     "parent": "pokemon",
-    "description": "チームの作成・使用チームの切り替え・一覧（add / use / unuse / ls / detail / rm -t）。",
+    "description": "チームの作成・使用チームの切り替え・一覧（add / use / unuse / ls / detail / rm -t）。番号はシングルとダブルで別々（-f）、登録する形式（format）、別の形式へ移す（set -t）。",
     "sections": [
       { "heading": "自分チーム（配信者・モデレーターのみ）" }
     ]
@@ -141,7 +141,7 @@
     "title": "注意事項",
     "reading": "ちゅういじこう",
     "parent": "pokemon",
-    "description": "権限（配信者・モデレーター）、連続実行の制限、対戦形式、データの取得元など。",
+    "description": "権限（配信者・モデレーター）、連続実行の制限、対戦形式（登録する形式）、データの取得元など。",
     "sections": [
       { "heading": "注意" }
     ]

@@ -97,6 +97,7 @@ public partial class MainWindow : INotifyPropertyChanged
     {
         InitializeComponent();
         InitializeEncodeRegister();
+        PokemonCommandController.RegisteredFormatChanged += OnPokemonRegisteredFormatChanged;
 
         DataContext = this;
         
@@ -192,8 +193,7 @@ public partial class MainWindow : INotifyPropertyChanged
         BouyomiChanConnectCheckBox.IsChecked = secretKeys.BouyomiChan.Checked;
 
         // Pokemon
-        PokemonBattleFormatComboBox.SelectedIndex =
-            PokemonCommandController.ParseFormat(secretKeys.Pokemon.BattleFormat) == BattleFormat.Doubles ? 1 : 0;
+        PokemonBattleFormatComboBox.SelectedIndex = PokemonBattleFormatIndex(secretKeys.Pokemon.BattleFormat);
         PokemonDataSourceComboBox.SelectedIndex =
             PokemonCommandController.ParseDataSource(secretKeys.Pokemon.DataSource) == PokemonDataSource.Develop ? 1 : 0;
         _pokemonSyncKey = RemoteRosterStore.IsValidKey(secretKeys.Pokemon.SyncKey) ? secretKeys.Pokemon.SyncKey : "";
@@ -983,6 +983,7 @@ public partial class MainWindow : INotifyPropertyChanged
     /// <param name="e"></param>
     private void MainWindow_Closed(object sender, EventArgs e)
     {
+        PokemonCommandController.RegisteredFormatChanged -= OnPokemonRegisteredFormatChanged;
         SaveSecretValue();
         _chatWindow?.Close();
         _raidListWindow?.Close();
@@ -1023,11 +1024,33 @@ public partial class MainWindow : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// ポケモンの対戦形式コンボボックスで選択中の値（Tag の "Singles" / "Doubles"）を返します。
+    /// ポケモンの対戦形式コンボボックスで選択中の値（Tag の "Singles" / "Doubles"）を返します。「未登録」は null です。
     /// </summary>
-    private string SelectedPokemonBattleFormat()
+    private string? SelectedPokemonBattleFormat()
     {
-        return (PokemonBattleFormatComboBox.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "Singles";
+        var tag = (PokemonBattleFormatComboBox.SelectedItem as ComboBoxItem)?.Tag?.ToString();
+        return PokemonCommandController.ParseRegisteredFormat(tag)?.ToString();
+    }
+
+    /// <summary>
+    /// 登録している対戦形式（secrets.json の値）に対応するコンボボックスの項目番号を返します（0: 未登録、1: シングル、2: ダブル）。
+    /// </summary>
+    private static int PokemonBattleFormatIndex(string? battleFormat)
+    {
+        return PokemonCommandController.ParseRegisteredFormat(battleFormat) switch
+        {
+            BattleFormat.Singles => 1,
+            BattleFormat.Doubles => 2,
+            _ => 0
+        };
+    }
+
+    /// <summary>
+    /// チャットの format set / format clear で登録形式が変わったとき、画面の「対戦形式」を同じ値にします。
+    /// </summary>
+    private void OnPokemonRegisteredFormatChanged(string? battleFormat)
+    {
+        Dispatcher.InvokeAsync(() => PokemonBattleFormatComboBox.SelectedIndex = PokemonBattleFormatIndex(battleFormat));
     }
 
     /// <summary>
@@ -1337,7 +1360,8 @@ public partial class MainWindow : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// 登録データの 1 行の要約を返します（例: ポケモンチャンピオンズ: 登録 15 体・チーム 2（使用中: チーム1））。
+    /// 登録データの 1 行の要約を返します（例: ポケモンチャンピオンズ: 登録 15 体・チーム 3（使用中: シングル1・ダブル2））。
+    /// チームの番号はシングル・ダブルで別々で、使用中も形式ごとに 1 つです。
     /// 登録のあるゲームが 3 つ以上なら、最初のゲームと「ほか N ゲーム」にします。
     /// </summary>
     private static string PokemonRosterSummary(IReadOnlyList<RosterGameView>? games)
@@ -1347,9 +1371,9 @@ public partial class MainWindow : INotifyPropertyChanged
 
         static string Summary(RosterGameView game)
         {
-            var active = game.Teams.FirstOrDefault(t => t.Active.Length > 0)?.Number;
+            var active = string.Join("・", game.Teams.Where(t => t.Active.Length > 0).Select(t => t.Number));
             return $"{game.Name}: 登録 {game.Pokemon.Count} 体・チーム {game.Teams.Count}" +
-                   (active is null ? "" : $"（使用中: {active}）");
+                   (active.Length == 0 ? "" : $"（使用中: {active}）");
         }
 
         return games.Count <= 2
@@ -1401,7 +1425,7 @@ public partial class MainWindow : INotifyPropertyChanged
 
         if (IsPokemonGameSelected())
         {
-            // Singles / Production に戻す（接続中なら SelectionChanged で即座に反映される）
+            // 未登録（シングル扱い）/ Production に戻す（接続中なら SelectionChanged で即座に反映される）
             PokemonBattleFormatComboBox.SelectedIndex = 0;
             PokemonDataSourceComboBox.SelectedIndex = 0;
             return;

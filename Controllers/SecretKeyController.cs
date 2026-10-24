@@ -56,6 +56,36 @@ public static class SecretKeyController
     }
 
     /// <summary>
+    /// ポケモンの登録形式（<c>pokemon.battleFormat</c>）だけを書き換えて保存します（null は未登録）。他の設定はファイルの内容のままです。
+    /// </summary>
+    /// <param name="battleFormat">"Singles" / "Doubles"。null で未登録に戻す</param>
+    public static void SavePokemonBattleFormat(string? battleFormat)
+    {
+        lock (PokemonSaveLock)
+        {
+            var keys = LoadKeys();
+            SaveKeys(new SecretKeyModel
+            {
+                Twitch = keys.Twitch,
+                DeepL = keys.DeepL,
+                BouyomiChan = keys.BouyomiChan,
+                Event = keys.Event,
+                CycleMessage = keys.CycleMessage,
+                FixedMessage = keys.FixedMessage,
+                BeatSaber = keys.BeatSaber,
+                Pokemon = new PokemonModel
+                {
+                    BattleFormat = battleFormat,
+                    DataSource = keys.Pokemon.DataSource,
+                    SyncKey = keys.Pokemon.SyncKey
+                }
+            });
+        }
+    }
+
+    private static readonly object PokemonSaveLock = new();
+
+    /// <summary>
     /// 初期設定ファイルを作成します。
     /// </summary>
     private static void CreateKeys()
@@ -137,7 +167,7 @@ public static class SecretKeyController
             },
             Pokemon = new PokemonModel
             {
-                BattleFormat = "Singles",
+                BattleFormat = null,
                 DataSource = "Production",
                 SyncKey = ""
             }

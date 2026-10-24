@@ -633,15 +633,16 @@
                                                                 ToolTipService.HorizontalOffset="-10"
                                                                 Click="HelpButton_Click">
                                                             <Button.ToolTip>
-                                                                <ToolTip Content="!poke 系コマンドのダメージ計算に使う対戦形式。ダブルでは全体技の威力が 0.75 倍になります（接続中でも切り替え可能）" />
+                                                                <ToolTip Content="!poke 系コマンドで、形式を書かなかったときに使う対戦形式（チャットの format set / format clear と同じ設定）。「未登録」はシングルとして動きます。ダブルでは全体技の威力が 0.75 倍になり、チームの追加・使用・計算もダブルのチームが対象になります（接続中でも切り替え可能）" />
                                                             </Button.ToolTip>
                                                             <materialDesign:PackIcon Kind="HelpCircleOutline" Width="16" Height="16"
                                                                                      Foreground="Gray" />
                                                         </Button>
-                                                        <ComboBox x:Name="PokemonBattleFormatComboBox" Width="120" Height="30"
+                                                        <ComboBox x:Name="PokemonBattleFormatComboBox" Width="150" Height="30"
                                                                   Margin="10,0,0,0" VerticalAlignment="Center" Foreground="Black"
                                                                   SelectionChanged="PokemonBattleFormatComboBox_SelectionChanged">
-                                                            <ComboBoxItem Content="シングル" Tag="Singles" IsSelected="True" />
+                                                            <ComboBoxItem Content="未登録（シングル）" Tag="None" IsSelected="True" />
+                                                            <ComboBoxItem Content="シングル" Tag="Singles" />
                                                             <ComboBoxItem Content="ダブル" Tag="Doubles" />
                                                         </ComboBox>
                                                     </StackPanel>

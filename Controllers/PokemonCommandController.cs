@@ -78,21 +78,29 @@ public class PokemonCommandController
     private readonly SemaphoreSlim _executeLock = new(1, 1);
 
     /// <summary>
-    /// ダメージ計算に使う対戦形式。接続中でも切り替えられます。
+    /// 登録している対戦形式（null は未登録で、シングルとして動きます）。接続中でも切り替えられます。
+    /// Auto Bot Settings の「対戦形式」と、チャットの <c>format set</c> / <c>format clear</c> は、同じ値（<c>secrets.json</c> の <c>pokemon.battleFormat</c>）です。
+    /// 形式を書かなかったコマンド（add -t / use -t / ls -t / dmg など）はこの形式で動きます。
     /// </summary>
-    public BattleFormat Format { get; set; }
+    public BattleFormat? RegisteredFormat { get; set; }
+
+    /// <summary>
+    /// チャットの <c>format set</c> / <c>format clear</c> で登録形式が変わり、<c>secrets.json</c> に保存したときに起きます
+    /// （画面の「対戦形式」を同じ値にそろえるため。引数は "Singles" / "Doubles"、未登録なら null）。呼ばれるスレッドは UI スレッドとは限りません。
+    /// </summary>
+    public static event Action<string?>? RegisteredFormatChanged;
 
     /// <summary>
     /// PokemonCommandController のコンストラクタ
     /// データは Cloudflare に公開した CSV（本番か開発用のどちらか）を使い、ローカルに 1 日キャッシュします（起動中も 1 日ごとに読み直します）。
     /// 登録したポケモン・チームはアクセスキーで取得元のサイトのクラウドに読み書きします（この PC には保存しません）。
     /// </summary>
-    /// <param name="format">ダメージ計算に使う対戦形式</param>
+    /// <param name="registeredFormat">登録している対戦形式（null は未登録でシングル扱い）</param>
     /// <param name="dataSource">データの取得元（登録データのクラウドも同じサイト）</param>
     /// <param name="syncKey">登録データのアクセスキー（空なら登録系のコマンドは使えません）</param>
-    public PokemonCommandController(BattleFormat format, PokemonDataSource dataSource, string syncKey)
+    public PokemonCommandController(BattleFormat? registeredFormat, PokemonDataSource dataSource, string syncKey)
     {
-        Format = format;
+        RegisteredFormat = registeredFormat;
         _dataSource = dataSource;
         _syncKey = syncKey;
         _command = CreateCommand(dataSource, syncKey);
@@ -185,13 +193,29 @@ public class PokemonCommandController
     }
 
     /// <summary>
-    /// 設定ファイルの文字列を対戦形式に変換します。不正な値はシングルとして扱います。
+    /// 設定ファイルの文字列を登録している対戦形式に変換します。未設定・不正な値は未登録（null）として扱います。
     /// </summary>
     /// <param name="value">"Singles" または "Doubles"</param>
-    /// <returns>対戦形式</returns>
-    public static BattleFormat ParseFormat(string? value)
+    /// <returns>登録している対戦形式（未登録は null）</returns>
+    public static BattleFormat? ParseRegisteredFormat(string? value)
     {
-        return Enum.TryParse<BattleFormat>(value, true, out var format) ? format : BattleFormat.Singles;
+        return Enum.TryParse<BattleFormat>(value, true, out var format) && Enum.IsDefined(format) ? format : null;
+    }
+
+    /// <summary>
+    /// チャットの <c>format set</c> / <c>format clear</c> の登録を保存します。<c>secrets.json</c> に書き、次のコマンドから新しい値を使い、
+    /// 画面の「対戦形式」にも知らせます。
+    /// </summary>
+    /// <param name="format">登録する形式（null で登録を解除）</param>
+    /// <param name="cancellationToken">キャンセルトークン</param>
+    private Task SaveRegisteredFormatAsync(BattleFormat? format, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var text = format?.ToString();
+        SecretKeyController.SavePokemonBattleFormat(text);
+        RegisteredFormat = format;
+        RegisteredFormatChanged?.Invoke(text);
+        return Task.CompletedTask;
     }
 
     /// <summary>
@@ -233,9 +257,12 @@ public class PokemonCommandController
                 _lastExecutedAt[userName] = now;
             }
 
+            var registered = RegisteredFormat;
             var result = await command.TryExecuteAsync(message, new PokeCommandOptions
             {
-                Format = Format,
+                Format = registered ?? BattleFormat.Singles,
+                FormatIsRegistered = registered is not null,
+                SaveFormatAsync = SaveRegisteredFormatAsync,
                 AllowMutations = canEdit,
                 MaxLength = maxLength
             });

@@ -63,10 +63,11 @@ public class SecretKeyModel
 public class PokemonModel
 {
     /// <summary>
-    /// ダメージ計算に使う対戦形式（"Singles" または "Doubles"）
+    /// 登録している対戦形式（"Singles" または "Doubles"）。null は未登録（シングルとして動く）。
+    /// Auto Bot Settings の「対戦形式」と、チャットの <c>format set</c> / <c>format clear</c> は、この同じ値を読み書きします。
     /// </summary>
     [JsonPropertyName("battleFormat")]
-    public string BattleFormat { get; init; } = "Singles";
+    public string? BattleFormat { get; init; }
 
     /// <summary>
     /// ポケモンのデータの取得元（"Production" または "Develop"）
