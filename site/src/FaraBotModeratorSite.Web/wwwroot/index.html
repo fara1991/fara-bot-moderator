@@ -9,7 +9,12 @@
     <title>FaraBotModerator</title>
     <!-- SEO-HEAD:END -->
     <base href="/" />
-    <link rel="icon" type="image/svg+xml" href="images/site-icon.svg" />
+    <!-- ファビコン。favicon.ico は wwwroot の直下に必ず置く（ブラウザが /favicon.ico を直接探す。無いと 404 ページが返る）。SVG は色の切り替えを持たない（Safari 非対応のため、PNG・ICO と見た目をそろえる） -->
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <link rel="icon" type="image/x-icon" sizes="16x16 32x32 48x48" href="favicon.ico" />
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
     <!-- 起動までの読み込み表示（画面全体を覆う不透明なオーバーレイ）。最初に当てる（CSS の読み込み前にも本文が見えないように、インラインで書く）。
          背景色は theme-init.js（kit）が決める data-bs-theme に従う -->
     <style>
