@@ -146,23 +146,27 @@ const stepOf = (yml, name) => {
   return yml.slice(start, ends.length ? Math.min(...ends) : undefined);
 };
 
-test("ワークフローは Pokémon と同じ形（build.yml / deploy-develop.yml / deploy.yml）。アプリの ci.yml・release.yml は別。成果物は使わない", () => {
+test("ワークフローは Pokémon と同じ形（build.yml / deploy-develop.yml / deploy.yml）。アプリのリリースは release-app.yml。成果物は使わない", () => {
   const files = readdirSync(new URL("../../.github/workflows/", import.meta.url)).sort();
-  assert.deepEqual(files, ["build.yml", "ci.yml", "deploy-develop.yml", "deploy.yml", "release.yml"]);
+  assert.deepEqual(files, ["build.yml", "deploy-develop.yml", "deploy.yml", "release-app.yml"]);
   for (const yml of [readBuild(), readDev(), readProd()]) {
     assert.ok(!yml.includes("upload-artifact") && !yml.includes("download-artifact"), "成果物は保存も取り出しもしない");
     assert.match(yml, /permissions:\n {2}contents: read/);
     assert.match(yml, /submodules: true/, "kit の submodule を取得する");
-    assert.match(yml, /external\/fara-site-kit/, "kit を上げたときも動く（paths）");
   }
+  for (const yml of [readDev(), readProd()]) assert.match(yml, /external\/fara-site-kit/, "kit を上げたときも公開する（paths）");
 });
 
-test("動くとき: build は push と PR、確認用は develop、本番は master（どれも site/ などを変えたとき）。公開のジョブはブランチで絞る", () => {
+test("動くとき: build はすべての push と PR（アプリも変わるので絞らない）、確認用は develop、本番は master（公開は site/ などを変えたとき）。公開のジョブはブランチで絞る", () => {
   const build = readBuild(), dev = readDev(), prod = readProd();
-  assert.match(build, /on:\n {2}push:\n {4}branches-ignore: \[gh-pages\]\n {4}paths:\n(?: {6}- .*\n)+ {2}pull_request:\n {4}paths:\n(?: {6}- .*\n)+ {2}workflow_dispatch:\n/);
+  assert.match(build, /on:\n {2}push:\n {4}branches-ignore: \[gh-pages\]\n {2}pull_request:\n {2}workflow_dispatch:\n/);
+  // build にはアプリ（Windows）とサイトの 2 つのジョブ
+  assert.match(build, /\n {2}app:\n {4}name: Build app\n {4}runs-on: windows-latest\n/);
+  assert.match(build, /dotnet build FaraBotModerator\.csproj -c Release --no-restore/);
+  assert.match(build, /\n {2}site:\n {4}name: Build site\n {4}runs-on: ubuntu-latest\n/);
   assert.match(dev, /on:\n {2}push:\n {4}branches: \[develop\]\n {4}paths:\n/);
   assert.match(prod, /on:\n {2}push:\n {4}branches: \[master\]\n {4}paths:\n/);
-  for (const [name, yml] of [["build.yml", build], ["deploy-develop.yml", dev], ["deploy.yml", prod]]) assert.ok(yml.includes(`- ".github/workflows/${name}"`), `${name} 自身を paths に入れる`);
+  for (const [name, yml] of [["deploy-develop.yml", dev], ["deploy.yml", prod]]) assert.ok(yml.includes(`- ".github/workflows/${name}"`), `${name} 自身を paths に入れる`);
   assert.ok(!dev.includes("pull_request") && !prod.includes("pull_request"));
   assert.ok(dev.includes("\n    if: github.ref == 'refs/heads/develop'\n"));
   assert.ok(prod.includes("\n    if: github.ref == 'refs/heads/master'\n"));

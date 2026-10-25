@@ -1,40 +1,44 @@
-name: Build and test (site)
+name: Build and test
 
-# FaraBotModerator の紹介サイト（site/）のビルドとテスト。site/ などを変えた push と Pull Request で動く。公開はしない（Cloudflare のシークレットも使わない）。
+# FaraBotModerator のビルドとテスト。すべての push と Pull Request で動く。公開はしない（Cloudflare のシークレットも使わない）。
+#   app  … アプリ本体（WPF。Windows でビルド）
+#   site … 紹介サイト（site/）
 # 公開は、deploy-develop.yml（develop → 確認用）と deploy.yml（master → 本番）がそれぞれ自分でビルドして行う。成果物（artifact）は保存しない。
-# fara-pokemon-battle-assistant と同じ形（build.yml / deploy-develop.yml / deploy.yml）。アプリ本体の CI は ci.yml、リリースは release.yml。
+# fara-pokemon-battle-assistant と同じ形（build.yml / deploy-develop.yml / deploy.yml）。アプリのインストーラーのリリースは release-app.yml（タグ v* か手動実行）。
 
 on:
   push:
     branches-ignore: [gh-pages]
-    paths:
-      - "site/**"
-      - "Manual.md"
-      - "global.json"
-      - ".github/workflows/build.yml"
-      - ".github/scripts/**"
-      - ".gitmodules"
-      - "external/fara-site-kit"
   pull_request:
-    paths:
-      - "site/**"
-      - "Manual.md"
-      - "global.json"
-      - ".github/workflows/build.yml"
-      - ".github/scripts/**"
-      - ".gitmodules"
-      - "external/fara-site-kit"
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: site-build-${{ github.ref }}
+  group: build-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  build:
+  app:
+    name: Build app
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Restore
+        run: dotnet restore FaraBotModerator.csproj
+
+      - name: Build
+        run: dotnet build FaraBotModerator.csproj -c Release --no-restore
+
+  site:
     name: Build site
     runs-on: ubuntu-latest
     steps:

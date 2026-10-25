@@ -44,9 +44,9 @@ npx wrangler dev --env dev    # Cloudflare と同じ動き（Worker 経由）で
 
 ## 公開
 
-ワークフローは 3 つです（fara-pokemon-battle-assistant などと同じ形。どれも `site/`・`Manual.md`・`external/fara-site-kit` などを変えたときだけ動きます）。公開の 2 つは自分でビルドして公開し、成果物（artifact）は使いません。アプリ本体の `ci.yml`・`release.yml` は別です。
+ワークフローは fara-pokemon-battle-assistant などと同じ 3 つです。公開の 2 つは `site/`・`Manual.md`・`external/fara-site-kit` などを変えたときだけ動き、自分でビルドして公開します（成果物（artifact）は使いません）。ほかに、アプリのインストーラーのリリース用の `release-app.yml`（タグ `v*` か手動実行）があります。
 
-- `.github/workflows/build.yml`（Build and test (site)）: push と PR で、ビルドとテスト。本番用・確認用の両方を書き出して確かめる。公開しない
+- `.github/workflows/build.yml`（Build and test (site)）: すべての push と PR で、アプリ本体（Windows）と紹介サイトのビルドとテスト。サイトは本番用・確認用の両方を書き出して確かめる。公開しない
 - `.github/workflows/deploy-develop.yml`（Deploy (develop)）: `develop` への push で、確認用に公開
 - `.github/workflows/deploy.yml`（Deploy (production)）: `master` への push で、本番に公開
 
