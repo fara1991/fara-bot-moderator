@@ -1,0 +1,80 @@
+name: Build and test (site)
+
+# FaraBotModerator の紹介サイト（site/）のビルドとテスト。site/ などを変えた push と Pull Request で動く。公開はしない（Cloudflare のシークレットも使わない）。
+# 公開は、deploy-develop.yml（develop → 確認用）と deploy.yml（master → 本番）がそれぞれ自分でビルドして行う。成果物（artifact）は保存しない。
+# fara-pokemon-battle-assistant と同じ形（build.yml / deploy-develop.yml / deploy.yml）。アプリ本体の CI は ci.yml、リリースは release.yml。
+
+on:
+  push:
+    branches-ignore: [gh-pages]
+    paths:
+      - "site/**"
+      - "Manual.md"
+      - "global.json"
+      - ".github/workflows/build.yml"
+      - ".github/scripts/**"
+      - ".gitmodules"
+      - "external/fara-site-kit"
+  pull_request:
+    paths:
+      - "site/**"
+      - "Manual.md"
+      - "global.json"
+      - ".github/workflows/build.yml"
+      - ".github/scripts/**"
+      - ".gitmodules"
+      - "external/fara-site-kit"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: site-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build site
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Build
+        working-directory: site
+        run: dotnet build FaraBotModeratorSite.sln -c Release --nologo
+
+      - name: Test
+        working-directory: site
+        run: |
+          dotnet test tests/FaraBotModeratorSite.Content.Tests -c Release --no-build --nologo
+          dotnet test tests/FaraBotModeratorSite.Shared.Tests -c Release --no-build --nologo
+          dotnet test tests/FaraBotModeratorSite.Web.Tests -c Release --no-build --nologo
+
+      - name: Node tests (worker and page scripts)
+        working-directory: site
+        run: |
+          node --test worker/index.test.mjs tests/js/site-init.test.mjs
+          node --test ../external/fara-site-kit/worker/report.test.mjs ../external/fara-site-kit/worker/maintenance.test.mjs
+
+      - name: Deploy gate test
+        run: node --test .github/scripts/require-maintenance.test.mjs
+
+      # 公開物を、本番用と確認用の両方で作れること（公開のワークフローは、どちらか一方だけを作る）
+      - name: Build site (production)
+        working-directory: site
+        run: node tools/build-site.mjs --env production
+
+      - name: Build site (develop)
+        working-directory: site
+        run: node tools/build-site.mjs --env develop

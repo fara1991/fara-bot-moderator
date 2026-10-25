@@ -1,4 +1,4 @@
-# Cloudflare Workers の設定。publish/wwwroot/ は `npm run build:site`（tools/build-site.mjs）で作る（Blazor WebAssembly + 本文入りの静的 HTML。.github/workflows/site.yml 参照）。
+# Cloudflare Workers の設定。publish/wwwroot/ は `npm run build:site`（tools/build-site.mjs）で作る（Blazor WebAssembly + 本文入りの静的 HTML。.github/workflows/build.yml・deploy-develop.yml・deploy.yml 参照）。
 #
 #   本番:     master  ブランチ → twitch-bot.fara-labs.com      (npx wrangler deploy --env production)
 #   develop:  develop ブランチ → twitch-bot-dev.fara-labs.com  (npx wrangler deploy --env dev)
@@ -48,7 +48,7 @@ routes = [
   { pattern = "twitch-bot-dev.fara-labs.com", custom_domain = true },
 ]
 
-# 確認用の noindex（X-Robots-Tag）は、build-pages（--env develop）と公開のワークフロー（.github/workflows/site.yml）が publish/wwwroot/_headers に付ける（ポケモンのサイトと同じ）
+# 確認用の noindex（X-Robots-Tag）は、build-pages（--env develop）と確認用の公開のワークフロー（.github/workflows/deploy-develop.yml）が publish/wwwroot/_headers に付ける（ポケモンのサイトと同じ）
 
 [env.dev.assets]
 directory = "./publish/wwwroot"
