@@ -1,4 +1,6 @@
-name: Build and Release
+name: Release (app installer)
+
+# アプリ本体のインストーラーを作り、GitHub の Release に公開する。タグ v* の push か、バージョンを入れた手動実行で動く（紹介サイトの公開は deploy.yml・deploy-develop.yml）。
 
 on:
   push:

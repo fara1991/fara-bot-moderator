@@ -1,0 +1,114 @@
+name: Deploy (develop)
+
+# 紹介サイトの確認用（https://twitch-bot-dev.fara-labs.com 。Cloudflare Access で自分だけが見られる）への公開。develop への push（site/ などを変えたとき）で実行。
+# 本番には影響しない。手動で再実行したいときは Actions タブから develop を選んで Run workflow。
+# 自分でビルドして公開する（成果物は使わない）。ビルドとテストは build.yml が同じ push で行う。
+# kit の tools/maintenance.mjs（一括変更 CLI）は、この workflow の手動実行（maintenance_mode / maintenance_message）を使う。
+
+on:
+  push:
+    branches: [develop]
+    paths:
+      - "site/**"
+      - "Manual.md"
+      - "global.json"
+      - ".github/workflows/deploy-develop.yml"
+      - ".github/scripts/**"
+      - ".gitmodules"
+      - "external/fara-site-kit"
+  workflow_dispatch:
+    inputs:
+      maintenance_mode:
+        description: "メンテナンス表示の切り替え。true = 全体メンテナンス（全ページがメンテナンス画面・503）、notice = お知らせ帯、false = 通常。空 = 変更しない"
+        type: choice
+        options: ["", "true", "notice", "false"]
+        default: ""
+      maintenance_message:
+        description: "お知らせ・メンテナンス画面に出す文（200 文字まで・改行なし）。空 = 変更しない"
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-develop
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Deploy to Cloudflare (develop)
+    runs-on: ubuntu-latest
+    # 手動実行で別のブランチを選んでも、確認用には develop だけを公開する
+    if: github.ref == 'refs/heads/develop'
+    environment:
+      name: develop
+      url: https://twitch-bot-dev.fara-labs.com
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Build site (develop)
+        working-directory: site
+        run: node tools/build-site.mjs --env develop
+
+      # 確認用（develop）が検索結果に載らないようにする（ポケモンのサイトと同じ。kit の build-pages も X-Robots-Tag: noindex を付けるが、従来どおり nofollow も付けるため、ここで追記する）
+      - name: Add noindex header (develop)
+        run: |
+          cat >> site/publish/wwwroot/_headers <<'HEADERS'
+          /*
+            X-Robots-Tag: noindex, nofollow
+          HEADERS
+
+      # 入力はシェルに直接埋め込まず、環境変数で受ける。空の入力には --var を付けない（keep_vars で現在の値が保持される）。push では何も渡さない
+      - name: Deploy to Cloudflare Workers (develop)
+        shell: bash
+        working-directory: site
+        run: |
+          if [ "$GITHUB_REF" != "refs/heads/develop" ]; then echo "::error::dev へは develop からしか公開しません ($GITHUB_REF)"; exit 1; fi
+          vars=()
+          if [ -n "$MAINTENANCE_MODE_INPUT" ]; then vars+=(--var "MAINTENANCE_MODE:$MAINTENANCE_MODE_INPUT"); fi
+          if [ -n "$MAINTENANCE_MESSAGE_INPUT" ]; then vars+=(--var "MAINTENANCE_MESSAGE:$MAINTENANCE_MESSAGE_INPUT"); fi
+          npx wrangler@4.149.0 deploy --env dev "${vars[@]}"
+        env:
+          MAINTENANCE_MODE_INPUT: ${{ inputs.maintenance_mode }}
+          MAINTENANCE_MESSAGE_INPUT: ${{ inputs.maintenance_message }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+
+      # 公開の結果（設定した値と、反映後の現在値）をジョブサマリーに出す。公開が失敗したときも出す
+      - name: Summary (maintenance)
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          msg="$(printf '%s' "$MAINTENANCE_MESSAGE_INPUT" | tr '`' '"')"
+          {
+            echo "### メンテナンス表示 (${WORKER_NAME})"
+            echo "- 設定した値: MAINTENANCE_MODE=\`${MAINTENANCE_MODE_INPUT:-(変更なし)}\` / MAINTENANCE_MESSAGE=\`${msg:-(変更なし)}\`"
+            node -e '
+              const j = (v) => JSON.stringify(v);
+              fetch(`https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/workers/scripts/${process.env.WORKER_NAME}/settings`, { headers: { Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}` } })
+                .then((r) => r.json())
+                .then((b) => {
+                  const list = b?.result?.bindings ?? [];
+                  const v = (n) => { const x = list.find((y) => y.name === n); return x ? (x.type === "plain_text" ? j(x.text).replaceAll("`", "\u0027") : `(${x.type})`) : "(未設定)"; };
+                  console.log(`- 反映後の現在値: MAINTENANCE_MODE=\`${v("MAINTENANCE_MODE")}\` / MAINTENANCE_MESSAGE=\`${v("MAINTENANCE_MESSAGE")}\``);
+                })
+                .catch(() => console.log("- 反映後の現在値: 取得できませんでした"));
+            '
+          } >> "$GITHUB_STEP_SUMMARY"
+        env:
+          MAINTENANCE_MODE_INPUT: ${{ inputs.maintenance_mode }}
+          MAINTENANCE_MESSAGE_INPUT: ${{ inputs.maintenance_message }}
+          WORKER_NAME: fara-twitch-bot-dev
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}

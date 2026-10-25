@@ -44,10 +44,14 @@ npx wrangler dev --env dev    # Cloudflare と同じ動き（Worker 経由）で
 
 ## 公開
 
-`.github/workflows/site.yml` が、`master` / `develop` への push（`site/`・`Manual.md`・`external/fara-site-kit` などを変えたとき）で、ビルド・テストして Cloudflare にデプロイします。PR ではビルドとテストだけ行います。
+ワークフローは fara-pokemon-battle-assistant などと同じ 3 つです。公開の 2 つは `site/`・`Manual.md`・`external/fara-site-kit` などを変えたときだけ動き、自分でビルドして公開します（成果物（artifact）は使いません）。ほかに、アプリのインストーラーのリリース用の `release-app.yml`（タグ `v*` か手動実行）があります。
+
+- `.github/workflows/build.yml`（Build and test (site)）: すべての push と PR で、アプリ本体（Windows）と紹介サイトのビルドとテスト。サイトは本番用・確認用の両方を書き出して確かめる。公開しない
+- `.github/workflows/deploy-develop.yml`（Deploy (develop)）: `develop` への push で、確認用に公開
+- `.github/workflows/deploy.yml`（Deploy (production)）: `master` への push で、本番に公開
 
 - 本番（master）の公開は、Worker の変数 `MAINTENANCE_MODE` が `notice` のときだけ行い、公開と同時に `true`（メンテナンス画面）にします。作業が終わったら、Cloudflare で `false` に戻します（お知らせも一緒に消える）
-- メンテナンス表示の切り替えは、Actions の「Run workflow」（確認用は `develop`、本番は `master` を選ぶ）で `maintenance_mode`（`true` / `notice` / `false`、空 = 変更しない）と `maintenance_message`（文面。空 = 変更しない）を入れて実行します。公開されるのは、選んだブランチの最新のコードです。mode を指定した本番の実行は、`notice` の確認を飛ばします。結果はジョブサマリーに出ます（手順は fara-site-kit の `docs/maintenance-cli.md`）
+- メンテナンス表示の切り替えは、Actions の「Run workflow」（確認用は Deploy (develop) で `develop`、本番は Deploy (production) で `master` を選ぶ）で `maintenance_mode`（`true` / `notice` / `false`、空 = 変更しない）と `maintenance_message`（文面。空 = 変更しない）を入れて実行します。公開されるのは、選んだブランチの最新のコードです。mode を指定した本番の実行は、`notice` の確認を飛ばします。結果はジョブサマリーに出ます（手順は fara-site-kit の `docs/maintenance-cli.md`）
 - お知らせ（`MAINTENANCE_MODE=notice`）の帯は、アプリが `/api/maintenance` を読んで出します（以前の、Worker が HTML に差し込む方式はやめました）
 
 GitHub のリポジトリに、次の設定が必要です（ポケモンサイトなど、ほかのサイトと同じ値）。
