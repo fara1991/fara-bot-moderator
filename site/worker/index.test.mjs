@@ -157,9 +157,9 @@ test("ワークフローは Pokémon と同じ形（build.yml / deploy-develop.y
   for (const yml of [readDev(), readProd()]) assert.match(yml, /external\/fara-site-kit/, "kit を上げたときも公開する（paths）");
 });
 
-test("動くとき: build はすべての push と PR（アプリも変わるので絞らない）、確認用は develop、本番は master（公開は site/ などを変えたとき）。公開のジョブはブランチで絞る", () => {
+test("動くとき: build は develop・master の push と PR（アプリも変わるのでパスで絞らない）、確認用は develop、本番は master（公開は site/ などを変えたとき）。公開のジョブはブランチで絞る", () => {
   const build = readBuild(), dev = readDev(), prod = readProd();
-  assert.match(build, /on:\n {2}push:\n {4}branches-ignore: \[gh-pages\]\n {2}pull_request:\n {2}workflow_dispatch:\n/);
+  assert.match(build, /on:\n(?: {2}#.*\n)? {2}push:\n {4}branches: \[develop, master\]\n {2}pull_request:\n {2}workflow_dispatch:\n/);
   // build にはアプリ（Windows）とサイトの 2 つのジョブ
   assert.match(build, /\n {2}app:\n {4}name: Build app\n {4}runs-on: windows-latest\n/);
   assert.match(build, /dotnet build FaraBotModerator\.csproj -c Release --no-restore/);
