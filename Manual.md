@@ -433,7 +433,7 @@ FaraBombRush は、Beat Saber **1.29.1** と **1.40.8** に対応しています
 
 - 共通: [BSIPA](https://github.com/bsmg/BeatSaber-IPA-Reloaded) 4.2.0 以上（4.x 系）
 - 1.40.8 のみ: SiraUtil 3.1.0 以上（3.x 系）と、BeatSaberMarkupLanguage 1.12.0 以上（1.x 系）。無いと Mod が読み込まれません
-- Twitch チャットのコマンドを使うとき（1.29.1・1.40.8 とも）: BeatSaberPlus（ChatPlexSDK）。無い場合、チャットは無効になる想定です（ゲーム内では未確認）
+- Twitch チャットのコマンドを使うとき（1.29.1・1.40.8 とも）: BeatSaberPlus（ChatPlexSDK）。無い場合は、チャットのコマンドが無効になります（ゲーム内で確認済み）
 
 導入の手順:
 
