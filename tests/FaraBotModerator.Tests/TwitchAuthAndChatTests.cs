@@ -62,6 +62,23 @@ public class TwitchAuthServiceTests
     {
         Assert.True(TwitchAuthService.ShouldHandleAuthUrl(ReturnUrl, "", "xyz", 8080));
     }
+
+    [Fact]
+    public void A_failed_authorization_status_tells_the_user_to_authorize_again()
+    {
+        // コードが無効（例外なし）・例外のどちらでも、画面の文は「もう一度認可」を案内する
+        Assert.Contains("もう一度", TwitchAuthService.AuthorizationFailureStatus(null));
+        Assert.Contains("もう一度", TwitchAuthService.AuthorizationFailureStatus(new System.InvalidOperationException("secret")));
+    }
+
+    [Fact]
+    public void A_failed_authorization_status_does_not_show_the_exception_text()
+    {
+        // 例外の文（URL や応答の本文を含みうる）は画面に出さない（ログにだけ出す）
+        var status = TwitchAuthService.AuthorizationFailureStatus(new System.InvalidOperationException("secret-body"));
+
+        Assert.DoesNotContain("secret-body", status);
+    }
 }
 
 /// <summary>

@@ -114,6 +114,22 @@ public class TextRegexControllerTests : IDisposable
     }
 
     [Fact]
+    public void LoadBsrChat_reads_the_user_file_again_after_a_read_failure()
+    {
+        // 読めなかった（ファイルを別の人が開いている）ときは既定の設定で変換し、その結果を覚えない。直ったら、次のチャットで利用者の設定が効く
+        var path = Path.Combine(_directory, "bsr.json");
+        File.WriteAllText(path, "{\"bsrChat\":[{\"key\":\"^a$\",\"value\":\"b\"}]}");
+
+        using (new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.None))
+        {
+            Assert.Equal("a", TextRegexController.LoadBsrChat("a", path));
+        }
+
+        // ファイルの中身も更新日時も変えずに、読めるようになったあとの呼び出し
+        Assert.Equal("b", TextRegexController.LoadBsrChat("a", path));
+    }
+
+    [Fact]
     public void LoadBsrChatModel_keeps_a_valid_user_file_as_is()
     {
         var path = Path.Combine(_directory, "bsr.json");
