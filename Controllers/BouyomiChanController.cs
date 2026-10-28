@@ -12,6 +12,21 @@ namespace FaraBotModerator.Controllers;
 public class BouyomiChanController
 {
     /// <summary>
+    /// 棒読みちゃんの HTTP 連携の待ち受け先（ポート 5008・/Talk）
+    /// </summary>
+    private const string TalkUrl = "http://localhost:5008/Talk";
+
+    /// <summary>
+    /// 発声の要求が時間内に返らないときの上限（棒読みちゃんが起動していないときに長く待たせないため）
+    /// </summary>
+    private static readonly TimeSpan TalkTimeout = TimeSpan.FromSeconds(2);
+
+    /// <summary>
+    /// 起動確認の上限
+    /// </summary>
+    private static readonly TimeSpan RunningCheckTimeout = TimeSpan.FromSeconds(10);
+
+    /// <summary>
     /// 通信に使う HttpClient。呼び出しのたびに作ると、ソケットを使い切るので、1 つを使い回す（時間の制限は呼び出しごとに CancellationToken で付ける）
     /// </summary>
     private static readonly HttpClient Client = new();
@@ -46,7 +61,7 @@ public class BouyomiChanController
     {
         try
         {
-            var content = new FormUrlEncodedContent([
+            using var content = new FormUrlEncodedContent([
                 new KeyValuePair<string, string>("text", talkText),
                 new KeyValuePair<string, string>("speed", "-1"),
                 new KeyValuePair<string, string>("tone", "-1"),
@@ -55,8 +70,8 @@ public class BouyomiChanController
             ]);
 
             // タイムアウトを短めに設定（棒読みちゃんが起動していない場合に長時間待たされないようにするため）
-            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(2));
-            using var response = await Client.PostAsync("http://localhost:5008/Talk", content, timeout.Token);
+            using var timeout = new CancellationTokenSource(TalkTimeout);
+            using var response = await Client.PostAsync(TalkUrl, content, timeout.Token);
             return response.IsSuccessStatusCode;
         }
         catch (Exception ex)
@@ -75,10 +90,11 @@ public class BouyomiChanController
     {
         try
         {
-            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+            using var timeout = new CancellationTokenSource(RunningCheckTimeout);
             // 棒読みちゃんのHTTP連携が有効であれば、GET /Talk に対して (恐らく405 Method Not Allowed等が返るが) 接続はできるはず
-            // 接続自体が拒否される場合は起動していないとみなす
-            using var response = await Client.GetAsync("http://localhost:5008/Talk", timeout.Token);
+            // 接続自体が拒否される場合は起動していないとみなす。応答の中身（ステータス）は見ない
+            // 応答は使わない（接続できたことが分かればよい）。受け取った応答は捨てて、接続を返す
+            (await Client.GetAsync(TalkUrl, timeout.Token)).Dispose();
             return true;
         }
         catch (Exception ex)
