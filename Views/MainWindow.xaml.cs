@@ -371,18 +371,33 @@ public partial class MainWindow : INotifyPropertyChanged
     /// <returns></returns>
     private async Task StartWebServerAsync()
     {
-        var accessTokenQuery = new[] {$"http://localhost:{Settings.Default.Port}", "code=", "scope=", "state="};
         while (true)
         {
             await Task.Delay(100);
-            if (FaraBotModeratorWebView.Source is null)
-                continue;
+            // 1 周期の失敗で監視を止めない（戻りの URL を処理できなくても、次の周期でまた見る）
+            try
+            {
+                if (FaraBotModeratorWebView.Source is null) continue;
 
-            var url = FaraBotModeratorWebView.Source.ToString();
-            // URL毎に処理を追加
-            if (accessTokenQuery.All(key => url.Contains(key))) await UpdateAccessTokenAsync(url);
+                // 認証を始めていない・処理済み・戻りの形でない URL は無視する（処理した戻りの URL は、画面に残っていても 2 度処理しない）
+                var url = FaraBotModeratorWebView.Source.ToString();
+                if (!TwitchAuthService.ShouldHandleAuthUrl(url, _lastHandledAuthUrl, Settings.Default.OAuth2State, Settings.Default.Port))
+                    continue;
+
+                _lastHandledAuthUrl = url;
+                await UpdateAccessTokenAsync(url);
+            }
+            catch (Exception ex)
+            {
+                LogController.OutputLog($"<Error> 認証の戻りの処理に失敗しました（次の周期で続けます）: {ex.Message}");
+            }
         }
     }
+
+    /// <summary>
+    /// 最後に処理した認証の戻りの URL（同じ URL を 2 度処理しないため）。
+    /// </summary>
+    private string _lastHandledAuthUrl = "";
 
     /// <summary>
     /// </summary>
