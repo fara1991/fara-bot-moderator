@@ -62,9 +62,12 @@ public static class PokemonSyncKeyController
     /// <param name="OldKey">今のアクセスキー（まだ使える）</param>
     /// <param name="NewKey">新しいアクセスキー（まだ保存していない）</param>
     /// <param name="CopiedTotals">写した時点の、古いキーの履歴の状態（古いキーを消すときの見比べに使う）</param>
+    /// <param name="CopiedRevision">写した登録データの版。古いキーへ後から登録が書かれていたら、消さずに写し直す</param>
+    /// <param name="RosterKeys">写した登録データのゲーム（写し直すときに、古いキーで空になったゲームも空として書くため）</param>
     /// <param name="TrimmedMatches">サーバーの上限に収めるため、内容を省いて写した試合の数</param>
     public sealed record PendingRotation(string OldKey, string NewKey,
-        IReadOnlyDictionary<string, HistoryTotal> CopiedTotals, int TrimmedMatches);
+        IReadOnlyDictionary<string, HistoryTotal> CopiedTotals, long CopiedRevision,
+        IReadOnlyList<string> RosterKeys, int TrimmedMatches);
 
     /// <summary>
     /// アクセスキーの作り直し（前半）。今のクラウドの登録データ・相手チーム・試合の履歴を新しいキーの置き場に写す。
@@ -85,6 +88,9 @@ public static class PokemonSyncKeyController
         if (old.RivalUnreadable)
             throw new RosterUnavailableException(RosterUnavailableReason.InvalidResponse, null,
                 "クラウドの相手チームを読み込めなかったため、キーを作り直せません。時間をおいて、もう一度試してください");
+        // 写した登録データの版。古いキーを消すとき、この版のままかを確かめる（読んでから書かれていたら、読み直して写し直す）
+        var copiedRevision = RevisionOf(old);
+        var rosterKeys = json is null ? new List<string>() : RosterRepository.Deserialize(json).DataSets.Keys.ToList();
 
         var key = RemoteRosterStore.GenerateKey();
         var remote = CreateStore(dataSource, key, http);
@@ -94,7 +100,7 @@ public static class PokemonSyncKeyController
             if (json is not null) await remote.SaveAsync(json, cancellationToken);
             else await remote.LoadAsync(cancellationToken);
             var (trimmed, totals) = await CopyHistoryAsync(old, remote, cancellationToken);
-            return new PendingRotation(oldKey, key, totals, trimmed);
+            return new PendingRotation(oldKey, key, totals, copiedRevision, rosterKeys, trimmed);
         }
         catch
         {
@@ -115,33 +121,48 @@ public static class PokemonSyncKeyController
     /// アクセスキーの作り直し（後半）。新しいキーを保存したあとに呼ぶ。古いキーを使えなくし、置き場を消す。
     /// 写している間に別の端末・BOT が履歴を足していたら、消さずに、足された分だけ新しいキーへ写して、もう一度試す。
     /// </summary>
-    /// <returns>古いキーを消せたか（false でも新しいキーへの移動は済んでいる。古いキーは使わないよう案内する）</returns>
+    /// <returns>古いキーを消せたか（false のときは、古いキーは残っている。写している間に古いキーへ書かれた内容は、新しいキーに入っていないかもしれない）</returns>
     public static async Task<bool> FinishRotateAsync(PokemonDataSource dataSource, PendingRotation pending,
         CancellationToken cancellationToken = default, HttpClient? http = null)
     {
         var old = CreateStore(dataSource, pending.OldKey, http);
         var remote = CreateStore(dataSource, pending.NewKey, http);
-        var expected = pending.CopiedTotals;
+        var expectedHistory = pending.CopiedTotals;
+        long? expectedRevision = pending.CopiedRevision;
+        var rosterKeys = pending.RosterKeys.ToList();
         for (var attempt = 0; attempt < MaxRotateRetries; attempt++)
         {
             try
             {
-                // 確認と削除はサーバーで 1 つの処理なので、その間に取りこぼしは起きない
-                await old.DeleteIfHistoryUnchangedAsync(expected, cancellationToken);
+                // 確認と削除はサーバーで 1 つの処理なので、その間に取りこぼしは起きない（履歴の状態と登録データの版の両方を見る）
+                await old.DeleteIfUnchangedAsync(expectedHistory, expectedRevision, cancellationToken);
                 return true;
             }
             catch (HistoryChangedException changed)
             {
                 try
                 {
-                    await CopyNewMatchesAsync(old, remote, expected, changed.Current, cancellationToken);
+                    // 登録データの版が違う（または版が分からない）ときは、古いキーの登録データを読み直して、新しいキーへ全部写し直す
+                    if (changed.CurrentRevision != expectedRevision)
+                    {
+                        var reread = await old.LoadAsync(cancellationToken);
+                        // 相手チームを読めないまま写すと、新しいキーの相手チームと履歴を空にしてしまう
+                        if (old.RivalUnreadable)
+                            throw new RosterUnavailableException(RosterUnavailableReason.InvalidResponse, null,
+                                "クラウドの相手チームを読み込めなかったため、写し直せません。時間をおいて、もう一度試してください");
+                        var state = reread is null ? new RosterState() : RosterRepository.Deserialize(reread);
+                        rosterKeys = rosterKeys.Union(state.DataSets.Keys).ToList();
+                        await RewriteRosterAsync(remote, state, rosterKeys, cancellationToken);
+                        expectedRevision = RevisionOf(old);
+                    }
+
+                    await CopyNewMatchesAsync(old, remote, expectedHistory, changed.Current, cancellationToken);
+                    expectedHistory = changed.Current;
                 }
-                catch (Exception ex) when (ex is RosterUnavailableException or HistoryLimitException)
+                catch (Exception ex) when (ex is RosterUnavailableException or HistoryLimitException or RosterConflictException)
                 {
                     break;
                 }
-
-                expected = changed.Current;
             }
             catch (RosterUnavailableException)
             {
@@ -151,6 +172,39 @@ public static class PokemonSyncKeyController
 
         return false;
     }
+
+    /// <summary>
+    /// 古いキーの登録データを、新しいキーへ全部書き直す（ポケモン → チーム → 相手チームの順。ゲームは <paramref name="keys"/> の全部）。
+    /// 写したあとに古いキーへ書かれた分を反映する。古いキーで空になったゲームは空として書く。
+    /// </summary>
+    private static async Task RewriteRosterAsync(RemoteRosterStore remote, RosterState state, IReadOnlyList<string> keys, CancellationToken ct)
+    {
+        // 書く前に新しいキーの版を読む（版 0 のまま書くと、409 になる）
+        await remote.LoadAsync(ct);
+        foreach (var part in new[] { RosterPart.Pokemon, RosterPart.Teams, RosterPart.Rival })
+            foreach (var key in keys)
+                await remote.SavePartAsync(state, key, part, ct);
+        VerifyCounts(state, await remote.LoadAsync(ct));
+    }
+
+    /// <summary>
+    /// 写した結果を確かめる（ゲームごとのポケモン・チーム・相手チームの数が同じか）。違えば例外（写し直しを中止する）。
+    /// </summary>
+    private static void VerifyCounts(RosterState source, string? copiedJson)
+    {
+        var copied = copiedJson is null ? new RosterState() : RosterRepository.Deserialize(copiedJson);
+        foreach (var (key, roster) in source.DataSets)
+        {
+            var got = copied.DataSets.TryGetValue(key, out var c) ? c : new DataSetRoster();
+            if (roster.Pokemon.Count != got.Pokemon.Count || roster.Teams.Count != got.Teams.Count || roster.Rivals.Count != got.Rivals.Count)
+                throw new RosterUnavailableException(RosterUnavailableReason.InvalidResponse, null,
+                    "クラウドに写せない内容があったため、写し直しを中止しました。古いアクセスキーは消していません");
+        }
+    }
+
+    /// <summary>直近の読み込み（または保存）で分かった登録データの版。</summary>
+    private static long RevisionOf(RemoteRosterStore remote) =>
+        remote.Revision ?? throw new InvalidOperationException("登録データの版を読めていません");
 
     /// <summary>
     /// 登録データの全ゲーム合計の登録数とチーム数を返します。

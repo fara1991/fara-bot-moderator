@@ -69,8 +69,63 @@ public class PokemonSyncKeyRotateTests
 
         Assert.True(finished);
         var delete = router.Servers[oldKey].Requests.Last(r => r.Method == HttpMethod.Delete);
-        // 履歴の見比べ（expect=）つきで消す。写した時点の状態のときだけ消える（サーバー側の確認）
+        // 履歴の見比べ（expect=）と、登録データの版（revision=）つきで消す。写した時点の状態のときだけ消える（サーバー側の確認）
         Assert.Contains("expect=", delete.RequestUri!.Query);
+        Assert.Contains("revision=", delete.RequestUri!.Query);
         Assert.True(router.Servers[oldKey].Deleted);
+    }
+
+    [Fact]
+    public async Task Finish_rotate_copies_a_roster_change_made_on_the_old_key_during_the_rotation()
+    {
+        var router = new KeyRouter();
+        var oldKey = RemoteRosterStore.GenerateKey();
+        router.Servers[oldKey] = new FakeRosterServer { ExpectedKey = oldKey };
+        using var http = new HttpClient(router);
+        var pending = await PokemonSyncKeyController.PrepareRotateAsync(PokemonDataSource.Production, oldKey,
+            default, http);
+
+        // 写している間に、別の端末・BOT が古いキーへ登録を書く（登録データの版が変わる）
+        var writer = new RemoteRosterStore(http, RemoteRosterStore.ProductionBaseUrl, oldKey);
+        await new RosterRepository(writer).ChangeRivalsAsync("Champions", roster =>
+        {
+            roster.Rivals.Add(new RivalPokemon { Id = roster.NextRivalId++, PokemonId = 445, PokemonName = "写している間の相手" });
+            return (0, true);
+        });
+
+        var finished = await PokemonSyncKeyController.FinishRotateAsync(PokemonDataSource.Production, pending,
+            default, http);
+
+        Assert.True(finished);
+        Assert.True(router.Servers[oldKey].Deleted);
+        // 新しいキーには、写している間に足された登録も入っている（消さずに、写し直してから古いキーを消した）
+        var copied = RosterRepository.Deserialize(router.Servers[pending.NewKey].RosterJson!);
+        Assert.Contains(copied.DataSets["Champions"].Rivals, r => r.PokemonName == "写している間の相手");
+    }
+
+    [Fact]
+    public async Task Finish_rotate_keeps_the_old_key_after_five_failed_attempts()
+    {
+        var router = new KeyRouter();
+        var oldKey = RemoteRosterStore.GenerateKey();
+        var old = new FakeRosterServer { ExpectedKey = oldKey };
+        router.Servers[oldKey] = old;
+        // 消そうとするたびに、古いキーの版が進む（写し直しても追いつかない状況）
+        old.Override = request =>
+        {
+            if (request.Method == HttpMethod.Delete) old.Revision++;
+            return null;
+        };
+        using var http = new HttpClient(router);
+        var pending = await PokemonSyncKeyController.PrepareRotateAsync(PokemonDataSource.Production, oldKey,
+            default, http);
+
+        var finished = await PokemonSyncKeyController.FinishRotateAsync(PokemonDataSource.Production, pending,
+            default, http);
+
+        Assert.False(finished);
+        Assert.False(old.Deleted);
+        // 上限は 5 回。それ以上は消そうとしない
+        Assert.Equal(5, old.Requests.Count(r => r.Method == HttpMethod.Delete));
     }
 }
