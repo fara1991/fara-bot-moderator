@@ -188,7 +188,8 @@ public static class PokemonSyncKeyController
     }
 
     /// <summary>
-    /// 写した結果を確かめる（ゲームごとのポケモン・チーム・相手チームの数が同じか）。違えば例外（写し直しを中止する）。
+    /// 写した結果を確かめる（ゲームごとのポケモン・チーム・枠・相手チームの数が同じか）。違えば例外（写し直しを中止する）。
+    /// 数え方はサイトの CloudSync と同じ（枠が無いチームは数えず、チームの枠の数を足す）。
     /// </summary>
     private static void VerifyCounts(RosterState source, string? copiedJson)
     {
@@ -196,10 +197,19 @@ public static class PokemonSyncKeyController
         foreach (var (key, roster) in source.DataSets)
         {
             var got = copied.DataSets.TryGetValue(key, out var c) ? c : new DataSetRoster();
-            if (roster.Pokemon.Count != got.Pokemon.Count || roster.Teams.Count != got.Teams.Count || roster.Rivals.Count != got.Rivals.Count)
+            if (CountRoster(roster) != CountRoster(got) || roster.Rivals.Count != got.Rivals.Count)
                 throw new RosterUnavailableException(RosterUnavailableReason.InvalidResponse, null,
                     "クラウドに写せない内容があったため、写し直しを中止しました。古いアクセスキーは消していません");
         }
+    }
+
+    /// <summary>
+    /// ゲームの登録数（ポケモン・枠のあるチーム・チームの枠の合計）。
+    /// </summary>
+    private static (int Pokemon, int Teams, int Slots) CountRoster(DataSetRoster roster)
+    {
+        var teams = roster.Teams.Where(t => t.Slots.Count > 0).ToList();
+        return (roster.Pokemon.Count, teams.Count, teams.Sum(t => t.Slots.Count));
     }
 
     /// <summary>直近の読み込み（または保存）で分かった登録データの版。</summary>
