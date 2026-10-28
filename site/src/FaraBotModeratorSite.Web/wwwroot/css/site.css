@@ -650,8 +650,11 @@ html body .site-search-input:focus-visible {
 .button { min-block-size: 2.75rem; }
 .card > a,
 .link-list a,
-.page-section > p > a,
-.fsk-footer a:not(.fsk-footer-social) { min-height: 44px; display: inline-flex; align-items: center; }
+.page-section > p > a { min-height: 44px; display: inline-flex; align-items: center; }
+/* フッターの文字リンク（600px 以上）。スマホ（600px 未満）は kit の ::after（44px の当たり判定）に任せ、行の高さを詰める（高さを 44px にすると、2 段のフッターが約 140px になる） */
+@media (min-width: 600px) {
+    .fsk-footer a:not(.fsk-footer-social) { min-height: 44px; display: inline-flex; align-items: center; }
+}
 .fsk-header .mud-icon-button { min-width: 44px; min-height: 44px; }
 /* 左のメニューの「現在のページ」: MudBlazor の既定（テーマの主色 #6d28d9）は暗い地色の上で 2.6:1 しかないので、明るい紫にする */
 html body .fsk-sidebar .mud-nav-link.active .mud-nav-link-text { color: #c4b5fd; }
@@ -660,7 +663,6 @@ html body .fsk-sidebar .mud-nav-link.active .mud-nav-link-text { color: #c4b5fd;
 @media (max-width: 600px) {
     .button { min-block-size: 2.75rem; }
     .side-settings .mud-button-root { min-height: 44px; }
-    .fsk-footer a:not(.fsk-footer-social) { min-height: 44px; display: inline-flex; align-items: center; }
     .breadcrumb a,
     .card > a,
     .link-list a,

@@ -17,7 +17,8 @@ export default {
   viewports: [360, 390, 768, 1024, 1440],
   viewportHeight: 800,
   readySelector: ".mud-layout",
-  menuEsc: { buttonSelector: ".fsk-menu-toggle" },
+  // closeSelector: kit v0.7.0 のスマホのドロワーは、開くと左上に閉じるボタン（.fsk-drawer-close）を出し、ドロワーがメニューボタンを覆う。閉じる手段はこのボタンで判定する（docs/layout-check.md の 6.）
+  menuEsc: { buttonSelector: ".fsk-menu-toggle", closeSelector: ".fsk-drawer-close" },
   // 除外は、既知の例外だけ（rule・selector・reason が必須。page は省くとすべてのページ）。増やすときは理由を具体的に書く
   exclusions: [
     {
