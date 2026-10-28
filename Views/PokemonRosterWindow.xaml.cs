@@ -63,6 +63,15 @@ public partial class PokemonRosterWindow : Window
 
     private async void RosterReloadButton_Click(object sender, RoutedEventArgs e)
     {
-        await _reload();
+        try
+        {
+            await _reload();
+        }
+        catch (Exception ex)
+        {
+            // async void の中で例外を出すとアプリが落ちるので、必ず受けてログに残す
+            LogController.OutputLog($"<Error> 登録データの一覧の再読み込みに失敗しました: {ex.GetType().Name}");
+            MessageBox.Show($"登録データを読み込めませんでした: {ex.Message}", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
     }
 }

@@ -70,6 +70,13 @@ public static class PokemonSyncKeyController
         IReadOnlyList<string> RosterKeys, int TrimmedMatches);
 
     /// <summary>
+    /// アクセスキーの作り直し（後半）の結果。
+    /// </summary>
+    /// <param name="OldKeyDeleted">古いキーを消せたか（false のときは古いキーが残っている）</param>
+    /// <param name="TrimmedMatches">後半で、内容を省いて写した試合の数（前半の分は <see cref="PendingRotation.TrimmedMatches"/>）</param>
+    public sealed record RotateFinishResult(bool OldKeyDeleted, int TrimmedMatches);
+
+    /// <summary>
     /// アクセスキーの作り直し（前半）。今のクラウドの登録データ・相手チーム・試合の履歴を新しいキーの置き場に写す。
     /// 古いキーは消さない（新しいキーを保存できてから <see cref="FinishRotateAsync"/> で消す）。
     /// 写せなかったときは、新しいキーの置き場を消して例外にする（古いキーのまま）。
@@ -121,8 +128,8 @@ public static class PokemonSyncKeyController
     /// アクセスキーの作り直し（後半）。新しいキーを保存したあとに呼ぶ。古いキーを使えなくし、置き場を消す。
     /// 写している間に別の端末・BOT が履歴を足していたら、消さずに、足された分だけ新しいキーへ写して、もう一度試す。
     /// </summary>
-    /// <returns>古いキーを消せたか（false のときは、古いキーは残っている。写している間に古いキーへ書かれた内容は、新しいキーに入っていないかもしれない）</returns>
-    public static async Task<bool> FinishRotateAsync(PokemonDataSource dataSource, PendingRotation pending,
+    /// <returns>古いキーを消せたか（false のときは、古いキーは残っている。写している間に古いキーへ書かれた内容は、新しいキーに入っていないかもしれない）と、後半で省いて写した試合の数</returns>
+    public static async Task<RotateFinishResult> FinishRotateAsync(PokemonDataSource dataSource, PendingRotation pending,
         CancellationToken cancellationToken = default, HttpClient? http = null)
     {
         var old = CreateStore(dataSource, pending.OldKey, http);
@@ -130,13 +137,14 @@ public static class PokemonSyncKeyController
         var expectedHistory = pending.CopiedTotals;
         long? expectedRevision = pending.CopiedRevision;
         var rosterKeys = pending.RosterKeys.ToList();
+        var trimmed = 0;
         for (var attempt = 0; attempt < MaxRotateRetries; attempt++)
         {
             try
             {
                 // 確認と削除はサーバーで 1 つの処理なので、その間に取りこぼしは起きない（履歴の状態と登録データの版の両方を見る）
                 await old.DeleteIfUnchangedAsync(expectedHistory, expectedRevision, cancellationToken);
-                return true;
+                return new RotateFinishResult(true, trimmed);
             }
             catch (HistoryChangedException changed)
             {
@@ -156,7 +164,7 @@ public static class PokemonSyncKeyController
                         expectedRevision = RevisionOf(old);
                     }
 
-                    await CopyNewMatchesAsync(old, remote, expectedHistory, changed.Current, cancellationToken);
+                    trimmed += await CopyNewMatchesAsync(old, remote, expectedHistory, changed.Current, cancellationToken);
                     expectedHistory = changed.Current;
                 }
                 catch (Exception ex) when (ex is RosterUnavailableException or HistoryLimitException or RosterConflictException)
@@ -170,7 +178,28 @@ public static class PokemonSyncKeyController
             }
         }
 
-        return false;
+        return new RotateFinishResult(false, trimmed);
+    }
+
+    /// <summary>
+    /// 使わなくなったアクセスキーの置き場を、best-effort で消します（新しいキーを保存できなかったときなど）。
+    /// 消せなくても例外にはせず false を返す（呼び出し側は、キーを使わないことだけを案内する）。
+    /// </summary>
+    /// <param name="dataSource">データの取得元</param>
+    /// <param name="syncKey">消す置き場のアクセスキー（今使っているキーを渡さないこと）</param>
+    /// <param name="http">通信に使う HttpClient（省略時は既定のもの。テスト用）</param>
+    /// <returns>消せたか</returns>
+    public static async Task<bool> DiscardKeyAsync(PokemonDataSource dataSource, string syncKey, HttpClient? http = null)
+    {
+        try
+        {
+            await CreateStore(dataSource, syncKey, http).DeleteAsync(CancellationToken.None);
+            return true;
+        }
+        catch (Exception)
+        {
+            return false;
+        }
     }
 
     /// <summary>
@@ -250,9 +279,11 @@ public static class PokemonSyncKeyController
     /// <summary>
     /// 写し終えたあとに、古いキーへ足された試合（写した時点の次の Id 以降）だけを、新しいキーへ足す。
     /// </summary>
-    private static async Task CopyNewMatchesAsync(RemoteRosterStore source, RemoteRosterStore target,
+    /// <returns>内容を省いて写した試合の数</returns>
+    private static async Task<int> CopyNewMatchesAsync(RemoteRosterStore source, RemoteRosterStore target,
         IReadOnlyDictionary<string, HistoryTotal> previous, IReadOnlyDictionary<string, HistoryTotal> current, CancellationToken ct)
     {
+        var trimmed = 0;
         foreach (var (dataSetKey, state) in current)
         {
             var from = previous.TryGetValue(dataSetKey, out var was) ? was.NextId : 1;
@@ -272,8 +303,10 @@ public static class PokemonSyncKeyController
                 throw new RosterUnavailableException(RosterUnavailableReason.InvalidResponse, null,
                     "履歴を最後まで読めなかったため、キーを作り直せません。もう一度試してください");
             added.Reverse();
-            if (added.Count > 0) await target.AppendManyAsync(dataSetKey, added, ct);
+            if (added.Count > 0) trimmed += await target.AppendManyAsync(dataSetKey, added, ct);
         }
+
+        return trimmed;
     }
 
     /// <summary>

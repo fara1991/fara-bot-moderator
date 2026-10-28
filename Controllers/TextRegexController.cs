@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Text;
 using System.Text.Encodings.Web;
@@ -153,10 +154,13 @@ public static class TextRegexController
                 // Request Dope /Krouton_06 68.1% (xxxx) added to queue.
                 // ↑をチャット表示用にデータ取得でもいい
                 // https://api.beatsaver.com/maps/id/xxxx
+                // 1 回の走査で置き換える（順に Replace すると、一致した文の中の "{1}" が次の段階で置き換わってしまう）。
+                // 一致の文は MatchEvaluator で入れる（$ を置換の書式として解釈させない）
                 var value = textKeyValues.Value ?? string.Empty;
-                for (var i = 0; i < matches.Count; i++)
-                    value = value.Replace("{" + i + "}", matches[i].Value);
-                return value;
+                return Regex.Replace(value, @"\{(0|[1-9]\d*)\}", placeholder =>
+                    int.TryParse(placeholder.Groups[1].Value, NumberStyles.None, CultureInfo.InvariantCulture, out var index) && index < matches.Count
+                        ? matches[index].Value
+                        : placeholder.Value);
             }
             catch (RegexMatchTimeoutException)
             {
@@ -205,7 +209,7 @@ public static class TextRegexController
     private static void Quarantine(string path, string reason)
     {
         var broken = Path.Combine(Path.GetDirectoryName(path) ?? "",
-            $"{Path.GetFileNameWithoutExtension(path)}.broken-{DateTime.Now:yyyyMMddHHmmss}{Path.GetExtension(path)}");
+            $"{Path.GetFileNameWithoutExtension(path)}.broken-{DateTime.Now:yyyyMMdd-HHmmssfff}{Path.GetExtension(path)}");
         try
         {
             File.Move(path, broken);

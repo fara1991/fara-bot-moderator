@@ -67,7 +67,7 @@ public class PokemonSyncKeyRotateTests
         var finished = await PokemonSyncKeyController.FinishRotateAsync(PokemonDataSource.Production, pending,
             default, http);
 
-        Assert.True(finished);
+        Assert.True(finished.OldKeyDeleted);
         var delete = router.Servers[oldKey].Requests.Last(r => r.Method == HttpMethod.Delete);
         // 履歴の見比べ（expect=）と、登録データの版（revision=）つきで消す。写した時点の状態のときだけ消える（サーバー側の確認）
         Assert.Contains("expect=", delete.RequestUri!.Query);
@@ -96,7 +96,7 @@ public class PokemonSyncKeyRotateTests
         var finished = await PokemonSyncKeyController.FinishRotateAsync(PokemonDataSource.Production, pending,
             default, http);
 
-        Assert.True(finished);
+        Assert.True(finished.OldKeyDeleted);
         Assert.True(router.Servers[oldKey].Deleted);
         // 新しいキーには、写している間に足された登録も入っている（消さずに、写し直してから古いキーを消した）
         var copied = RosterRepository.Deserialize(router.Servers[pending.NewKey].RosterJson!);
@@ -123,9 +123,95 @@ public class PokemonSyncKeyRotateTests
         var finished = await PokemonSyncKeyController.FinishRotateAsync(PokemonDataSource.Production, pending,
             default, http);
 
-        Assert.False(finished);
+        Assert.False(finished.OldKeyDeleted);
         Assert.False(old.Deleted);
         // 上限は 5 回。それ以上は消そうとしない
         Assert.Equal(5, old.Requests.Count(r => r.Method == HttpMethod.Delete));
+    }
+
+    /// <summary>
+    /// サーバーに、メモが 500 文字を超える試合を 1 件置く（クライアントから送ると、送る前に 500 文字へ切られるため、サーバーの状態を直接書く）。
+    /// 写すときに、内容を省く対象になる。
+    /// </summary>
+    private static void AddLongMemoMatchOnServer(FakeRosterServer server)
+    {
+        server.WriteFromElsewhere(state =>
+        {
+            if (!state.DataSets.TryGetValue("Champions", out var data))
+                state.DataSets["Champions"] = data = new DataSetRoster { ActiveTeams = new Dictionary<string, int?>() };
+            data.History.Add(new RivalMatch { Id = data.NextMatchId++, Date = "2026-10-29", Memo = new string('長', 600) });
+        });
+    }
+
+    [Fact]
+    public async Task Prepare_rotate_counts_the_matches_copied_without_their_content()
+    {
+        var router = new KeyRouter();
+        var oldKey = RemoteRosterStore.GenerateKey();
+        router.Servers[oldKey] = new FakeRosterServer { ExpectedKey = oldKey };
+        using var http = new HttpClient(router);
+        // 写す前に、内容を省く試合を 1 件入れておく
+        AddLongMemoMatchOnServer(router.Servers[oldKey]);
+
+        var pending = await PokemonSyncKeyController.PrepareRotateAsync(PokemonDataSource.Production, oldKey,
+            default, http);
+
+        Assert.Equal(1, pending.TrimmedMatches);
+    }
+
+    [Fact]
+    public async Task Finish_rotate_counts_the_matches_added_during_the_rotation_that_were_trimmed()
+    {
+        var router = new KeyRouter();
+        var oldKey = RemoteRosterStore.GenerateKey();
+        router.Servers[oldKey] = new FakeRosterServer { ExpectedKey = oldKey };
+        using var http = new HttpClient(router);
+        var pending = await PokemonSyncKeyController.PrepareRotateAsync(PokemonDataSource.Production, oldKey,
+            default, http);
+
+        // 写している間に、古いキーへ内容を省く試合が足される（後半で写し、件数に入る）
+        AddLongMemoMatchOnServer(router.Servers[oldKey]);
+
+        var finished = await PokemonSyncKeyController.FinishRotateAsync(PokemonDataSource.Production, pending,
+            default, http);
+
+        Assert.True(finished.OldKeyDeleted);
+        Assert.Equal(1, finished.TrimmedMatches);
+    }
+
+    [Fact]
+    public async Task Discard_removes_only_the_new_key_and_never_touches_the_old_key()
+    {
+        var router = new KeyRouter();
+        var oldKey = RemoteRosterStore.GenerateKey();
+        router.Servers[oldKey] = new FakeRosterServer { ExpectedKey = oldKey };
+        using var http = new HttpClient(router);
+        var pending = await PokemonSyncKeyController.PrepareRotateAsync(PokemonDataSource.Production, oldKey,
+            default, http);
+
+        var discarded = await PokemonSyncKeyController.DiscardKeyAsync(PokemonDataSource.Production, pending.NewKey, http);
+
+        Assert.True(discarded);
+        Assert.True(router.Servers[pending.NewKey].Deleted);
+        Assert.False(router.Servers[oldKey].Deleted);
+        Assert.DoesNotContain(router.Servers[oldKey].Requests, r => r.Method == HttpMethod.Delete);
+    }
+
+    /// <summary>どの要求にも、つながらない（接続に失敗した）ように返す。</summary>
+    private sealed class UnreachableHandler : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
+            throw new HttpRequestException("unreachable (test)");
+    }
+
+    [Fact]
+    public async Task Discard_returns_false_instead_of_throwing_when_the_server_cannot_be_reached()
+    {
+        using var http = new HttpClient(new UnreachableHandler());
+
+        var discarded = await PokemonSyncKeyController.DiscardKeyAsync(PokemonDataSource.Production,
+            RemoteRosterStore.GenerateKey(), http);
+
+        Assert.False(discarded);
     }
 }

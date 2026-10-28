@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Unicode;
@@ -29,6 +30,11 @@ public class UniqueChannelPointController
     /// </summary>
     private const int RandomRotationMinDeg = -45;
     private const int RandomRotationMaxDeg = 45;
+
+    /// <summary>
+    /// Twitch のログイン名（英数字・アンダースコア）。ファイル名に使える文字だけ。
+    /// </summary>
+    private static readonly Regex LoginNamePattern = new(@"\A[A-Za-z0-9_]+\z", RegexOptions.CultureInvariant);
 
     private readonly SecretKeyModel _secretKeys;
 
@@ -69,8 +75,15 @@ public class UniqueChannelPointController
             return "BeatSaber UserData path is not configured.";
         }
 
-        // PosX, PosY, PosZ, RotX, RotY, RotZ
-        var r = new Random();
+        // ファイル名に使うので、ログイン名（英数字・アンダースコア）だけを受ける。ほかの文字は、パスを変えたり、ファイル名を壊したりしうる
+        if (!LoginNamePattern.IsMatch(userName))
+        {
+            LogController.OutputLog("<Error> RandomTailor: the user name has characters that cannot be used in a file name");
+            return "RandomTailor: could not create the setting file (the user name has characters that cannot be used in a file name).";
+        }
+
+        // PosX, PosY, PosZ, RotX, RotY, RotZ（Random.Shared は複数のスレッドから使える。イベントは受信のスレッドから来る）
+        var r = Random.Shared;
         var pos = new[]
             {r.Next(RandomPositionMinMm, RandomPositionMaxMm), r.Next(RandomPositionMinMm, RandomPositionMaxMm), r.Next(RandomPositionMinMm, RandomPositionMaxMm)};
         var rot = new[]
@@ -106,7 +119,7 @@ public class UniqueChannelPointController
         {
             // フォルダが無い・書き込めないのは、利用者の環境の問題。イベントの処理を止めず、チャットに知らせる
             LogController.OutputLog($"<Error> RandomTailor の設定ファイルを書けませんでした: {ex.GetType().Name}");
-            return "RandomTailor: BeatSaber の UserData フォルダに設定ファイルを書けませんでした（設定のフォルダの場所を確認してください）。";
+            return "RandomTailor: could not write the setting file to the BeatSaber UserData folder (check the folder path in the settings).";
         }
 
         return

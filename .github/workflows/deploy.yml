@@ -74,16 +74,11 @@ jobs:
       # 確認できないとき・notice でないときは、ここで止める（手動実行の skip_maintenance_check で飛ばせる）。
       # mode に true / notice / false のどれかを指定した手動実行は、操作した人の意思なので、確認を飛ばす
       # お知らせの文は、Cloudflare の変数に入れる前に検査する（改行は表示を壊し、200 文字を超えると公開の途中で失敗するため）。
-      # 空（変更しない）は通す
+      # 空（変更しない）は通す。検査は deploy-develop.yml と同じ（.github/scripts/check-maintenance-message.mjs）
       - name: Validate maintenance_message
         env:
           MAINTENANCE_MESSAGE_INPUT: ${{ inputs.maintenance_message }}
-        run: |
-          node -e '
-            const m = process.env.MAINTENANCE_MESSAGE_INPUT ?? "";
-            if (/[\r\n]/.test(m)) { console.log("::error::お知らせの文に改行は使えません"); process.exit(1); }
-            if ([...m].length > 200) { console.log("::error::お知らせの文は 200 文字までです（いま " + [...m].length + " 文字）"); process.exit(1); }
-          '
+        run: node .github/scripts/check-maintenance-message.mjs
 
       - name: Require MAINTENANCE_MODE=notice (production)
         if: ${{ !contains(fromJSON('["true","notice","false"]'), inputs.maintenance_mode) }}

@@ -19,6 +19,7 @@ using FaraBotModerator.Properties;
 using Microsoft.Web.WebView2.Core;
 using BattleFormat = FaraPokemonBattleAssistant.Core.Models.BattleFormat;
 using RemoteRosterStore = FaraPokemonBattleAssistant.Core.Roster.RemoteRosterStore;
+using RotateFinishResult = FaraBotModerator.Controllers.PokemonSyncKeyController.RotateFinishResult;
 using RosterUnavailableException = FaraPokemonBattleAssistant.Core.Roster.RosterUnavailableException;
 
 namespace FaraBotModerator.Views;
@@ -433,7 +434,9 @@ public partial class MainWindow : INotifyPropertyChanged
         if (DateTime.Now > Settings.Default.expiresDateTime)
         {
             TwitchApiNotificationCanvas.Visibility = Visibility.Visible;
-            if (!string.IsNullOrEmpty(Settings.Default.RefreshToken)) await UpdateRefreshTokenAsync();
+            if (TokenMonitorPolicy.ShouldRefresh(DateTime.Now, Settings.Default.expiresDateTime,
+                    !string.IsNullOrEmpty(Settings.Default.RefreshToken), _nextRefreshAttemptAt))
+                await UpdateRefreshTokenAsync();
         }
         else
         {
@@ -552,11 +555,24 @@ public partial class MainWindow : INotifyPropertyChanged
             TwitchApiClientIdPasswordBox.Password,
             TwitchApiClientSecretPasswordBox.Password);
 
-        if (!success)
-        {
+        if (success) return;
+
+        // 失敗したら、次の refresh は一定時間（30 秒）空けて試す（毎秒の再試行にしない）
+        _nextRefreshAttemptAt = DateTime.Now + TokenMonitorPolicy.RefreshRetryInterval;
+        // 認可の試行が進行中（認可画面を開いてから期限内）なら、開き直さない。開き直すと state が変わり、進行中の認可が合わなくなる
+        if (!TokenMonitorPolicy.IsAuthorizationInProgress(_authorizationStartedAt, DateTime.Now))
             RequestApiAccessToken();
-        }
     }
+
+    /// <summary>
+    /// 次に refresh を試してよい時刻（監視が毎秒 refresh し続けないように）。
+    /// </summary>
+    private DateTime _nextRefreshAttemptAt = DateTime.MinValue;
+
+    /// <summary>
+    /// 認可画面を開いた時刻（監視から開き直さないための判断に使う）。認可が成功したとき・開けなかったときは null。
+    /// </summary>
+    private DateTime? _authorizationStartedAt;
 
     /// <summary>
     ///     Twitch API Access Tokenを取得、更新します。
@@ -578,23 +594,26 @@ public partial class MainWindow : INotifyPropertyChanged
 
         if (success)
         {
+            _authorizationStartedAt = null;
             UnlockWindowControl();
         }
     }
 
     /// <summary>
-    ///     accessTokenに必要な認証コードを取得するURLを開く
+    ///     accessTokenに必要な認証コードを取得するURLを開く（ボタンからは常に開く。監視からは <see cref="TokenMonitorPolicy.IsAuthorizationInProgress"/> を見て呼ぶ）
     /// </summary>
     private void RequestApiAccessToken()
     {
         try
         {
             var requestUrl = _twitchAuthService.GenerateAuthorizationUrl(TwitchApiClientIdPasswordBox.Password);
+            _authorizationStartedAt = DateTime.Now;
             LockWindowControl(true);
             FaraBotModeratorWebView.Source = new Uri(requestUrl);
         }
         catch (Exception ex)
         {
+            _authorizationStartedAt = null;
             UnlockWindowControl();
             LogController.OutputLog(ex.Message);
         }
@@ -1208,7 +1227,7 @@ public partial class MainWindow : INotifyPropertyChanged
 
     /// <summary>
     /// アクセスキーを確定します。先に設定ファイルへ保存できたときだけ、メモリ・入力欄・接続中のコマンドを切り替えて、登録データを読み直します。
-    /// 保存できなかったときは、今のアクセスキーのまま（新しいキーは画面に出して控えてもらう）。
+    /// 保存できなかったときは、今のアクセスキーのまま（新しいキーは画面に出さない。呼び出し側は、新しいキーの置き場を消す）。
     /// </summary>
     /// <param name="key">アクセスキー（空ならデータ共有をやめる）</param>
     /// <returns>切り替えて保存できたか</returns>
@@ -1220,7 +1239,8 @@ public partial class MainWindow : INotifyPropertyChanged
                 MessageBox.Show("データ共有をやめる設定を設定ファイル（secrets.json）へ保存できませんでした（ログを確認してください）。今のアクセスキーのまま使えます。",
                     "アクセスキー", MessageBoxButton.OK, MessageBoxImage.Warning);
             else
-                MessageBox.Show("アクセスキーを設定ファイル（secrets.json）へ保存できませんでした。今のアクセスキーのままです。\n新しいアクセスキーを控えてから、もう一度試してください（「コピー」では今のキーがコピーされます）:\n\n" + key,
+                // 新しいキーは画面に出さない（出すと、置き場が残っているキーで試してしまい、作り直しのたびに置き場が増えるため）。呼び出し側が置き場を消す
+                MessageBox.Show("アクセスキーを設定ファイル（secrets.json）へ保存できませんでした。今のアクセスキーのままです（新しいアクセスキーは使えません）。\nもう一度、操作をやり直してください。",
                     "アクセスキー", MessageBoxButton.OK, MessageBoxImage.Warning);
             return false;
         }
@@ -1296,7 +1316,13 @@ public partial class MainWindow : INotifyPropertyChanged
         try
         {
             var key = await PokemonSyncKeyController.IssueAsync(SelectedPokemonDataSourceValue());
-            if (!await ApplyPokemonSyncKeyAsync(key)) return;
+            if (!await ApplyPokemonSyncKeyAsync(key))
+            {
+                // 保存できなかった新しいキーは使わないので、空の置き場も消す（消せなくても、キーは画面に出していないので使われない）
+                await PokemonSyncKeyController.DiscardKeyAsync(SelectedPokemonDataSourceValue(), key);
+                PokemonSyncStatusTextBlock.Text = "発行しましたが、保存できませんでした（今のアクセスキーのまま）";
+                return;
+            }
             MessageBox.Show("アクセスキーを発行しました（データ共有を始めました）。\n\nサイトの「データ共有」ページで、このアクセスキーを貼り付けて「アクセスキーを入力して共有」を押すと、サイトと同じ登録データを使えます（「コピー」でコピーできます）。\n\nアクセスキーはパスワードと同じ扱いです。配信画面に映さないでください。",
                 "アクセスキー", MessageBoxButton.OK, MessageBoxImage.Information);
         }
@@ -1378,26 +1404,36 @@ public partial class MainWindow : INotifyPropertyChanged
             // 2. 新しいキーを設定ファイルへ保存できてから、画面を切り替える。保存できなければ今のキーのまま（古いキーは消さない）
             if (!await ApplyPokemonSyncKeyAsync(pending.NewKey))
             {
+                // 新しいキーは使わないので、写し終えた置き場を消す。キーは画面に出していないので、消せなくても使われない（その場合は案内する）
+                var discarded = await PokemonSyncKeyController.DiscardKeyAsync(SelectedPokemonDataSourceValue(), pending.NewKey);
                 PokemonSyncStatusTextBlock.Text = "作り直しましたが、保存できませんでした（今のアクセスキーのまま）";
+                if (!discarded)
+                    MessageBox.Show("新しいアクセスキーの置き場を消せませんでした（そのキーは画面に出していないので、使われません）。今のアクセスキーは変わっていません。",
+                        "アクセスキー", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
             // 3. 古いキーを消す（消せなくても、新しいキーへの切り替えは済んでいる。ここで例外が出ても、作り直し自体は済んでいるので警告にする）
-            bool oldKeyDeleted;
+            RotateFinishResult finished;
             try
             {
-                oldKeyDeleted = await PokemonSyncKeyController.FinishRotateAsync(SelectedPokemonDataSourceValue(), pending);
+                finished = await PokemonSyncKeyController.FinishRotateAsync(SelectedPokemonDataSourceValue(), pending);
             }
             catch (Exception ex)
             {
                 LogController.OutputLog($"<Error> 古いアクセスキーの削除に失敗しました: {ex.GetType().Name}");
-                oldKeyDeleted = false;
+                finished = new RotateFinishResult(false, 0);
             }
+            // 内容を省いて写した試合（サーバーの上限）は、前半と後半の合計を出す
+            var trimmed = pending.TrimmedMatches + finished.TrimmedMatches;
             MessageBox.Show(
-                (oldKeyDeleted
+                (finished.OldKeyDeleted
                     ? "アクセスキーを作り直しました。古いアクセスキーは使えなくなりました。"
                     : "アクセスキーを作り直しました。ただし、古いアクセスキーは残っています。写している間に古いアクセスキーへ書かれた内容は、新しいアクセスキーに入っていないかもしれません。古いアクセスキーは使わないでください。") +
-                "\n\nサイトの「データ共有」ページで、新しいアクセスキーを入力し直してください（「コピー」でコピーできます）。",
-                "アクセスキー", MessageBoxButton.OK, oldKeyDeleted ? MessageBoxImage.Information : MessageBoxImage.Warning);
+                "\n\nサイトの「データ共有」ページで、新しいアクセスキーを入力し直してください（「コピー」でコピーできます）。" +
+                (trimmed > 0
+                    ? $"\n\n内容を省いて写した試合が {trimmed} 件あります（サーバーの上限のため。その試合の内容は、新しいアクセスキーに入っていません）。"
+                    : ""),
+                "アクセスキー", MessageBoxButton.OK, finished.OldKeyDeleted ? MessageBoxImage.Information : MessageBoxImage.Warning);
         }
         catch (RosterUnavailableException ex)
         {
@@ -1425,7 +1461,16 @@ public partial class MainWindow : INotifyPropertyChanged
         if (MessageBox.Show("このボットでのデータ共有をやめます（アクセスキーを使うのをやめます）。\nクラウドの登録データは残り、サイトはそのまま使えます。データ共有をやめると、チャットの登録系のコマンド（!poke add など）は使えなくなります。\n\n続けますか？",
                 "確認", MessageBoxButton.OKCancel, MessageBoxImage.Warning) != MessageBoxResult.OK)
             return;
-        await ApplyPokemonSyncKeyAsync("");
+        try
+        {
+            await ApplyPokemonSyncKeyAsync("");
+        }
+        catch (Exception ex)
+        {
+            // async void の中で例外を出すとアプリが落ちるので、必ず受けてログに残す
+            LogController.OutputLog($"<Error> データ共有をやめる処理に失敗しました: {ex.GetType().Name}");
+            MessageBox.Show($"データ共有をやめる処理に失敗しました: {ex.Message}", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
     }
 
     /// <summary>
@@ -1553,7 +1598,16 @@ public partial class MainWindow : INotifyPropertyChanged
 
     private async void PokemonRosterReloadButton_Click(object sender, RoutedEventArgs e)
     {
-        await LoadPokemonRosterAsync();
+        try
+        {
+            await LoadPokemonRosterAsync();
+        }
+        catch (Exception ex)
+        {
+            // async void の中で例外を出すとアプリが落ちるので、必ず受けてログに残す
+            LogController.OutputLog($"<Error> 登録データの再読み込みに失敗しました: {ex.GetType().Name}");
+            MessageBox.Show($"登録データを読み込めませんでした: {ex.Message}", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
     }
 
     /// <summary>
