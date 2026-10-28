@@ -686,7 +686,8 @@ public partial class MainWindow : INotifyPropertyChanged
     /// <summary>
     ///     Secretの値を保存します。
     /// </summary>
-    private void SaveSecretValue()
+    /// <param name="syncKey">保存するアクセスキー（省略時は今のアクセスキー。切り替える前に新しいキーを保存するときに使う）</param>
+    private void SaveSecretValue(string? syncKey = null)
     {
         var timer1 =
             (FixedTimer1DatePicker.SelectedDate is not null
@@ -833,7 +834,7 @@ public partial class MainWindow : INotifyPropertyChanged
             {
                 BattleFormat = SelectedPokemonBattleFormat(),
                 DataSource = SelectedPokemonDataSource(),
-                SyncKey = _pokemonSyncKey
+                SyncKey = syncKey ?? _pokemonSyncKey
             }
         };
 
@@ -1201,36 +1202,41 @@ public partial class MainWindow : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// アクセスキーを確定します。すぐに設定ファイルへ保存し、接続中のコマンドにも反映して、登録データを読み直します。
+    /// アクセスキーを確定します。先に設定ファイルへ保存できたときだけ、メモリ・入力欄・接続中のコマンドを切り替えて、登録データを読み直します。
+    /// 保存できなかったときは、今のアクセスキーのまま（新しいキーは画面に出して控えてもらう）。
     /// </summary>
     /// <param name="key">アクセスキー（空ならデータ共有をやめる）</param>
-    /// <returns>設定ファイルに保存できたか（false のときは、キーを画面に出して控えてもらっている）</returns>
+    /// <returns>切り替えて保存できたか</returns>
     private async Task<bool> ApplyPokemonSyncKeyAsync(string key)
     {
+        if (!TrySaveSecretValue(key))
+        {
+            if (string.IsNullOrEmpty(key))
+                MessageBox.Show("データ共有をやめる設定を設定ファイル（secrets.json）へ保存できませんでした（ログを確認してください）。今のアクセスキーのまま使えます。",
+                    "アクセスキー", MessageBoxButton.OK, MessageBoxImage.Warning);
+            else
+                MessageBox.Show("アクセスキーを設定ファイル（secrets.json）へ保存できませんでした。今のアクセスキーのままです。\n新しいアクセスキーを控えてから、もう一度試してください（「コピー」では今のキーがコピーされます）:\n\n" + key,
+                    "アクセスキー", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return false;
+        }
+
         _pokemonSyncKey = key;
         SetPokemonSyncKeyInput(key);
-        // キーを作り直したあとは古いキーが使えないため、終了を待たずに保存する
-        var saved = TrySaveSecretValue();
         _twitchClientController?.SetPokemonSyncKey(key);
         UpdatePokemonSyncKeyButtons();
         await LoadPokemonRosterAsync();
-        if (!saved && string.IsNullOrEmpty(key))
-            MessageBox.Show("データ共有の設定を設定ファイル（secrets.json）へ保存できませんでした（ログを確認してください）。",
-                "アクセスキー", MessageBoxButton.OK, MessageBoxImage.Warning);
-        else if (!saved)
-            MessageBox.Show("アクセスキーを設定ファイル（secrets.json）へ保存できませんでした。このアプリを閉じると、このアクセスキーは残りません。\n今のアクセスキーを控えてください（「コピー」でコピーできます）:\n\n" + key,
-                "アクセスキー", MessageBoxButton.OK, MessageBoxImage.Warning);
-        return saved;
+        return true;
     }
 
     /// <summary>
     /// 設定ファイルへ保存します。失敗したら、理由（例外の種類だけ。キーは含めない）をログに残して false を返します。
     /// </summary>
-    private bool TrySaveSecretValue()
+    /// <param name="syncKey">保存するアクセスキー（省略時は今のアクセスキー）</param>
+    private bool TrySaveSecretValue(string? syncKey = null)
     {
         try
         {
-            SaveSecretValue();
+            SaveSecretValue(syncKey);
             return true;
         }
         catch (Exception ex)
@@ -1362,12 +1368,12 @@ public partial class MainWindow : INotifyPropertyChanged
         PokemonSyncStatusTextBlock.Text = "作り直し中…";
         try
         {
-            // 1. 新しいキーの置き場へ写す（古いキーはまだ消さない）
+            // 1. 新しいキーの置き場へ写す（古いキーはまだ消さない。今のキーもまだ画面と設定ファイルに残したまま）
             var pending = await PokemonSyncKeyController.PrepareRotateAsync(SelectedPokemonDataSourceValue(), _pokemonSyncKey);
-            // 2. 新しいキーを保存できてから、古いキーを消す（保存できなければ古いキーはそのまま使える）
+            // 2. 新しいキーを設定ファイルへ保存できてから、画面を切り替える。保存できなければ今のキーのまま（古いキーは消さない）
             if (!await ApplyPokemonSyncKeyAsync(pending.NewKey))
             {
-                PokemonSyncStatusTextBlock.Text = "作り直しましたが、保存できませんでした（古いアクセスキーは消していません）";
+                PokemonSyncStatusTextBlock.Text = "作り直しましたが、保存できませんでした（今のアクセスキーのまま）";
                 return;
             }
             // 3. 古いキーを消す（消せなくても、新しいキーへの切り替えは済んでいる。ここで例外が出ても、作り直し自体は済んでいるので警告にする）
@@ -1384,7 +1390,7 @@ public partial class MainWindow : INotifyPropertyChanged
             MessageBox.Show(
                 (oldKeyDeleted
                     ? "アクセスキーを作り直しました。古いアクセスキーは使えなくなりました。"
-                    : "アクセスキーを作り直しました（登録データは新しいアクセスキーに移りましたが、古いアクセスキーの置き場を消せませんでした。古いアクセスキーは使わないでください）。") +
+                    : "アクセスキーを作り直しました。ただし、古いアクセスキーは残っています。写している間に古いアクセスキーへ書かれた内容は、新しいアクセスキーに入っていないかもしれません。古いアクセスキーは使わないでください。") +
                 "\n\nサイトの「データ共有」ページで、新しいアクセスキーを入力し直してください（「コピー」でコピーできます）。",
                 "アクセスキー", MessageBoxButton.OK, oldKeyDeleted ? MessageBoxImage.Information : MessageBoxImage.Warning);
         }
