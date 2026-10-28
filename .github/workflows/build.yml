@@ -39,6 +39,9 @@ jobs:
       - name: Build
         run: dotnet build FaraBotModerator.csproj -c Release --no-restore
 
+      - name: Test (app unit tests)
+        run: dotnet test tests/FaraBotModerator.Tests/FaraBotModerator.Tests.csproj -c Release --nologo
+
   site:
     name: Build site
     runs-on: ubuntu-latest
