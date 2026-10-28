@@ -167,7 +167,7 @@ h1, h2, h3, h4 { color: var(--on-surface); font-weight: 700; }
     pointer-events: none;
 }
 /* 本文（ホームの各節・ドキュメント）の後ろには、ほぼ不透明な面を敷いて、吹き出しが文字に重ならないようにする。
-   吹き出しは、ヒーローと、本文の外側（広い画面の左右）にだけ見える */
+   吹き出しは、ヒーローの文字の外側と、本文の外側（広い画面の左右）にだけ見える（ヒーローの文字の面は .hero-inner） */
 .page-section,
 .doc-layout {
     background: color-mix(in srgb, var(--surface) 94%, transparent);
@@ -251,7 +251,14 @@ h1, h2, h3, h4 { color: var(--on-surface); font-weight: 700; }
     background: linear-gradient(180deg, var(--glow-1), transparent);
     border-bottom: 1px solid var(--outline-variant);
 }
-.hero-inner { max-width: 760px; margin: 0 auto; }
+/* 文字の領域（見出し・説明・ボタン・注記）の後ろには、ほぼ不透明な面を敷く。背景の吹き出しが文字に重ならないようにするため（.page-section と同じ考え方） */
+.hero-inner {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 28px 32px;
+    border-radius: var(--shape-m);
+    background: color-mix(in srgb, var(--surface) 90%, transparent);
+}
 .eyebrow {
     display: inline-block;
     margin: 0 0 14px;
@@ -275,6 +282,9 @@ h1, h2, h3, h4 { color: var(--on-surface); font-weight: 700; }
 .hero-note { margin: 20px 0 0; font-size: 0.88rem; color: var(--on-surface-variant); }
 
 .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+/* 前に兄弟があるカード（article）には、本文の上の間隔（上に 1rem）の規則が当たるため、グリッドの中では打ち消す。
+   詳細度は (0,3,0) にする（その規則は (0,2,2)）。打ち消さないと、2 枚目以降だけ 16px 下がり、行の上端がそろわない */
+.page-section .card-grid > .card { margin-block-start: 0; }
 .card {
     display: flex;
     flex-direction: column;
@@ -458,6 +468,8 @@ code {
     .prose th { white-space: normal; }
     .prose td { min-width: 0; }
     .hero { padding: 48px 20px 40px; }
+    /* 狭い画面では、面の中の左右の余白を小さくして、見出しの幅を残す（360px でも h1 が語の途中で折れないように） */
+    .hero-inner { padding: 20px 14px; }
     .page-section { padding-top: 32px; }
     .doc-main h1, .page-section h1 { font-size: 1.65rem; }
     .pager-next { margin-left: 0; text-align: left; }
