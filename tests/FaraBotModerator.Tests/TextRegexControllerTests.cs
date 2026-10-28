@@ -23,6 +23,7 @@ public class TextRegexControllerTests : IDisposable
 
     public void Dispose()
     {
+        GC.SuppressFinalize(this);
         try
         {
             Directory.Delete(_directory, true);

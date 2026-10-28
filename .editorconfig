@@ -82,3 +82,7 @@ tab_width = 4
 indent_style = space
 indent_size = 4
 tab_width = 4
+
+# C# の静的解析（ラチェット）。kit の dotnet.editorconfig（error）から、違反が残るものだけ下げる。件数と理由は site/CLAUDE.md・README の「C#」
+[*.cs]
+dotnet_diagnostic.VSTHRD100.severity = warning

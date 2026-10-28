@@ -57,7 +57,7 @@ document.addEventListener("click", function (e) {
     var a = e.target && e.target.closest && e.target.closest("a[href]");
     if (!a || e.defaultPrevented === undefined || e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
     var url;
-    try { url = new URL(a.href, location.href); } catch (err) { return; }
+    try { url = new URL(a.href, location.href); } catch { return; }
     if (url.origin === location.origin && url.pathname === location.pathname && url.hash.length > 1) {
         setTimeout(window.faraScrollToHash, 50);
     }

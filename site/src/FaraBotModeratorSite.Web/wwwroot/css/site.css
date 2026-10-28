@@ -663,3 +663,9 @@ html body .fsk-sidebar .mud-nav-link.active .mud-nav-link-text { color: #c4b5fd;
     .prose pre, .code-sample { white-space: pre-wrap; overflow-wrap: anywhere; }
     .prose pre code, .code-sample code { white-space: pre-wrap; overflow-wrap: anywhere; }
 }
+
+/* ---- 問い合わせフォーム（kit の部品）。レイアウト計測（layout-check）の指摘を直す ----
+   入力欄は MudBlazor が outline:0 にする（.mud-input > input:focus など）。その規則に負けない詳細度で、フォーカス中の枠を出す（色は kit の --fsk-focus）。
+   送信ボタンは高さ 48px（タップの大きさ。44px ちょうどだと、判定の端が隣の要素に当たるため）。 */
+html :is(input, textarea).mud-input-slot.mud-input-root:is(:focus, :focus-visible) { outline: 2px solid var(--fsk-focus, #e9d5ff); outline-offset: 2px; }
+.fsk-report-submit { min-height: 48px; }

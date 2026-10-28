@@ -88,3 +88,66 @@ jobs:
       - name: Build site (develop)
         working-directory: site
         run: node tools/build-site.mjs --env develop
+
+  # 配信中のサイトを、幅ごと（360〜1440px）に開いて、レイアウトの数値の崩れを見る（site/layout-check.config.mjs・docs/layout-check.md）。公開はしない
+  layout-check:
+    name: Layout check (site)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # kit の計測と、site の設定は、それぞれ自分の node_modules を見る（kit の依存は kit の中から読まれるため、kit でも npm ci する）
+      - name: Install (kit)
+        working-directory: external/fara-site-kit
+        run: npm ci
+
+      - name: Install (site)
+        working-directory: site
+        run: npm ci
+
+      - name: Build site (production, publish/wwwroot)
+        working-directory: site
+        run: node tools/build-site.mjs --env production
+
+      - name: Install Chromium
+        working-directory: site
+        run: npx playwright-core install --with-deps chromium
+
+      - name: Layout check
+        working-directory: site
+        run: npm run layout-check
+
+  # ESLint（site/ の JS。対象と設定は site/eslint.config.mjs）。C# のアナライザーは、各ビルド（app・site）の中で動く（Directory.Build.props）
+  lint:
+    name: Lint (site JS)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install (kit)
+        working-directory: external/fara-site-kit
+        run: npm ci
+
+      - name: Install (site)
+        working-directory: site
+        run: npm ci
+
+      - name: Lint
+        working-directory: site
+        run: npm run lint
