@@ -53,6 +53,20 @@ git submodule update --init
 1. `dotnet publish` による実行ファイルの生成（シングルファイル形式）
 2. Inno Setupを使用したインストーラー (`.exe`) の作成（Inno Setup 6 がインストールされている場合）
 
+### 署名用の自己署名証明書を作る（任意）
+リリースの署名（GitHub Actions の `release-app.yml`）に使う自己署名証明書は、`create_certificate.ps1` で作れます。パスワードは自分で決めて、実行時に入力してください（スクリプトに既定のパスワードはありません。画面には表示されません）。
+
+```powershell
+./create_certificate.ps1
+# Password の入力を求められるので、自分で決めたパスワードを入力する
+```
+
+できた `cert.pfx` の中身を base64 にした文字列を、GitHub のリポジトリの Settings > Secrets and variables > Actions に次の名前で登録します。
+- `CERTIFICATE_PFX`: スクリプトが表示する base64 文字列
+- `CERTIFICATE_PASSWORD`: 入力したパスワード
+
+`cert.pfx` は秘密鍵を含みます。リポジトリにコミットせず、安全な場所に保管してください。
+
 ### プロジェクト構成
 - `FaraBotModerator`: アプリ本体 (WPF)
 - `Installer`: Inno Setup用スクリプトおよび関連ファイル
