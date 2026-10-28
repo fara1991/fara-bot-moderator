@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Security.Cryptography;
@@ -26,15 +27,17 @@ public class TwitchAuthService
     /// <returns>成功した場合はtrue</returns>
     public async Task<bool> RefreshAccessTokenAsync(string clientId, string clientSecret)
     {
-        var parameter =
-            $"client_id={clientId}" +
-            $"&client_secret={clientSecret}" +
-            "&grant_type=refresh_token" +
-            $"&refresh_token={Settings.Default.RefreshToken}";
+        var form = new[]
+        {
+            new KeyValuePair<string, string>("client_id", clientId),
+            new KeyValuePair<string, string>("client_secret", clientSecret),
+            new KeyValuePair<string, string>("grant_type", "refresh_token"),
+            new KeyValuePair<string, string>("refresh_token", Settings.Default.RefreshToken ?? "")
+        };
 
         try
         {
-            var (responseBody, option) = await PostRequestAsync(parameter, "https://id.twitch.tv/oauth2/token");
+            var (responseBody, option) = await PostRequestAsync(form, "https://id.twitch.tv/oauth2/token");
             var tokenResponse = JsonSerializer.Deserialize<TwitchRefreshTokenModel>(responseBody, option);
 
             if (tokenResponse?.AccessToken == null) return false;
@@ -70,14 +73,16 @@ public class TwitchAuthService
             throw new HttpRequestException(message);
         }
 
-        var parameter =
-            $"client_id={clientId}" +
-            $"&client_secret={clientSecret}" +
-            $"&code={authorizationCode}" +
-            "&grant_type=authorization_code" +
-            $"&redirect_uri=http://localhost:{Settings.Default.Port}";
+        var form = new[]
+        {
+            new KeyValuePair<string, string>("client_id", clientId),
+            new KeyValuePair<string, string>("client_secret", clientSecret),
+            new KeyValuePair<string, string>("code", authorizationCode),
+            new KeyValuePair<string, string>("grant_type", "authorization_code"),
+            new KeyValuePair<string, string>("redirect_uri", $"http://localhost:{Settings.Default.Port}")
+        };
 
-        var (responseBody, option) = await PostRequestAsync(parameter, "https://id.twitch.tv/oauth2/token");
+        var (responseBody, option) = await PostRequestAsync(form, "https://id.twitch.tv/oauth2/token");
 
         if (responseBody.Contains("Invalid authorization code")) return false;
 
@@ -87,6 +92,8 @@ public class TwitchAuthService
         Settings.Default.AccessToken = tokenResponse.AccessToken;
         Settings.Default.RefreshToken = tokenResponse.RefreshToken;
         Settings.Default.expiresDateTime = DateTime.Now.AddSeconds(tokenResponse.ExpiresIn);
+        // 使い終わった state は消す（同じ認証の戻りを、もう一度受け付けないように）
+        Settings.Default.OAuth2State = "";
         Settings.Default.Save();
 
         return true;
@@ -166,9 +173,11 @@ public class TwitchAuthService
     /// <summary>
     /// POSTリクエストを送信します。
     /// </summary>
-    private static async Task<(string responseBody, JsonSerializerOptions option)> PostRequestAsync(string parameter, string url)
+    private static async Task<(string responseBody, JsonSerializerOptions option)> PostRequestAsync(
+        IEnumerable<KeyValuePair<string, string>> form, string url)
     {
-        var content = new StringContent(parameter, Encoding.Default, "application/x-www-form-urlencoded");
+        // 値（secret・code）は URL エンコードされる（連結した文字列だと、記号を含むときに壊れる）
+        var content = new FormUrlEncodedContent(form);
         var response = await HttpClient.PostAsync(url, content);
 
         var responseBody = await response.Content.ReadAsStringAsync();

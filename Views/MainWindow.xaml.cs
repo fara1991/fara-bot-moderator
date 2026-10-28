@@ -88,6 +88,11 @@ public partial class MainWindow : INotifyPropertyChanged
     private TwitchTestEventController? _twitchTestEventController;
 
     /// <summary>
+    /// テスト用のコントローラーを作ったときの、チャット接続（TwitchClientController）。接続をし直したら作り直すため
+    /// </summary>
+    private TwitchClientController? _testEventClient;
+
+    /// <summary>
     /// </summary>
     private readonly TwitchAuthService _twitchAuthService = new();
 
@@ -387,32 +392,48 @@ public partial class MainWindow : INotifyPropertyChanged
         while (true)
         {
             await Task.Delay(1000);
-
-            // Token期限
-            if (DateTime.Now > Settings.Default.expiresDateTime)
+            try
             {
-                TwitchApiNotificationCanvas.Visibility = Visibility.Visible;
-                if (!string.IsNullOrEmpty(Settings.Default.RefreshToken)) await UpdateRefreshTokenAsync();
+                await MonitorOnceAsync();
             }
-            else
+            catch (Exception ex)
             {
-                TwitchApiNotificationCanvas.Visibility = Visibility.Hidden;
+                // 1 周期の失敗で監視を止めない（トークン期限・棒読みちゃん・チャット表示は、次の周期でまた動く）
+                LogController.OutputLog($"<Error> 監視の処理に失敗しました（次の周期で続けます）: {ex.Message}");
             }
+        }
+    }
 
-            TwitchApiExpireDateTimeTextBlock.Text = $"Token expiration: {Settings.Default.expiresDateTime}";
+    /// <summary>
+    /// 監視の 1 周期分（トークン期限・チャット表示・棒読みちゃんの接続確認）。
+    /// </summary>
+    private async Task MonitorOnceAsync()
+    {
+        // Token期限
+        if (DateTime.Now > Settings.Default.expiresDateTime)
+        {
+            TwitchApiNotificationCanvas.Visibility = Visibility.Visible;
+            if (!string.IsNullOrEmpty(Settings.Default.RefreshToken)) await UpdateRefreshTokenAsync();
+        }
+        else
+        {
+            TwitchApiNotificationCanvas.Visibility = Visibility.Hidden;
+        }
 
-            if (_twitchClientController is not null) AddGridViewChatData();
+        TwitchApiExpireDateTimeTextBlock.Text = $"Token expiration: {Settings.Default.expiresDateTime}";
 
-            // 棒読みちゃん接続チェック
-            if (BouyomiChanConnectCheckBox.IsChecked != true || TwitchConnectionStateLabel.Content.ToString() != "State: Connect") continue;
-            if (_twitchClientController != null && !await BouyomiChanController.IsBouyomiChanRunningAsync())
+        if (_twitchClientController is not null) AddGridViewChatData();
+
+        // 棒読みちゃん接続チェック
+        if (BouyomiChanConnectCheckBox.IsChecked != true || TwitchConnectionStateLabel.Content.ToString() != "State: Connect") return;
+        if (_twitchClientController != null && !await BouyomiChanController.IsBouyomiChanRunningAsync())
+        {
+            // Dispatcher.InvokeAsync は Task を返すので、中の TwitchDisconnect まで待つために await を 2 回書く
+            await await Dispatcher.InvokeAsync(async () =>
             {
-                await Dispatcher.InvokeAsync(async () =>
-                {
-                    MessageBox.Show("棒読みちゃんが終了しました。Disconnectする前に棒読みちゃんを閉じないでください。\n安全のためTwitchから切断します。", "警告", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    await TwitchDisconnect();
-                });
-            }
+                MessageBox.Show("棒読みちゃんが終了しました。Disconnectする前に棒読みちゃんを閉じないでください。\n安全のためTwitchから切断します。", "警告", MessageBoxButton.OK, MessageBoxImage.Warning);
+                await TwitchDisconnect();
+            });
         }
     }
 
@@ -423,36 +444,64 @@ public partial class MainWindow : INotifyPropertyChanged
             while (_twitchClientController is null) await Task.Delay(100);
 
             await Task.Delay(500);
-            var isConnected = _twitchClientController is { IsConnected: true } &&
-                              _twitchEventSubController is { IsConnected: true } &&
-                              DateTime.Now <= Settings.Default.expiresDateTime;
-
-            TwitchConnectionStateLabel.Content = isConnected
-                ? @"State: Connect"
-                : @"State: Disconnect";
-
-            // Test Sendボタンの状態を制御
-            FollowTestButton.IsEnabled = isConnected;
-            RaidTestButton.IsEnabled = isConnected;
-            SubscriptionTestButton.IsEnabled = isConnected;
-            BitsTestButton.IsEnabled = isConnected;
-            GiftTestButton.IsEnabled = isConnected;
-            ChannelPointTestButton.IsEnabled = isConnected;
+            try
+            {
+                UpdateConnectionStateOnce();
+            }
+            catch (Exception ex)
+            {
+                // 1 周期の失敗で状態表示の更新を止めない
+                LogController.OutputLog($"<Error> 接続状態の表示に失敗しました（次の周期で続けます）: {ex.Message}");
+            }
         }
+    }
+
+    /// <summary>
+    /// 接続状態の表示と、テスト送信ボタンの有効・無効を 1 回更新します。
+    /// </summary>
+    private void UpdateConnectionStateOnce()
+    {
+        var isConnected = _twitchClientController is { IsConnected: true } &&
+                          _twitchEventSubController is { IsConnected: true } &&
+                          DateTime.Now <= Settings.Default.expiresDateTime;
+
+        TwitchConnectionStateLabel.Content = isConnected
+            ? @"State: Connect"
+            : @"State: Disconnect";
+
+        // Test Sendボタンの状態を制御
+        FollowTestButton.IsEnabled = isConnected;
+        RaidTestButton.IsEnabled = isConnected;
+        SubscriptionTestButton.IsEnabled = isConnected;
+        BitsTestButton.IsEnabled = isConnected;
+        GiftTestButton.IsEnabled = isConnected;
+        ChannelPointTestButton.IsEnabled = isConnected;
     }
 
     private void AddGridViewChatData()
     {
         if (_chatWindow is null) return;
 
-        var chatModelData = _twitchClientController?.PickChatData();
-        if (chatModelData is null) return;
+        // 溜まっているチャットを、上限までまとめて表示に追加する（1 周期に 1 件だと、1 秒に 2 件以上のとき、表示が遅れ続けるため）
+        for (var i = 0; i < MaxChatRowsPerTick; i++)
+        {
+            var chatModelData = _twitchClientController?.PickChatData();
+            if (chatModelData is null) return;
+            AddChatRow(_chatWindow, chatModelData);
+        }
+    }
 
+    /// <summary>
+    /// 1 回の監視の周期で表示するチャットの上限（溜まったときに UI を止めないため。残りは次の周期で出す）。
+    /// </summary>
+    private const int MaxChatRowsPerTick = 50;
+
+    private static void AddChatRow(ChatWindow chatWindow, ChatModel chatModelData)
+    {
         var beforeScrollBottom = true;
 
-        var beforeScrollViewer =
-            VisualTreeHelper.GetChild(VisualTreeHelper.GetChild(_chatWindow.TwitchChatDataGrid, 0), 0);
-        if (beforeScrollViewer is ScrollViewer viewer)
+        // 表示の部品の並びが無いとき（まだ描画されていない・作りが変わった）は、既定（一番下）として扱う
+        if (GetChildOrNull(GetChildOrNull(chatWindow.TwitchChatDataGrid, 0), 0) is ScrollViewer viewer)
         {
             var offset = viewer.VerticalOffset;
             var extent = viewer.ScrollableHeight;
@@ -461,8 +510,17 @@ public partial class MainWindow : INotifyPropertyChanged
             beforeScrollBottom = offset + viewport >= extent;
         }
 
-        _chatWindow.TwitchChatDataGrid.Items.Add(chatModelData);
-        if (beforeScrollBottom) _chatWindow.TwitchChatDataGrid.ScrollIntoView(chatModelData);
+        chatWindow.TwitchChatDataGrid.Items.Add(chatModelData);
+        if (beforeScrollBottom) chatWindow.TwitchChatDataGrid.ScrollIntoView(chatModelData);
+    }
+
+    /// <summary>
+    /// 子要素を番号で取ります。その番号の子が無いときは null（VisualTreeHelper.GetChild は範囲外で例外になるため）。
+    /// </summary>
+    private static DependencyObject? GetChildOrNull(DependencyObject? parent, int index)
+    {
+        if (parent is null || VisualTreeHelper.GetChildrenCount(parent) <= index) return null;
+        return VisualTreeHelper.GetChild(parent, index);
     }
 
     /// <summary>
@@ -786,7 +844,7 @@ public partial class MainWindow : INotifyPropertyChanged
             _twitchApiController = new TwitchApiController(secretKeys);
             await _twitchApiController.InitializeAsync();
 
-            var isTokenValid = _twitchApiController.ValidateToken();
+            var isTokenValid = await _twitchApiController.ValidateTokenAsync();
             LogController.OutputLog($"Token validation result: {isTokenValid}");
 
             if (!isTokenValid)
@@ -1476,7 +1534,8 @@ public partial class MainWindow : INotifyPropertyChanged
 
     private void InitializeTestEventController()
     {
-        if (_twitchTestEventController != null) return;
+        // 接続を作り直していたら（TwitchClientController が変わっていたら）、古い接続へ送らないように作り直す
+        if (_twitchTestEventController != null && ReferenceEquals(_testEventClient, _twitchClientController)) return;
         
         var secretKeys = SecretKeyController.LoadKeys();
         _twitchApiController ??= new TwitchApiController(secretKeys);
@@ -1490,6 +1549,7 @@ public partial class MainWindow : INotifyPropertyChanged
         // あるいは MainWindowで管理するようにリファクタリングする。
         // ひとまずTwitchClientControllerにGetterを追加する。
         
+        _testEventClient = _twitchClientController;
         _twitchTestEventController = new TwitchTestEventController(
             _twitchClientController, 
             _twitchClientController.BouyomiChanController, 
