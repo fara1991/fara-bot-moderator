@@ -29,10 +29,40 @@ public class TwitchAuthServiceTests
     }
 
     [Fact]
-    public void Scopes_have_no_duplicates_and_use_uppercase_escapes()
+    public void Scopes_have_no_duplicates()
     {
         Assert.Equal(TwitchAuthService.Scopes.Length, TwitchAuthService.Scopes.Distinct().Count());
-        Assert.All(TwitchAuthService.Scopes, scope => Assert.DoesNotContain("%3a", scope));
+    }
+
+    [Fact]
+    public void Scopes_are_the_ones_the_bot_uses()
+    {
+        // 実装している機能に必要な権限だけ（増やす・減らすときは、対応する呼び出しを確かめてここも直す）
+        var expected = new[]
+        {
+            "bits:read", "channel:moderate", "channel:read:redemptions", "chat:edit",
+            "chat:read", "moderator:manage:shoutouts", "moderator:read:followers", "user:read:follows",
+        };
+        Assert.Equal(expected.OrderBy(scope => scope), TwitchAuthService.Scopes.OrderBy(scope => scope));
+    }
+
+    [Fact]
+    public void Stream_key_is_not_requested()
+    {
+        Assert.DoesNotContain("channel:read:stream_key", TwitchAuthService.Scopes);
+    }
+
+    [Fact]
+    public void The_scope_parameter_is_encoded_with_uppercase_escapes_and_joined_with_20()
+    {
+        var url = TwitchAuthService.BuildAuthorizationUrl("client", 3000, "state123");
+        var scopeParam = url.Split("&scope=")[1].Split('&')[0];
+
+        Assert.Equal(
+            "bits%3Aread%20channel%3Amoderate%20channel%3Aread%3Aredemptions%20chat%3Aedit%20chat%3Aread" +
+            "%20moderator%3Amanage%3Ashoutouts%20moderator%3Aread%3Afollowers%20user%3Aread%3Afollows",
+            scopeParam);
+        Assert.DoesNotContain("%3a", url);
     }
 
     private const string ReturnUrl = "http://localhost:8080/?code=abc&scope=bits%3Aread&state=xyz";

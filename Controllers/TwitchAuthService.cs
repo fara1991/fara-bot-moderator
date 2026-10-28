@@ -145,7 +145,7 @@ public class TwitchAuthService
                $"?client_id={clientId}" +
                $"&redirect_uri=http://localhost%3A{port}" +
                "&response_type=code" +
-               "&scope=" + string.Join("%20", Scopes) +
+               "&scope=" + string.Join("%20", Scopes.Select(Uri.EscapeDataString)) +
                $"&state={state}";
     }
 
@@ -155,34 +155,19 @@ public class TwitchAuthService
     internal static DateTime ExpiryFrom(DateTime now, int expiresInSeconds) => now.AddSeconds(expiresInSeconds);
 
     /// <summary>
-    /// 認可を求める権限（スコープ）。同じ権限を 2 度書かない（<see cref="GenerateAuthorizationUrl"/> が使う）。
+    /// 認可を求める権限（スコープ）。実装している機能（チャット・EventSub・Helix の呼び出し）に必要なものだけを並べる。
+    /// 同じ権限を 2 度書かない。URL の組み立ては <see cref="BuildAuthorizationUrl"/> が行う（空白を %20、権限名を Uri.EscapeDataString で %3A 形式にする）。
     /// </summary>
     internal static readonly string[] Scopes =
     [
-        "bits%3Aread",
-        "channel%3Amanage%3Apredictions",
-        "channel%3Amanage%3Araids",
-        "channel%3Amanage%3Aredemptions",
-        "channel%3Amanage%3Aschedule",
-        "channel%3Aread%3Ahype_train",
-        "channel%3Aread%3Apolls",
-        "channel%3Aread%3Apredictions",
-        "channel%3Aread%3Aredemptions",
-        "channel%3Aread%3Astream_key",
-        "channel%3Aread%3Asubscriptions",
-        "channel%3Aread%3Avips",
-        "moderation%3Aread",
-        "moderator%3Amanage%3Aannouncements",
-        "user%3Aread%3Abroadcast",
-        "user%3Aread%3Afollows",
-        "user%3Aread%3Asubscriptions",
-        "user%3Aread%3Aemail",
-        "channel%3Amoderate",
-        "chat%3Aedit",
-        "chat%3Aread",
-        "whispers%3Aread",
-        "moderator%3Amanage%3Ashoutouts",
-        "moderator%3Aread%3Afollowers",
+        "bits:read",
+        "channel:moderate",
+        "channel:read:redemptions",
+        "chat:edit",
+        "chat:read",
+        "moderator:manage:shoutouts",
+        "moderator:read:followers",
+        "user:read:follows",
     ];
 
     /// <summary>
