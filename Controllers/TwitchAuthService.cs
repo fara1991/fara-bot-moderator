@@ -159,6 +159,21 @@ public class TwitchAuthService
         !string.IsNullOrEmpty(expectedState) && string.Equals(expectedState, actualState, StringComparison.Ordinal);
 
     /// <summary>
+    /// 監視している画面の URL を、認証の戻りとして処理するか。認証を始めていない（state が空）・処理済みの URL・
+    /// 戻りの形（http://localhost:ポート の、code・scope・state を含む URL）でないものは処理しない。
+    /// </summary>
+    /// <param name="url">画面の今の URL</param>
+    /// <param name="lastHandled">最後に処理した戻りの URL（同じ URL を 2 度処理しないため）</param>
+    /// <param name="expectedState">認証のときに作った state（設定に保存したもの）</param>
+    /// <param name="port">認証の戻り先のポート</param>
+    internal static bool ShouldHandleAuthUrl(string url, string lastHandled, string expectedState, int port)
+    {
+        if (string.IsNullOrEmpty(expectedState)) return false;
+        if (url == lastHandled) return false;
+        return url.Contains($"http://localhost:{port}") && url.Contains("code=") && url.Contains("scope=") && url.Contains("state=");
+    }
+
+    /// <summary>
     /// トークンの有効期限が切れているかどうかを確認します。
     /// </summary>
     /// <returns>期限切れの場合はtrue</returns>

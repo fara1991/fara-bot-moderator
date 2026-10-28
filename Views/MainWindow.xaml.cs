@@ -371,7 +371,6 @@ public partial class MainWindow : INotifyPropertyChanged
     /// <returns></returns>
     private async Task StartWebServerAsync()
     {
-        var accessTokenQuery = new[] {$"http://localhost:{Settings.Default.Port}", "code=", "scope=", "state="};
         while (true)
         {
             await Task.Delay(100);
@@ -379,12 +378,11 @@ public partial class MainWindow : INotifyPropertyChanged
             try
             {
                 if (FaraBotModeratorWebView.Source is null) continue;
-                // 認証を始めていないとき（state が無い）は、戻りの URL があっても無視する
-                if (string.IsNullOrEmpty(Settings.Default.OAuth2State)) continue;
 
+                // 認証を始めていない・処理済み・戻りの形でない URL は無視する（処理した戻りの URL は、画面に残っていても 2 度処理しない）
                 var url = FaraBotModeratorWebView.Source.ToString();
-                // 処理した戻りの URL は、画面に残っていても 2 度処理しない（同じ code を何度も送らない）
-                if (url == _lastHandledAuthUrl || !accessTokenQuery.All(key => url.Contains(key))) continue;
+                if (!TwitchAuthService.ShouldHandleAuthUrl(url, _lastHandledAuthUrl, Settings.Default.OAuth2State, Settings.Default.Port))
+                    continue;
 
                 _lastHandledAuthUrl = url;
                 await UpdateAccessTokenAsync(url);

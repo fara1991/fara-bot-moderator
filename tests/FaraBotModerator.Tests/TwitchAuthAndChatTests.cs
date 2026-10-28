@@ -34,6 +34,34 @@ public class TwitchAuthServiceTests
         Assert.Equal(TwitchAuthService.Scopes.Length, TwitchAuthService.Scopes.Distinct().Count());
         Assert.All(TwitchAuthService.Scopes, scope => Assert.DoesNotContain("%3a", scope));
     }
+
+    private const string ReturnUrl = "http://localhost:8080/?code=abc&scope=bits%3Aread&state=xyz";
+
+    [Fact]
+    public void The_same_return_url_is_not_handled_twice()
+    {
+        Assert.False(TwitchAuthService.ShouldHandleAuthUrl(ReturnUrl, ReturnUrl, "xyz", 8080));
+    }
+
+    [Fact]
+    public void Nothing_is_handled_before_authentication_starts()
+    {
+        // state が空（認証を始めていない・認証の後）は、戻りの URL があっても無視する
+        Assert.False(TwitchAuthService.ShouldHandleAuthUrl(ReturnUrl, "", "", 8080));
+    }
+
+    [Fact]
+    public void A_url_without_a_code_is_not_handled()
+    {
+        const string noCode = "http://localhost:8080/?scope=bits%3Aread&state=xyz";
+        Assert.False(TwitchAuthService.ShouldHandleAuthUrl(noCode, "", "xyz", 8080));
+    }
+
+    [Fact]
+    public void A_new_return_url_is_handled()
+    {
+        Assert.True(TwitchAuthService.ShouldHandleAuthUrl(ReturnUrl, "", "xyz", 8080));
+    }
 }
 
 /// <summary>
