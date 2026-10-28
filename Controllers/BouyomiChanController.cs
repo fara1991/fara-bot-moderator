@@ -93,8 +93,9 @@ public class BouyomiChanController
             using var timeout = new CancellationTokenSource(RunningCheckTimeout);
             // 棒読みちゃんのHTTP連携が有効であれば、GET /Talk に対して (恐らく405 Method Not Allowed等が返るが) 接続はできるはず
             // 接続自体が拒否される場合は起動していないとみなす。応答の中身（ステータス）は見ない
-            using var response = await Client.GetAsync(TalkUrl, timeout.Token);
-            return response is not null;
+            // 応答は使わない（接続できたことが分かればよい）。受け取った応答は捨てて、接続を返す
+            (await Client.GetAsync(TalkUrl, timeout.Token)).Dispose();
+            return true;
         }
         catch (Exception ex)
         {
