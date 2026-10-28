@@ -51,6 +51,7 @@ npx wrangler dev --env dev    # Cloudflare と同じ動き（Worker 経由）で
 - `.github/workflows/deploy.yml`（Deploy (production)）: `master` への push で、本番に公開
 
 - 本番（master）の公開は、Worker の変数 `MAINTENANCE_MODE` が `notice` のときだけ行い、公開と同時に `true`（メンテナンス画面）にします。作業が終わったら、Cloudflare で `false` に戻します（お知らせも一緒に消える）
+- Worker がまだ無い初回の公開だけ、Run workflow で `first_publish` を `true` にします。Worker が見つからない（404）のは、初回のほかに Worker 名・アカウント ID の誤りでも起きるため、それ以外では止めます（確認を飛ばさない）
 - メンテナンス表示の切り替えは、Actions の「Run workflow」（確認用は Deploy (develop) で `develop`、本番は Deploy (production) で `master` を選ぶ）で `maintenance_mode`（`true` / `notice` / `false`、空 = 変更しない）と `maintenance_message`（文面。空 = 変更しない）を入れて実行します。公開されるのは、選んだブランチの最新のコードです。mode を指定した本番の実行は、`notice` の確認を飛ばします。結果はジョブサマリーに出ます（手順は fara-site-kit の `docs/maintenance-cli.md`）
 - お知らせ（`MAINTENANCE_MODE=notice`）の帯は、アプリが `/api/maintenance` を読んで出します（以前の、Worker が HTML に差し込む方式はやめました）
 

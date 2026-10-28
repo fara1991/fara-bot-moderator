@@ -13,9 +13,15 @@ on:
         required: true
         type: string
 
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: windows-latest
+    # タグの作成・push（手動実行）と、Release の作成に contents: write が要る（この job だけ）
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout
@@ -23,13 +29,24 @@ jobs:
         with:
           submodules: true
 
+      # 入力は式展開でスクリプトに埋め込まず、環境変数で受ける（引用符を含む入力で、スクリプトを壊したり、命令を混ぜられないように）。
+      # 形式は vX.Y.Z（任意で -prerelease）だけを受ける
       - name: Set version
         id: version
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref_name }}
+          INPUT_VERSION: ${{ inputs.version }}
         run: |
-          if ("${{ github.event_name }}" -eq "push") {
-            $version = "${{ github.ref_name }}"
+          if ($env:EVENT_NAME -eq "push") {
+            $version = $env:REF_NAME
           } else {
-            $version = "${{ inputs.version }}"
+            $version = $env:INPUT_VERSION
+          }
+          $version = "$version".Trim()
+          if ($version -notmatch '^v?\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$') {
+            Write-Host "::error::バージョンの形式が正しくありません（例: v1.0.0）: $version"
+            exit 1
           }
           # vプレフィックスがない場合は追加
           if (-not $version.StartsWith("v")) {
