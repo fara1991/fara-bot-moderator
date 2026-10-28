@@ -73,7 +73,7 @@ jobs:
         working-directory: site
         run: |
           node --test worker/index.test.mjs tests/js/site-init.test.mjs
-          node --test ../external/fara-site-kit/worker/report.test.mjs ../external/fara-site-kit/worker/maintenance.test.mjs
+          node --test ../external/fara-site-kit/worker/report.test.mjs ../external/fara-site-kit/worker/report-rate-limit.test.mjs ../external/fara-site-kit/worker/maintenance.test.mjs
 
       - name: Deploy gate test
         run: |

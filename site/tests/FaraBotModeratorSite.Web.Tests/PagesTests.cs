@@ -99,6 +99,11 @@ public class PagesTests
         var text = Text(await RenderAsync<Privacy>());
         foreach (var topic in new[] { "運営者", "ブラウザに保存する情報", "アクセス解析・広告", "Web Analytics", "問い合わせで送る情報", "Turnstile", "Discord", "外部のサービス", "第三者への提供", "Windows アプリ" })
             Assert.Contains(topic, text);
+        // 問い合わせの回数制限（1 日 3 回・送信元の識別子を当日だけ保存）の記載。「匿名」とは書かない（識別子は送信元に結びつくため）
+        Assert.Contains("1 日 3 回", text);
+        Assert.Contains("IP アドレスそのものは保存しません", text);
+        Assert.Contains("日本時間の翌 0 時まで", text);
+        Assert.DoesNotContain("匿名", text);
         // このサイトは外部のフォント・CDN を使わない（CSP が同じオリジンだけ）ので、載せない
         Assert.DoesNotContain("Google Fonts", text);
         Assert.DoesNotContain("jsDelivr", text);

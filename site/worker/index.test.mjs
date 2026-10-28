@@ -313,3 +313,32 @@ test("package.json は wrangler のバージョンを固定する（公開のワ
   assert.match(pkg.devDependencies.wrangler, /^\d+\.\d+\.\d+$/);
   for (const yml of [readDev(), readProd()]) assert.ok(yml.includes(`npx wrangler@${pkg.devDependencies.wrangler} deploy`));
 });
+
+test("報告の回数制限: Worker は kit の ReportRateLimiter（Durable Object）を公開する。例外のログは errorSummary を通し、生の例外を出さない", async () => {
+  const source = read("./index.js");
+  assert.match(source, /export \{ ReportRateLimiter \} from "\.\.\/\.\.\/external\/fara-site-kit\/worker\/report-rate-limit\.js";/);
+  assert.match(source, /import \{ errorSummary \} from "\.\.\/\.\.\/external\/fara-site-kit\/worker\/error-summary\.js";/);
+  assert.ok(!/console\.error\(e\)/.test(source), "console.error(e) は使わない（例外の中身が出る）");
+  assert.match(source, /console\.error\(`報告の受け口で例外: \$\{errorSummary\(e\)\}`\);/);
+  const mod = await import("./index.js");
+  assert.equal(typeof mod.ReportRateLimiter, "function");
+});
+
+test("報告の回数制限: wrangler.toml は REPORT_LIMITER の binding と migrations を、トップレベル・[env.production]・[env.dev] の 3 か所に書く（環境は継承しないため）", () => {
+  const toml = read("../wrangler.toml");
+  // 見出し（[[…]] や […]）の手前で区切る。各ブロックの中身で確かめる
+  const blocks = toml.split(/^(?=\[)/m).map((body) => ({ header: body.match(/^\[.*\]$/m)?.[0] ?? "", body }));
+  for (const scope of ["", "env.production.", "env.dev."]) {
+    const where = scope || "トップレベル";
+    const bindings = blocks.filter((b) => b.header === `[[${scope}durable_objects.bindings]]`);
+    assert.equal(bindings.length, 1, `${where} の binding は 1 つ`);
+    assert.match(bindings[0].body, /^name = "REPORT_LIMITER"$/m, where);
+    assert.match(bindings[0].body, /^class_name = "ReportRateLimiter"$/m, where);
+    const migrations = blocks.filter((b) => b.header === `[[${scope}migrations]]`);
+    assert.equal(migrations.length, 1, `${where} の migrations は 1 つ`);
+    assert.match(migrations[0].body, /^tag = "v1"$/m, where);
+    assert.match(migrations[0].body, /^new_sqlite_classes = \["ReportRateLimiter"\]$/m, where);
+  }
+  // 上の 3 つ以外に、Durable Object の設定を書いていないこと
+  assert.equal(blocks.filter((b) => b.header.includes("durable_objects")).length, 3);
+});

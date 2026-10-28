@@ -15,6 +15,14 @@ keep_vars = true
 # workers.dev と preview の URL は使わない（確認用は Cloudflare Access でカスタムドメインだけを守っているため、ほかの URL から見えないようにする）
 workers_dev = false
 preview_urls = false
+# 報告の 1 日の送信回数の制限（送信元ごと 3 回）。durable_objects・migrations は環境を継承しないので、トップレベル・[env.production]・[env.dev] の 3 か所に書く（docs/usage.md 2.2 の有効化）
+[[durable_objects.bindings]]
+name = "REPORT_LIMITER"
+class_name = "ReportRateLimiter"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["ReportRateLimiter"]
 
 [assets]
 directory = "./publish/wwwroot"
@@ -33,6 +41,14 @@ routes = [
   { pattern = "twitch-bot.fara-labs.com", custom_domain = true },
 ]
 
+[[env.production.durable_objects.bindings]]
+name = "REPORT_LIMITER"
+class_name = "ReportRateLimiter"
+
+[[env.production.migrations]]
+tag = "v1"
+new_sqlite_classes = ["ReportRateLimiter"]
+
 [env.production.assets]
 directory = "./publish/wwwroot"
 binding = "ASSETS"
@@ -47,6 +63,14 @@ preview_urls = false
 routes = [
   { pattern = "twitch-bot-dev.fara-labs.com", custom_domain = true },
 ]
+
+[[env.dev.durable_objects.bindings]]
+name = "REPORT_LIMITER"
+class_name = "ReportRateLimiter"
+
+[[env.dev.migrations]]
+tag = "v1"
+new_sqlite_classes = ["ReportRateLimiter"]
 
 # 確認用の noindex（X-Robots-Tag）は、build-pages（--env develop）と確認用の公開のワークフロー（.github/workflows/deploy-develop.yml）が publish/wwwroot/_headers に付ける（ポケモンのサイトと同じ）
 
