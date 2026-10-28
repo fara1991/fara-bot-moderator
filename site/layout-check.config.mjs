@@ -22,8 +22,8 @@ export default {
   exclusions: [
     {
       rule: "no-offscreen-focus",
-      selector: ".fsk-content a, .fsk-content button, .fsk-content input, .fsk-content textarea, .fsk-content [tabindex]",
-      reason: "本文の項目は、Tab で移ると画面の外（下の方の段落）にあるだけ。kit の計測は scroll せずに位置を見るため、下にある本文の項目を「画面の外」と数える（kit の計測の課題）。閉じたドロワーの項目は本文の外にあり、inert で Tab に入らないので、この除外の対象外（そのまま計測する）",
+      selector: ".fsk-content a, .fsk-content button, .fsk-content input, .fsk-content textarea, .fsk-content [tabindex], .fsk-content .table-wrap",
+      reason: "本文の項目（横に広い表の、スクロールできる枠を含む。Chrome は tabindex が無くても、その枠で Tab を止める）は、Tab で移ると画面の外（下の方の段落）にあるだけ。kit の計測は scroll せずに位置を見るため、下にある本文の項目を「画面の外」と数える（kit の計測の課題）。閉じたドロワーの項目は本文の外にあり、inert で Tab に入らないので、この除外の対象外（そのまま計測する）",
     },
     {
       // パンくず（ドキュメント › コマンド実行 など）。小さな文字リンクが上下に並ぶ。折り返しは、フォントの幅で変わる（CI の Linux と Windows で違った）ため、判定が揺れる
