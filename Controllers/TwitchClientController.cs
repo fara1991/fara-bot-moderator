@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using FaraBotModerator.Enums;
@@ -24,7 +25,10 @@ namespace FaraBotModerator.Controllers;
 public class TwitchClientController
 {
     private readonly BouyomiChanController _bouyomiChanController = new();
-    private readonly Queue<ChatModel> _chatDataQueue = new();
+    /// <summary>
+    /// 表示用のチャットの待ち行列。受信（TwitchLib のスレッド）と表示（UI の監視ループ）が別のスレッドから触るので、並行アクセスに対応したものを使う
+    /// </summary>
+    private readonly ConcurrentQueue<ChatModel> _chatDataQueue = new();
     private readonly SecretKeyModel _secretKeys;
     private readonly TwitchApiController _twitchApiController;
     private TwitchClient? _twitchClient;
@@ -125,8 +129,16 @@ public class TwitchClientController
     public async void SendApplicationMessage(string message)
     {
         if (message.Equals("")) return;
-        SendMessage(_twitchUserName, message);
-        await SendMessageTranslationAsync(_twitchUserName, _twitchUserDisplayName, message);
+        try
+        {
+            SendMessage(_twitchUserName, message);
+            await SendMessageTranslationAsync(_twitchUserName, _twitchUserDisplayName, message);
+        }
+        catch (Exception ex)
+        {
+            // async void は例外を呼び出し元に返せず、そのままアプリが落ちるので、ここで受けてログに残す
+            LogController.OutputLog($"<Error> アプリからのメッセージの送信に失敗しました: {ex.Message}");
+        }
     }
 
     /// <summary>
@@ -168,7 +180,7 @@ public class TwitchClientController
     /// <returns>チャットデータ。キューが空の場合はnull</returns>
     public ChatModel? PickChatData()
     {
-        return _chatDataQueue.Count > 0 ? _chatDataQueue.Dequeue() : null;
+        return _chatDataQueue.TryDequeue(out var chatModel) ? chatModel : null;
     }
 
     /// <summary>
@@ -179,10 +191,20 @@ public class TwitchClientController
     /// <param name="userId">ユーザーID</param>
     private async void AddChatListData(string userName, string message, string userId = "")
     {
-        var chatUserIconUrl = userId != ""
-            ? await _twitchApiController.GetTwitchIconUrlByIdAsync(userId)
-            : await _twitchApiController.GetTwitchIconUrlByLoginAsync(userName);
-        var chatModel = new ChatModel {Name = userName, Chat = message, Icon = chatUserIconUrl};
+        // アイコンが取れなくても、チャットの行は表示する（アイコン無し）
+        string? chatUserIconUrl = null;
+        try
+        {
+            chatUserIconUrl = userId != ""
+                ? await _twitchApiController.GetTwitchIconUrlByIdAsync(userId)
+                : await _twitchApiController.GetTwitchIconUrlByLoginAsync(userName);
+        }
+        catch (Exception ex)
+        {
+            LogController.OutputLog($"<Error> チャットのアイコンを取得できませんでした: {ex.Message}");
+        }
+
+        var chatModel = new ChatModel {Name = userName, Chat = message, Icon = chatUserIconUrl ?? string.Empty};
         _chatDataQueue.Enqueue(chatModel);
     }
 
@@ -319,15 +341,23 @@ public class TwitchClientController
     /// </summary>
     public async void TwitchClientOnRaidNotification(object? sender, OnRaidNotificationArgs e)
     {
-        var raiderName = e.RaidNotification.MsgParamLogin;
-        var raiderChannelUrl = $"https://twitch.tv/{raiderName}";
-        var message = _secretKeys.Event.Raid.Message.Replace("{raiderName}", raiderName)
-            .Replace("{raiderChannelUrl}", raiderChannelUrl);
-        SendMessage(raiderName, $"[{Settings.Default.BotName}] {message}");
-        BouyomiChanController.AddEventTalkTask($"{raiderName}さんにRaidされました", _secretKeys.BouyomiChan.Checked);
-        LogController.OutputLog($"<Raid> Name: {raiderName}, URL: {raiderChannelUrl}", TwitchEventEnum.Raid);
+        try
+        {
+            var raiderName = e.RaidNotification.MsgParamLogin;
+            var raiderChannelUrl = $"https://twitch.tv/{raiderName}";
+            var message = _secretKeys.Event.Raid.Message.Replace("{raiderName}", raiderName)
+                .Replace("{raiderChannelUrl}", raiderChannelUrl);
+            SendMessage(raiderName, $"[{Settings.Default.BotName}] {message}");
+            BouyomiChanController.AddEventTalkTask($"{raiderName}さんにRaidされました", _secretKeys.BouyomiChan.Checked);
+            LogController.OutputLog($"<Raid> Name: {raiderName}, URL: {raiderChannelUrl}", TwitchEventEnum.Raid);
 
-        await _twitchApiController.SendShoutoutAsync(raiderName);
+            await _twitchApiController.SendShoutoutAsync(raiderName);
+        }
+        catch (Exception ex)
+        {
+            // async void の中の例外は呼び出し元に戻らず、アプリが落ちるので、ここで受けてログに残す
+            LogController.OutputLog($"<Error> Raid の処理に失敗しました: {ex.Message}");
+        }
     }
 
     /// <summary>
@@ -405,15 +435,11 @@ public class TwitchClientController
     }
 
     /// <summary>
-    /// メッセージ受信時の処理を行います。バッドワードのタイムアウトや翻訳処理を含みます。
+    /// メッセージ受信時の処理を行います（ポケモンコマンド・翻訳・読み上げ）。
     /// </summary>
     private async void TwitchClientOnMessageReceived(object? sender, OnMessageReceivedArgs e)
     {
         if (_twitchClient == null) return;
-        // Twitchチャット上のコメントのみ受け取れる
-        if (e.ChatMessage.Message.Contains(@"badword"))
-            _twitchClient.TimeoutUser(e.ChatMessage.Channel, e.ChatMessage.Username, TimeSpan.FromMinutes(30),
-                "Bad word! 30 minute timeout!");
         try
         {
             var userName = e.ChatMessage.Username;
