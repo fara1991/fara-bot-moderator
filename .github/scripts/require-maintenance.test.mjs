@@ -32,9 +32,12 @@ test("readMaintenanceValue: テキストの変数の値を読む。シークレ�
   assert.equal(readMaintenanceValue(bindings("x", "secret_text")), "(secret)");
   assert.equal(readMaintenanceValue([{ name: "OTHER", type: "plain_text", text: "x" }]), "");
   assert.equal(readMaintenanceValue(undefined), "");
-  assert.equal(readMaintenanceValue([{ name: "MAINTENANCE", type: "plain_text", text: "notice" }]), "", "旧名 MAINTENANCE は読まない（フォールバックなし）");
   assert.equal(readMaintenanceValue(null), "");
   assert.equal(readMaintenanceValue([null, { name: "MAINTENANCE_MODE", type: "plain_text", text: 5 }]), "");
+});
+
+test("readMaintenanceValue: 旧名 MAINTENANCE は読まない（フォールバックなし）", () => {
+  assert.equal(readMaintenanceValue([{ name: "MAINTENANCE", type: "plain_text", text: "notice" }]), "");
 });
 
 test("fetchSettings: 正しい URL と認証で読み、404 は「無い」", async () => {
@@ -73,10 +76,23 @@ test("run: false・未設定・シークレットのときは止める", async (
   }
 });
 
-test("run: Worker がまだ無い（初回の公開）ときは通す", async () => {
+test("run: Worker が無い（404）ときは止める（Worker 名・アカウント ID の誤りでも 404 になるため。確認を飛ばさない）", async () => {
   const r = await runWith(async () => new Response("", { status: 404 }));
+  assert.equal(r.code, 1);
+  assert.match(r.text, /::error::/);
+  assert.match(r.text, /first_publish/);
+});
+
+test("run: 初回の公開（ALLOW_MISSING_WORKER=1）のときだけ、Worker が無いことを通す", async () => {
+  const r = await runWith(async () => new Response("", { status: 404 }), { ...ENV, ALLOW_MISSING_WORKER: "1" });
   assert.equal(r.code, 0);
   assert.match(r.text, /初回/);
+  assert.equal((await runWith(async () => new Response("", { status: 404 }), { ...ENV, ALLOW_MISSING_WORKER: "0" })).code, 1);
+  assert.equal((await runWith(async () => new Response("", { status: 404 }), { ...ENV, ALLOW_MISSING_WORKER: "" })).code, 1);
+});
+
+test("run: ALLOW_MISSING_WORKER は、Worker が有るときには効かない（MAINTENANCE_MODE の確認は続く）", async () => {
+  assert.equal((await runWith(async () => settingsResponse(bindings("false")), { ...ENV, ALLOW_MISSING_WORKER: "1" })).code, 1);
 });
 
 test("run: 確かめられなかったとき（通信・権限）は止める", async () => {

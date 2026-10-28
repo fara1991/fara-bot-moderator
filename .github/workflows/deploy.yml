@@ -31,6 +31,10 @@ on:
         description: "お知らせ・メンテナンス画面に出す文（200 文字まで・改行なし）。空 = 変更しない"
         type: string
         default: ""
+      first_publish:
+        description: "Worker がまだ無い初回の公開のときだけ true（MAINTENANCE_MODE の確認を、Worker が無いことに限って通す）。Worker 名・アカウント ID の誤りでも 404 になるので、通常は false のまま"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -69,6 +73,18 @@ jobs:
       # 本番（master）の公開は、Cloudflare の Worker の変数 MAINTENANCE_MODE が notice（更新予定のお知らせを出している）のときだけ行う。
       # 確認できないとき・notice でないときは、ここで止める（手動実行の skip_maintenance_check で飛ばせる）。
       # mode に true / notice / false のどれかを指定した手動実行は、操作した人の意思なので、確認を飛ばす
+      # お知らせの文は、Cloudflare の変数に入れる前に検査する（改行は表示を壊し、200 文字を超えると公開の途中で失敗するため）。
+      # 空（変更しない）は通す
+      - name: Validate maintenance_message
+        env:
+          MAINTENANCE_MESSAGE_INPUT: ${{ inputs.maintenance_message }}
+        run: |
+          node -e '
+            const m = process.env.MAINTENANCE_MESSAGE_INPUT ?? "";
+            if (/[\r\n]/.test(m)) { console.log("::error::お知らせの文に改行は使えません"); process.exit(1); }
+            if ([...m].length > 200) { console.log("::error::お知らせの文は 200 文字までです（いま " + [...m].length + " 文字）"); process.exit(1); }
+          '
+
       - name: Require MAINTENANCE_MODE=notice (production)
         if: ${{ !contains(fromJSON('["true","notice","false"]'), inputs.maintenance_mode) }}
         run: node .github/scripts/require-maintenance.mjs fara-twitch-bot
@@ -76,6 +92,8 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
           SKIP_MAINTENANCE_CHECK: ${{ inputs.skip_maintenance_check }}
+          # 初回の公開（first_publish）のときだけ、Worker が無いことを通す（それ以外の 404 は止める）
+          ALLOW_MISSING_WORKER: ${{ inputs.first_publish && '1' || '' }}
 
       # 入力はシェルに直接埋め込まず、環境変数で受ける。空の入力には --var を付けない（keep_vars で現在の値が保持される）。
       # mode を指定 → その値 / push と、何も指定しない手動実行 → 公開と同時に MAINTENANCE_MODE:true（メンテナンス画面。作業が終わったら
