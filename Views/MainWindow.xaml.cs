@@ -133,6 +133,11 @@ public partial class MainWindow : INotifyPropertyChanged
             LogController.OutputLog("Starting to load secret keys...");
             var secretKeys = await Task.Run(SecretKeyController.LoadKeys);
             LogController.OutputLog("Secret keys loaded successfully.");
+            if (SecretKeyController.QuarantinedPath is { } quarantined)
+                MessageBox.Show("secrets.json が壊れていたため、中身は消さずに別の名前で退避し、初期値で作り直しました。\n\n" +
+                                $"退避したファイル:\n{quarantined}\n\n" +
+                                "退避したファイルを開いて、必要な設定を入れ直してください（設定は初期値になっています）。",
+                    "設定ファイル", MessageBoxButton.OK, MessageBoxImage.Warning);
 
             // UIスレッドで実行する必要がある処理
             InitializeSecretValue(secretKeys);
@@ -1554,7 +1559,13 @@ public partial class MainWindow : INotifyPropertyChanged
             return;
         }
 
-        TextRegexController.ResetBsrChatModel();
+        if (!TextRegexController.ResetBsrChatModel())
+        {
+            MessageBox.Show("BeatSaber の設定（bsr.json）を初期化できませんでした（ファイルが使用中などの可能性があります。ログを確認してください）。",
+                "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+            return;
+        }
+
         BeatSaberBsrDataGrid.ItemsSource = TextRegexController.LoadBsrChatModel().BeatSaberChat;
     }
 
