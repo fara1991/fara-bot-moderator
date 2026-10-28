@@ -1130,15 +1130,37 @@ public partial class MainWindow : INotifyPropertyChanged
     /// アクセスキーを確定します。すぐに設定ファイルへ保存し、接続中のコマンドにも反映して、登録データを読み直します。
     /// </summary>
     /// <param name="key">アクセスキー（空ならデータ共有をやめる）</param>
-    private async Task ApplyPokemonSyncKeyAsync(string key)
+    /// <returns>設定ファイルに保存できたか（false のときは、キーを画面に出して控えてもらっている）</returns>
+    private async Task<bool> ApplyPokemonSyncKeyAsync(string key)
     {
         _pokemonSyncKey = key;
         SetPokemonSyncKeyInput(key);
         // キーを作り直したあとは古いキーが使えないため、終了を待たずに保存する
-        SaveSecretValue();
+        var saved = TrySaveSecretValue();
         _twitchClientController?.SetPokemonSyncKey(key);
         UpdatePokemonSyncKeyButtons();
         await LoadPokemonRosterAsync();
+        if (!saved)
+            MessageBox.Show("アクセスキーを設定ファイル（secrets.json）へ保存できませんでした。このアプリを閉じると、このアクセスキーは残りません。\n今のアクセスキーを控えてください（「コピー」でコピーできます）:\n\n" + key,
+                "アクセスキー", MessageBoxButton.OK, MessageBoxImage.Warning);
+        return saved;
+    }
+
+    /// <summary>
+    /// 設定ファイルへ保存します。失敗したら、理由（例外の種類だけ。キーは含めない）をログに残して false を返します。
+    /// </summary>
+    private bool TrySaveSecretValue()
+    {
+        try
+        {
+            SaveSecretValue();
+            return true;
+        }
+        catch (Exception ex)
+        {
+            LogController.OutputLog($"<Error> secrets.json の保存に失敗しました: {ex.GetType().Name}");
+            return false;
+        }
     }
 
     /// <summary>
@@ -1186,12 +1208,19 @@ public partial class MainWindow : INotifyPropertyChanged
         try
         {
             var key = await PokemonSyncKeyController.IssueAsync(SelectedPokemonDataSourceValue());
-            await ApplyPokemonSyncKeyAsync(key);
+            if (!await ApplyPokemonSyncKeyAsync(key)) return;
             MessageBox.Show("アクセスキーを発行しました（データ共有を始めました）。\n\nサイトの「データ共有」ページで、このアクセスキーを貼り付けて「アクセスキーを入力して共有」を押すと、サイトと同じ登録データを使えます（「コピー」でコピーできます）。\n\nアクセスキーはパスワードと同じ扱いです。配信画面に映さないでください。",
                 "アクセスキー", MessageBoxButton.OK, MessageBoxImage.Information);
         }
         catch (RosterUnavailableException ex)
         {
+            PokemonSyncStatusTextBlock.Text = "発行できませんでした";
+            MessageBox.Show($"アクセスキーを発行できませんでした: {ex.Message}", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        catch (Exception ex)
+        {
+            // async void の中で例外を出すとアプリが落ちるので、必ず受ける
+            LogController.OutputLog($"<Error> アクセスキーの発行に失敗しました: {ex.GetType().Name}");
             PokemonSyncStatusTextBlock.Text = "発行できませんでした";
             MessageBox.Show($"アクセスキーを発行できませんでした: {ex.Message}", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
         }
@@ -1219,7 +1248,7 @@ public partial class MainWindow : INotifyPropertyChanged
         try
         {
             var state = await PokemonSyncKeyController.LoadAsync(SelectedPokemonDataSourceValue(), key);
-            await ApplyPokemonSyncKeyAsync(key);
+            if (!await ApplyPokemonSyncKeyAsync(key)) return;
             var (pokemon, teams) = PokemonSyncKeyController.Count(state);
             if (pokemon == 0 && teams == 0)
                 MessageBox.Show("アクセスキーを設定しました（データ共有を始めました）。クラウドにはまだ登録がありません（アクセスキーの打ち間違いや、データの取得元が本番・開発用で違っていないか確認してください）。",
@@ -1229,6 +1258,12 @@ public partial class MainWindow : INotifyPropertyChanged
         {
             PokemonSyncStatusTextBlock.Text = RemoteRosterStore.IsValidKey(_pokemonSyncKey) ? "設定できませんでした（今のアクセスキーのまま）" : "設定できませんでした";
             MessageBox.Show($"このアクセスキーは使えませんでした: {ex.Message}", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        catch (Exception ex)
+        {
+            LogController.OutputLog($"<Error> アクセスキーの設定に失敗しました: {ex.GetType().Name}");
+            PokemonSyncStatusTextBlock.Text = "設定できませんでした";
+            MessageBox.Show($"アクセスキーを設定できませんでした: {ex.Message}", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
         }
         finally
         {
@@ -1250,8 +1285,16 @@ public partial class MainWindow : INotifyPropertyChanged
         PokemonSyncStatusTextBlock.Text = "作り直し中…";
         try
         {
-            var (key, oldKeyDeleted) = await PokemonSyncKeyController.RotateAsync(SelectedPokemonDataSourceValue(), _pokemonSyncKey);
-            await ApplyPokemonSyncKeyAsync(key);
+            // 1. 新しいキーの置き場へ写す（古いキーはまだ消さない）
+            var pending = await PokemonSyncKeyController.PrepareRotateAsync(SelectedPokemonDataSourceValue(), _pokemonSyncKey);
+            // 2. 新しいキーを保存できてから、古いキーを消す（保存できなければ古いキーはそのまま使える）
+            if (!await ApplyPokemonSyncKeyAsync(pending.NewKey))
+            {
+                PokemonSyncStatusTextBlock.Text = "作り直しましたが、保存できませんでした（古いアクセスキーは消していません）";
+                return;
+            }
+            // 3. 古いキーを消す（消せなくても、新しいキーへの切り替えは済んでいる）
+            var oldKeyDeleted = await PokemonSyncKeyController.FinishRotateAsync(SelectedPokemonDataSourceValue(), pending);
             MessageBox.Show(
                 (oldKeyDeleted
                     ? "アクセスキーを作り直しました。古いアクセスキーは使えなくなりました。"
@@ -1261,6 +1304,12 @@ public partial class MainWindow : INotifyPropertyChanged
         }
         catch (RosterUnavailableException ex)
         {
+            PokemonSyncStatusTextBlock.Text = "作り直せませんでした（今のアクセスキーのまま）";
+            MessageBox.Show($"アクセスキーを作り直せませんでした（今のアクセスキーのままです）: {ex.Message}", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        catch (Exception ex)
+        {
+            LogController.OutputLog($"<Error> アクセスキーの作り直しに失敗しました: {ex.GetType().Name}");
             PokemonSyncStatusTextBlock.Text = "作り直せませんでした（今のアクセスキーのまま）";
             MessageBox.Show($"アクセスキーを作り直せませんでした（今のアクセスキーのままです）: {ex.Message}", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
         }

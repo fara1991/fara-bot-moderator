@@ -19,85 +19,145 @@ public static class TextRegexController
     private static readonly string BeatSaberFile = Path.Combine(BeatSaberDirectory, "bsr.json");
 
     /// <summary>
-    /// BeatSaber用設定ファイルのモデルを読み込んで返します。ファイルが存在しない場合はデフォルトで作成します。
+    /// 読み書きを 1 つずつにするロック（チャットの読み上げと、画面のリセットが同時に触らないため）
     /// </summary>
-    public static TextRegexModel LoadBsrChatModel()
-    {
-        if (!Directory.Exists(BeatSaberDirectory)) Directory.CreateDirectory(BeatSaberDirectory);
-        if (!File.Exists(BeatSaberFile)) CreateBsrChatFile();
+    private static readonly object FileLock = new();
 
-        using var file = File.OpenText(BeatSaberFile);
-        var jsonData = file.ReadToEnd();
-        return JsonSerializer.Deserialize<TextRegexModel>(jsonData) ?? new TextRegexModel();
-    }
+    /// <summary>
+    /// ログに出した不正な正規表現（同じものを、チャットのたびに出し続けないため）
+    /// </summary>
+    private static readonly HashSet<string> ReportedInvalidPatterns = [];
+
+    /// <summary>
+    /// BeatSaber用設定ファイルのモデルを読み込んで返します。ファイルが存在しない場合はデフォルトで作成します。
+    /// 壊れたファイル（JSON として読めない）は改名して退避し、既定の設定を返します（設定は消しません）。
+    /// </summary>
+    public static TextRegexModel LoadBsrChatModel() => LoadBsrChatModel(BeatSaberFile);
 
     /// <summary>
     /// BeatSaber用設定ファイルをデフォルト値にリセットします。
     /// </summary>
     public static void ResetBsrChatModel()
     {
-        if (File.Exists(BeatSaberFile)) File.Delete(BeatSaberFile);
-        CreateBsrChatFile();
+        lock (FileLock)
+        {
+            WriteModel(BeatSaberFile, DefaultModel());
+        }
     }
 
     /// <summary>
     /// BeatSaberのリクエスト形式などのテキストを、設定された正規表現に基づいて読み上げ用テキストに変換します。
+    /// 不正な正規表現の行は無視し（ログに出します）、ほかの行は使います。
     /// </summary>
     /// <param name="bsrText">変換前のテキスト</param>
     /// <returns>変換後のテキスト</returns>
     public static string LoadBsrChat(string bsrText)
     {
-        // BeatSaber
-        if (!Directory.Exists(BeatSaberDirectory)) Directory.CreateDirectory(BeatSaberDirectory);
-        if (!File.Exists(BeatSaberFile)) CreateBsrChatFile();
-        try
+        return ConvertText(bsrText, LoadBsrChatModel(BeatSaberFile));
+    }
+
+    /// <summary>
+    /// 指定したファイルから設定を読みます（ファイルが無ければ既定の設定を書きます）。
+    /// </summary>
+    /// <param name="path">設定ファイルのパス</param>
+    internal static TextRegexModel LoadBsrChatModel(string path)
+    {
+        lock (FileLock)
         {
-            TextRegexModel? textRegex;
-            using (var file = File.OpenText(BeatSaberFile))
+            try
             {
-                var jsonData = file.ReadToEnd();
-                textRegex = JsonSerializer.Deserialize<TextRegexModel>(jsonData);
+                if (!File.Exists(path)) WriteModel(path, DefaultModel());
+                var model = JsonSerializer.Deserialize<TextRegexModel>(File.ReadAllText(path));
+                if (model is not null) return model;
+                Quarantine(path, "内容が空です");
+            }
+            catch (JsonException e)
+            {
+                Quarantine(path, e.Message);
+            }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+            {
+                // 読めないだけ（ファイルのロックなど）のときは、ファイルには触らず既定の設定を使う
+                LogController.OutputLog($"<Error> BeatSaber設定を読めませんでした（既定の設定を使います）: {e.Message}");
             }
 
-            if (textRegex is null)
-            {
-                const string message = "<Error> Text conversion not possible.";
-                LogController.OutputLog(message);
-                throw new FileFormatException(message);
-            }
-
-            foreach (var textKeyValues in textRegex.BeatSaberChat)
-                if (Regex.IsMatch(bsrText, textKeyValues.Key))
-                {
-                    // !bsr xxxx
-                    // Request Dope /Krouton_06 68.1% (xxxx) added to queue.
-                    // ↑をチャット表示用にデータ取得でもいい
-                    // https://api.beatsaver.com/maps/id/xxxx
-                    var matches = Regex.Matches(bsrText, textKeyValues.Key);
-                    for (var i = 0; i < matches.Count; i++)
-                        textKeyValues.Value = textKeyValues.Value.Replace("{" + i + "}", matches[i].Value);
-
-                    return textKeyValues.Value;
-                }
+            return DefaultModel();
         }
-        catch (Exception e)
+    }
+
+    /// <summary>
+    /// 設定に従ってテキストを変換します。不正な正規表現の行は、その行だけ無視します。
+    /// </summary>
+    internal static string ConvertText(string bsrText, TextRegexModel model)
+    {
+        foreach (var textKeyValues in model.BeatSaberChat ?? [])
         {
-            LogController.OutputLog($"<Error> {e.Message}");
-            var fileInfo = new FileInfo(BeatSaberFile);
-            fileInfo.Delete();
-            CreateBsrChatFile();
+            MatchCollection matches;
+            try
+            {
+                matches = Regex.Matches(bsrText, textKeyValues.Key);
+            }
+            catch (ArgumentException e)
+            {
+                ReportInvalidPattern(textKeyValues.Key, e);
+                continue;
+            }
+
+            if (matches.Count == 0) continue;
+
+            // !bsr xxxx
+            // Request Dope /Krouton_06 68.1% (xxxx) added to queue.
+            // ↑をチャット表示用にデータ取得でもいい
+            // https://api.beatsaver.com/maps/id/xxxx
+            var value = textKeyValues.Value ?? string.Empty;
+            for (var i = 0; i < matches.Count; i++)
+                value = value.Replace("{" + i + "}", matches[i].Value);
+            return value;
         }
 
         return bsrText;
     }
 
     /// <summary>
-    /// BeatSaber用設定ファイルを保存します。
+    /// 不正な正規表現を 1 回だけログに出します。
     /// </summary>
-    /// <param name="textRegex">保存する正規表現モデル</param>
-    private static void SaveBsrChatFile(TextRegexModel textRegex)
+    private static void ReportInvalidPattern(string? pattern, ArgumentException e)
     {
-        using var writer = new StreamWriter(BeatSaberFile, false, Encoding.UTF8);
+        var key = pattern ?? string.Empty;
+        lock (ReportedInvalidPatterns)
+        {
+            if (!ReportedInvalidPatterns.Add(key)) return;
+        }
+
+        LogController.OutputLog($"<Error> BeatSaber設定の正規表現が不正なため、この行は無視します: {key} ({e.Message})");
+    }
+
+    /// <summary>
+    /// 壊れた設定ファイルを、日時の付いた名前に改名して退避します（消しません）。
+    /// </summary>
+    private static void Quarantine(string path, string reason)
+    {
+        var broken = Path.Combine(Path.GetDirectoryName(path) ?? "",
+            $"{Path.GetFileNameWithoutExtension(path)}.broken-{DateTime.Now:yyyyMMddHHmmss}{Path.GetExtension(path)}");
+        try
+        {
+            File.Move(path, broken);
+            LogController.OutputLog($"<Error> BeatSaber設定が壊れていたため退避しました（既定の設定を使います）: {broken} ({reason})");
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            LogController.OutputLog($"<Error> BeatSaber設定が壊れていて、退避もできませんでした（既定の設定を使います）: {reason} ({e.Message})");
+        }
+    }
+
+    /// <summary>
+    /// 設定を一時ファイルに書いてから置き換えます（書き込みの途中で止まっても、元のファイルは壊れません）。
+    /// </summary>
+    private static void WriteModel(string path, TextRegexModel textRegex)
+    {
+        var directory = Path.GetDirectoryName(path) ?? "";
+        if (!Directory.Exists(directory)) Directory.CreateDirectory(directory);
+
         var options = new JsonSerializerOptions
         {
             Encoder = JavaScriptEncoder.Create(UnicodeRanges.All),
@@ -109,15 +169,18 @@ public static class TextRegexController
         jsonData = jsonData
             .Replace("\\u002B", "+")
             .Replace("\\u003C", "<");
-        writer.WriteLine(jsonData);
+
+        var temp = path + ".tmp";
+        File.WriteAllText(temp, jsonData + Environment.NewLine, new UTF8Encoding(false));
+        File.Move(temp, path, true);
     }
 
     /// <summary>
-    /// デフォルトのBeatSaber用設定ファイルを作成します。
+    /// 既定の BeatSaber 用の設定。
     /// </summary>
-    private static void CreateBsrChatFile()
+    private static TextRegexModel DefaultModel()
     {
-        var textRegex = new TextRegexModel
+        return new TextRegexModel
         {
             BeatSaberChat =
             [
@@ -139,6 +202,5 @@ public static class TextRegexController
                     "{0} で検索したら {1}曲あったよ。絞り込んでみてね。")
             ]
         };
-        SaveBsrChatFile(textRegex);
     }
 }
