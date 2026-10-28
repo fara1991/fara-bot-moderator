@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -24,9 +25,24 @@ public static class TextRegexController
     private static readonly object FileLock = new();
 
     /// <summary>
-    /// ログに出した不正な正規表現（同じものを、チャットのたびに出し続けないため）
+    /// ログに出した不正な正規表現・時間切れの正規表現（同じものを、チャットのたびに出し続けないため）
     /// </summary>
     private static readonly HashSet<string> ReportedInvalidPatterns = [];
+
+    /// <summary>
+    /// 1 つのパターンを実行してよい時間。これを超えたら、その行は無視する（チャットの処理を止めないため）
+    /// </summary>
+    private static readonly TimeSpan RegexTimeout = TimeSpan.FromMilliseconds(100);
+
+    /// <summary>
+    /// コンパイル済みのパターン（同じパターンを、チャットのたびに作り直さないため）。不正なパターンは null
+    /// </summary>
+    private static readonly ConcurrentDictionary<string, Regex?> CompiledPatterns = new();
+
+    /// <summary>
+    /// 読み込み済みの bsr.json（チャットのたびにファイルを読まないため）。ファイルの更新日時が変わったら読み直す
+    /// </summary>
+    private static (string Path, DateTime WriteTimeUtc, TextRegexModel Model)? _cachedBsrChat;
 
     /// <summary>
     /// BeatSaber用設定ファイルのモデルを読み込んで返します。ファイルが存在しない場合はデフォルトで作成します。
@@ -35,25 +51,57 @@ public static class TextRegexController
     public static TextRegexModel LoadBsrChatModel() => LoadBsrChatModel(BeatSaberFile);
 
     /// <summary>
-    /// BeatSaber用設定ファイルをデフォルト値にリセットします。
+    /// BeatSaber用設定ファイルをデフォルト値にリセットします。書けなかったとき（ファイルが使用中など）は、ログに残して false を返します。
     /// </summary>
-    public static void ResetBsrChatModel()
+    /// <returns>リセットできたか</returns>
+    public static bool ResetBsrChatModel()
     {
         lock (FileLock)
         {
-            WriteModel(BeatSaberFile, DefaultModel());
+            try
+            {
+                WriteModel(BeatSaberFile, DefaultModel());
+                _cachedBsrChat = null;
+                return true;
+            }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+            {
+                LogController.OutputLog($"<Error> BeatSaber設定を初期化できませんでした: {e.Message}");
+                return false;
+            }
         }
     }
 
     /// <summary>
     /// BeatSaberのリクエスト形式などのテキストを、設定された正規表現に基づいて読み上げ用テキストに変換します。
-    /// 不正な正規表現の行は無視し（ログに出します）、ほかの行は使います。
+    /// 不正な正規表現・時間内に終わらない正規表現の行は無視し（ログに出します）、ほかの行は使います。
+    /// 設定ファイルは、更新されたときだけ読み直します。
     /// </summary>
     /// <param name="bsrText">変換前のテキスト</param>
     /// <returns>変換後のテキスト</returns>
     public static string LoadBsrChat(string bsrText)
     {
-        return ConvertText(bsrText, LoadBsrChatModel(BeatSaberFile));
+        return ConvertText(bsrText, CachedBsrChatModel(BeatSaberFile));
+    }
+
+    /// <summary>
+    /// 読み込み済みの設定を返します。ファイルの更新日時が前と同じなら、ファイルを読まずに前のものを返します。
+    /// </summary>
+    private static TextRegexModel CachedBsrChatModel(string path)
+    {
+        lock (FileLock)
+        {
+            var writeTime = File.Exists(path) ? File.GetLastWriteTimeUtc(path) : DateTime.MinValue;
+            if (_cachedBsrChat is { } cached && cached.Path == path && cached.WriteTimeUtc == writeTime)
+                return cached.Model;
+
+            var model = LoadBsrChatModel(path);
+            // 読むときに作った（または退避した）ファイルの更新日時で覚える
+            var loadedWriteTime = File.Exists(path) ? File.GetLastWriteTimeUtc(path) : DateTime.MinValue;
+            _cachedBsrChat = (path, loadedWriteTime, model);
+            CompiledPatterns.Clear();
+            return model;
+        }
     }
 
     /// <summary>
@@ -92,44 +140,63 @@ public static class TextRegexController
     {
         foreach (var textKeyValues in model.BeatSaberChat ?? [])
         {
-            MatchCollection matches;
+            var regex = textKeyValues.Key is null ? null : GetRegex(textKeyValues.Key);
+            if (regex is null) continue;
+
             try
             {
-                matches = Regex.Matches(bsrText, textKeyValues.Key);
+                // MatchCollection は遅延評価なので、件数や値を読むときに時間切れの例外が出る。読む処理は全部 try の中に入れる
+                var matches = regex.Matches(bsrText);
+                if (matches.Count == 0) continue;
+
+                // !bsr xxxx
+                // Request Dope /Krouton_06 68.1% (xxxx) added to queue.
+                // ↑をチャット表示用にデータ取得でもいい
+                // https://api.beatsaver.com/maps/id/xxxx
+                var value = textKeyValues.Value ?? string.Empty;
+                for (var i = 0; i < matches.Count; i++)
+                    value = value.Replace("{" + i + "}", matches[i].Value);
+                return value;
             }
-            catch (ArgumentException e)
+            catch (RegexMatchTimeoutException)
             {
-                ReportInvalidPattern(textKeyValues.Key, e);
-                continue;
+                ReportOnce(textKeyValues.Key!, $"BeatSaber設定の正規表現が {RegexTimeout.TotalMilliseconds} ms 以内に終わらないため、この行は無視します");
             }
-
-            if (matches.Count == 0) continue;
-
-            // !bsr xxxx
-            // Request Dope /Krouton_06 68.1% (xxxx) added to queue.
-            // ↑をチャット表示用にデータ取得でもいい
-            // https://api.beatsaver.com/maps/id/xxxx
-            var value = textKeyValues.Value ?? string.Empty;
-            for (var i = 0; i < matches.Count; i++)
-                value = value.Replace("{" + i + "}", matches[i].Value);
-            return value;
         }
 
         return bsrText;
     }
 
     /// <summary>
-    /// 不正な正規表現を 1 回だけログに出します。
+    /// パターンをコンパイル済みで返します（同じパターンは 1 度だけ作る）。不正なパターンは、ログに出して null。
     /// </summary>
-    private static void ReportInvalidPattern(string? pattern, ArgumentException e)
+    private static Regex? GetRegex(string pattern)
     {
-        var key = pattern ?? string.Empty;
+        return CompiledPatterns.GetOrAdd(pattern, p =>
+        {
+            try
+            {
+                return new Regex(p, RegexOptions.None, RegexTimeout);
+            }
+            catch (ArgumentException e)
+            {
+                ReportOnce(p, $"BeatSaber設定の正規表現が不正なため、この行は無視します ({e.Message})");
+                return null;
+            }
+        });
+    }
+
+    /// <summary>
+    /// 同じパターンの警告は 1 回だけログに出します。
+    /// </summary>
+    private static void ReportOnce(string pattern, string message)
+    {
         lock (ReportedInvalidPatterns)
         {
-            if (!ReportedInvalidPatterns.Add(key)) return;
+            if (!ReportedInvalidPatterns.Add(pattern)) return;
         }
 
-        LogController.OutputLog($"<Error> BeatSaber設定の正規表現が不正なため、この行は無視します: {key} ({e.Message})");
+        LogController.OutputLog($"<Error> {message}: {pattern}");
     }
 
     /// <summary>
