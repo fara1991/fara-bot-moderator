@@ -67,7 +67,7 @@ public class TwitchAuthService
     public async Task<bool> ExchangeAuthorizationCodeAsync(string authorizationCode, string clientId,
         string clientSecret, string expectedState, string actualState)
     {
-        if (expectedState != actualState)
+        if (!StatesMatch(expectedState, actualState))
         {
             var message = "The token differs between request and response.";
             LogController.OutputLog(message);
@@ -115,33 +115,48 @@ public class TwitchAuthService
                $"?client_id={clientId}" +
                $"&redirect_uri=http://localhost%3A{Settings.Default.Port}" +
                "&response_type=code" +
-               "&scope=bits%3Aread " +
-               "channel%3Amanage%3Apredictions " +
-               "channel%3Amanage%3Araids " +
-               "channel%3amanage%3Aredemptions " +
-               "channel%3Amanage%3Aschedule " +
-               "channel%3Aread%3Ahype_train " +
-               "channel%3Aread%3Apolls " +
-               "channel%3Aread%3Apredictions " +
-               "channel%3Aread%3Aredemptions " +
-               "channel%3Aread%3Astream_key " +
-               "channel%3Aread%3Asubscriptions " +
-               "channel%3Aread%3Avips " +
-               "moderation%3Aread " +
-               "moderator%3Amanage%3Aannouncements " +
-               "user%3Aread%3Abroadcast " +
-               "user%3Aread%3Afollows " +
-               "user%3Aread%3Asubscriptions " +
-               "user%3Aread%3Aemail " +
-               "channel%3Amoderate " +
-               "chat%3Aedit " +
-               "chat%3Aread " +
-               "whispers%3Aread " +
-               "channel%3Amanage%3Araids " +
-               "moderator%3Amanage%3Ashoutouts " +
-               "moderator%3Aread%3Afollowers" +
+               "&scope=" + string.Join(" ", Scopes) +
                $"&state={state}";
     }
+
+    /// <summary>
+    /// 認可を求める権限（スコープ）。同じ権限を 2 度書かない（<see cref="GenerateAuthorizationUrl"/> が使う）。
+    /// </summary>
+    internal static readonly string[] Scopes =
+    [
+        "bits%3Aread",
+        "channel%3Amanage%3Apredictions",
+        "channel%3Amanage%3Araids",
+        "channel%3Amanage%3Aredemptions",
+        "channel%3Amanage%3Aschedule",
+        "channel%3Aread%3Ahype_train",
+        "channel%3Aread%3Apolls",
+        "channel%3Aread%3Apredictions",
+        "channel%3Aread%3Aredemptions",
+        "channel%3Aread%3Astream_key",
+        "channel%3Aread%3Asubscriptions",
+        "channel%3Aread%3Avips",
+        "moderation%3Aread",
+        "moderator%3Amanage%3Aannouncements",
+        "user%3Aread%3Abroadcast",
+        "user%3Aread%3Afollows",
+        "user%3Aread%3Asubscriptions",
+        "user%3Aread%3Aemail",
+        "channel%3Amoderate",
+        "chat%3Aedit",
+        "chat%3Aread",
+        "whispers%3Aread",
+        "moderator%3Amanage%3Ashoutouts",
+        "moderator%3Aread%3Afollowers",
+    ];
+
+    /// <summary>
+    /// 戻りの state が、認証のときに作った state と一致するか。どちらかが空なら一致しない（空同士を一致とみなさない）。
+    /// </summary>
+    /// <param name="expectedState">認証のときに作った state（設定に保存したもの）</param>
+    /// <param name="actualState">戻りの URL の state</param>
+    internal static bool StatesMatch(string expectedState, string actualState) =>
+        !string.IsNullOrEmpty(expectedState) && string.Equals(expectedState, actualState, StringComparison.Ordinal);
 
     /// <summary>
     /// トークンの有効期限が切れているかどうかを確認します。
@@ -189,8 +204,8 @@ public class TwitchAuthService
         IEnumerable<KeyValuePair<string, string>> form, string url)
     {
         // 値（secret・code）は URL エンコードされる（連結した文字列だと、記号を含むときに壊れる）
-        var content = new FormUrlEncodedContent(form);
-        var response = await HttpClient.PostAsync(url, content);
+        using var content = new FormUrlEncodedContent(form);
+        using var response = await HttpClient.PostAsync(url, content);
 
         var responseBody = await response.Content.ReadAsStringAsync();
         var option = new JsonSerializerOptions

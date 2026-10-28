@@ -26,9 +26,14 @@ public class TwitchClientController
 {
     private readonly BouyomiChanController _bouyomiChanController = new();
     /// <summary>
-    /// 表示用のチャットの待ち行列。受信（TwitchLib のスレッド）と表示（UI の監視ループ）が別のスレッドから触るので、並行アクセスに対応したものを使う
+    /// 表示用のチャットの待ち行列（送った順に並ぶ）。受信（TwitchLib のスレッド）と表示（UI の監視ループ）が別のスレッドから触るので、並行アクセスに対応したものを使う
     /// </summary>
-    private readonly ConcurrentQueue<ChatModel> _chatDataQueue = new();
+    private readonly ChatRowQueue _chatDataQueue = new();
+
+    /// <summary>
+    /// チャットのアイコンを待つ時間（ミリ秒）。これを過ぎたら、アイコン無しで表示する（後ろのチャットを止め続けないため）
+    /// </summary>
+    private const int ChatIconWaitMilliseconds = 1500;
     private readonly SecretKeyModel _secretKeys;
     private readonly TwitchApiController _twitchApiController;
     private TwitchClient? _twitchClient;
@@ -180,32 +185,44 @@ public class TwitchClientController
     /// <returns>チャットデータ。キューが空の場合はnull</returns>
     public ChatModel? PickChatData()
     {
-        return _chatDataQueue.TryDequeue(out var chatModel) ? chatModel : null;
+        return _chatDataQueue.TryPick();
     }
 
     /// <summary>
-    /// チャットデータをUI表示用キューに追加します。アイコンURLの取得も行います。
+    /// チャットデータをUI表示用キューに、送った順のまま追加します。アイコンURLは後から取得し、間に合わなければ空にします。
     /// </summary>
     /// <param name="userName">ユーザー名</param>
     /// <param name="message">メッセージ内容</param>
     /// <param name="userId">ユーザーID</param>
-    private async void AddChatListData(string userName, string message, string userId = "")
+    private void AddChatListData(string userName, string message, string userId = "")
     {
-        // アイコンが取れなくても、チャットの行は表示する（アイコン無し）
-        string? chatUserIconUrl = null;
+        // 行は今の順番で確保する（アイコンの取得の速さで、表示の順が入れ替わらないように）
+        var chatModel = new ChatModel {Name = userName, Chat = message};
+        _chatDataQueue.Enqueue(chatModel, GetChatIconAsync(userName, userId));
+    }
+
+    /// <summary>
+    /// チャットのアイコンURLを取得します。時間内に取れないとき・取れないときは null（アイコン無しで表示する）。
+    /// </summary>
+    private async Task<string?> GetChatIconAsync(string userName, string userId)
+    {
         try
         {
-            chatUserIconUrl = userId != ""
-                ? await _twitchApiController.GetTwitchIconUrlByIdAsync(userId)
-                : await _twitchApiController.GetTwitchIconUrlByLoginAsync(userName);
+            var lookup = userId != ""
+                ? _twitchApiController.GetTwitchIconUrlByIdAsync(userId)
+                : _twitchApiController.GetTwitchIconUrlByLoginAsync(userName);
+            return await lookup.WaitAsync(TimeSpan.FromMilliseconds(ChatIconWaitMilliseconds));
+        }
+        catch (TimeoutException)
+        {
+            return null;
         }
         catch (Exception ex)
         {
+            // アイコンが取れなくても、チャットの行は表示する（アイコン無し）
             LogController.OutputLog($"<Error> チャットのアイコンを取得できませんでした: {ex.Message}");
+            return null;
         }
-
-        var chatModel = new ChatModel {Name = userName, Chat = message, Icon = chatUserIconUrl ?? string.Empty};
-        _chatDataQueue.Enqueue(chatModel);
     }
 
     /// <summary>
@@ -365,13 +382,21 @@ public class TwitchClientController
     /// </summary>
     public void TwitchClientOnNewSubscriber(object? sender, OnNewSubscriberArgs e)
     {
-        var subscriberName = e.Subscriber.DisplayName;
-        var message = _secretKeys.Event.Subscription.Message.Replace("{subscriberName}", subscriberName)
-            .Replace("{totalSubscriptionMonth}", "1");
-        SendMessage(subscriberName, $"[{Settings.Default.BotName}] {message}", e.Subscriber.UserId);
-        BouyomiChanController.AddEventTalkTask($"{subscriberName}さんサブスクありがとうございます",
-                _secretKeys.BouyomiChan.Checked);
-        LogController.OutputLog($"<New Subscriber> Name: {subscriberName}", TwitchEventEnum.Subscriber);
+        try
+        {
+            var subscriberName = e.Subscriber.DisplayName;
+            var message = _secretKeys.Event.Subscription.Message.Replace("{subscriberName}", subscriberName)
+                .Replace("{totalSubscriptionMonth}", "1");
+            SendMessage(subscriberName, $"[{Settings.Default.BotName}] {message}", e.Subscriber.UserId);
+            BouyomiChanController.AddEventTalkTask($"{subscriberName}さんサブスクありがとうございます",
+                    _secretKeys.BouyomiChan.Checked);
+            LogController.OutputLog($"<New Subscriber> Name: {subscriberName}", TwitchEventEnum.Subscriber);
+        }
+        catch (Exception ex)
+        {
+            // TwitchLib のイベントの中で例外を出さない（ほかのイベント・チャットの処理を止めないため）
+            LogController.OutputLog($"<Error> 新規サブスクの処理に失敗しました: {ex.Message}", TwitchEventEnum.Subscriber);
+        }
     }
 
     /// <summary>
@@ -379,14 +404,21 @@ public class TwitchClientController
     /// </summary>
     private void TwitchClientOnPrimePaidSubscriber(object? sender, OnPrimePaidSubscriberArgs e)
     {
-        var subscriberName = e.PrimePaidSubscriber.DisplayName;
-        var months = e.PrimePaidSubscriber.MsgParamCumulativeMonths ?? "1";
-        var message = _secretKeys.Event.Subscription.Message.Replace("{subscriberName}", subscriberName)
-            .Replace("{totalSubscriptionMonth}", months);
-        SendMessage(subscriberName, $"[{Settings.Default.BotName}] {message}", e.PrimePaidSubscriber.UserId);
-        BouyomiChanController.AddEventTalkTask($"{subscriberName}さんサブスクありがとうございます",
-                _secretKeys.BouyomiChan.Checked);
-        LogController.OutputLog($"<Prime Subscriber> Name: {subscriberName}", TwitchEventEnum.Subscriber);
+        try
+        {
+            var subscriberName = e.PrimePaidSubscriber.DisplayName;
+            var months = e.PrimePaidSubscriber.MsgParamCumulativeMonths ?? "1";
+            var message = _secretKeys.Event.Subscription.Message.Replace("{subscriberName}", subscriberName)
+                .Replace("{totalSubscriptionMonth}", months);
+            SendMessage(subscriberName, $"[{Settings.Default.BotName}] {message}", e.PrimePaidSubscriber.UserId);
+            BouyomiChanController.AddEventTalkTask($"{subscriberName}さんサブスクありがとうございます",
+                    _secretKeys.BouyomiChan.Checked);
+            LogController.OutputLog($"<Prime Subscriber> Name: {subscriberName}", TwitchEventEnum.Subscriber);
+        }
+        catch (Exception ex)
+        {
+            LogController.OutputLog($"<Error> Primeサブスクの処理に失敗しました: {ex.Message}", TwitchEventEnum.Subscriber);
+        }
     }
 
     /// <summary>
@@ -415,7 +447,7 @@ public class TwitchClientController
         }
         catch (Exception ex)
         {
-            BouyomiChanController.AddEventTalkTask("翻訳に失敗しました", _secretKeys.BouyomiChan.Checked);
+            BouyomiChanController.AddEventTalkTask("イベントの処理に失敗しました", _secretKeys.BouyomiChan.Checked);
             LogController.OutputLog($"<Subscriber> Error: {ex.Message}", TwitchEventEnum.Subscriber);
         }
     }
@@ -425,13 +457,20 @@ public class TwitchClientController
     /// </summary>
     public void TwitchClientOnGiftedSubscription(object? sender, OnGiftedSubscriptionArgs e)
     {
-        var giftedUserName = e.GiftedSubscription.DisplayName;
-        var url = $"https://twitch.tv/{giftedUserName}";
-        var message = _secretKeys.Event.Gift.Message.Replace("{giftedUserName}", giftedUserName);
-        SendMessage(giftedUserName, $"[{Settings.Default.BotName}] {message}");
-        BouyomiChanController.AddEventTalkTask($"{giftedUserName}さんGiftありがとうございます",
-                _secretKeys.BouyomiChan.Checked);
-        LogController.OutputLog($"<Gift> Name: {giftedUserName} URL: {url}", TwitchEventEnum.Gift);
+        try
+        {
+            var giftedUserName = e.GiftedSubscription.DisplayName;
+            var url = $"https://twitch.tv/{giftedUserName}";
+            var message = _secretKeys.Event.Gift.Message.Replace("{giftedUserName}", giftedUserName);
+            SendMessage(giftedUserName, $"[{Settings.Default.BotName}] {message}");
+            BouyomiChanController.AddEventTalkTask($"{giftedUserName}さんGiftありがとうございます",
+                    _secretKeys.BouyomiChan.Checked);
+            LogController.OutputLog($"<Gift> Name: {giftedUserName} URL: {url}", TwitchEventEnum.Gift);
+        }
+        catch (Exception ex)
+        {
+            LogController.OutputLog($"<Error> ギフトの処理に失敗しました: {ex.Message}", TwitchEventEnum.Gift);
+        }
     }
 
     /// <summary>

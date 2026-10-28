@@ -375,14 +375,31 @@ public partial class MainWindow : INotifyPropertyChanged
         while (true)
         {
             await Task.Delay(100);
-            if (FaraBotModeratorWebView.Source is null)
-                continue;
+            // 1 周期の失敗で監視を止めない（戻りの URL を処理できなくても、次の周期でまた見る）
+            try
+            {
+                if (FaraBotModeratorWebView.Source is null) continue;
+                // 認証を始めていないとき（state が無い）は、戻りの URL があっても無視する
+                if (string.IsNullOrEmpty(Settings.Default.OAuth2State)) continue;
 
-            var url = FaraBotModeratorWebView.Source.ToString();
-            // URL毎に処理を追加
-            if (accessTokenQuery.All(key => url.Contains(key))) await UpdateAccessTokenAsync(url);
+                var url = FaraBotModeratorWebView.Source.ToString();
+                // 処理した戻りの URL は、画面に残っていても 2 度処理しない（同じ code を何度も送らない）
+                if (url == _lastHandledAuthUrl || !accessTokenQuery.All(key => url.Contains(key))) continue;
+
+                _lastHandledAuthUrl = url;
+                await UpdateAccessTokenAsync(url);
+            }
+            catch (Exception ex)
+            {
+                LogController.OutputLog($"<Error> 認証の戻りの処理に失敗しました（次の周期で続けます）: {ex.Message}");
+            }
         }
     }
+
+    /// <summary>
+    /// 最後に処理した認証の戻りの URL（同じ URL を 2 度処理しないため）。
+    /// </summary>
+    private string _lastHandledAuthUrl = "";
 
     /// <summary>
     /// </summary>
