@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace FaraBotModerator.Controllers;
@@ -10,6 +11,11 @@ namespace FaraBotModerator.Controllers;
 /// </summary>
 public class BouyomiChanController
 {
+    /// <summary>
+    /// 通信に使う HttpClient。呼び出しのたびに作ると、ソケットを使い切るので、1 つを使い回す（時間の制限は呼び出しごとに CancellationToken で付ける）
+    /// </summary>
+    private static readonly HttpClient Client = new();
+
     /// <summary>
     /// 棒読みちゃんに音声合成タスクを追加します。
     /// </summary>
@@ -48,10 +54,9 @@ public class BouyomiChanController
                 new KeyValuePair<string, string>("voice", "0")
             ]);
 
-            using var client = new HttpClient();
             // タイムアウトを短めに設定（棒読みちゃんが起動していない場合に長時間待たされないようにするため）
-            client.Timeout = TimeSpan.FromSeconds(2);
-            var response = await client.PostAsync("http://localhost:5008/Talk", content);
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+            using var response = await Client.PostAsync("http://localhost:5008/Talk", content, timeout.Token);
             return response.IsSuccessStatusCode;
         }
         catch (Exception ex)
@@ -70,15 +75,16 @@ public class BouyomiChanController
     {
         try
         {
-            using var client = new HttpClient();
-            client.Timeout = TimeSpan.FromSeconds(10);
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
             // 棒読みちゃんのHTTP連携が有効であれば、GET /Talk に対して (恐らく405 Method Not Allowed等が返るが) 接続はできるはず
             // 接続自体が拒否される場合は起動していないとみなす
-            await client.GetAsync("http://localhost:5008/Talk");
+            using var response = await Client.GetAsync("http://localhost:5008/Talk", timeout.Token);
             return true;
         }
-        catch
+        catch (Exception ex)
         {
+            // 起動していないとみなすが、理由（接続の拒否・タイムアウト）はログに残す
+            LogController.OutputLog($"BouyomiChan 接続確認: {ex.GetType().Name}");
             return false;
         }
     }

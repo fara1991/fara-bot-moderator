@@ -76,8 +76,8 @@ public partial class App : Application
         }
         catch (Exception ex)
         {
-            // その他のエラー（ログに出力できればする）
-            System.Diagnostics.Debug.WriteLine($"Permission check failed: {ex.Message}");
+            // その他のエラー（書き込み確認ができなかっただけなので、起動は続ける。理由はログに残す）
+            LogController.OutputLog($"<Error> 実行フォルダの書き込み確認に失敗しました: {ex.GetType().Name}");
         }
     }
 }

@@ -3,6 +3,7 @@ using System.IO;
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Unicode;
 using FaraBotModerator.Models;
 
@@ -57,7 +58,6 @@ public static class SecretKeyController
 
     private static void WriteKeys(SecretKeyModel secretKeys)
     {
-        using var writer = new StreamWriter(SecretFile, false, Encoding.UTF8);
         var options = new JsonSerializerOptions
         {
             Encoder = JavaScriptEncoder.Create(UnicodeRanges.All),
@@ -65,34 +65,48 @@ public static class SecretKeyController
         };
         var jsonData = JsonSerializer.Serialize(secretKeys, options);
         // \003Cだけ変換できないので手動で変換
-        writer.WriteLine(jsonData.Replace("\\u003C", "<"));
+        WriteAtomically(jsonData.Replace("\\u003C", "<"));
     }
 
     /// <summary>
-    /// ポケモンの登録形式（<c>pokemon.battleFormat</c>）だけを書き換えて保存します（null は未登録）。他の設定はファイルの内容のままです。
+    /// 一時ファイルに書いてから置き換えます。書き込みの途中で強制終了・ディスク満杯になっても、今の secrets.json は壊れません。
+    /// </summary>
+    private static void WriteAtomically(string jsonData)
+    {
+        var directory = Path.GetDirectoryName(SecretFile) ?? "";
+        if (!Directory.Exists(directory)) Directory.CreateDirectory(directory);
+
+        var temp = SecretFile + ".tmp";
+        File.WriteAllText(temp, jsonData + Environment.NewLine, Encoding.UTF8);
+        File.Move(temp, SecretFile, true);
+    }
+
+    /// <summary>
+    /// ポケモンの登録形式（<c>pokemon.battleFormat</c>）だけを書き換えて保存します（null は未登録）。
+    /// ファイルの他の項目は、読んだ内容のまま（モデルに無い項目も）残します。
     /// </summary>
     /// <param name="battleFormat">"Singles" / "Doubles"。null で未登録に戻す</param>
     public static void SavePokemonBattleFormat(string? battleFormat)
     {
         lock (FileLock)
         {
-            var keys = LoadKeys();
-            SaveKeys(new SecretKeyModel
+            // 無ければ作ってから読む（LoadKeys が初期値のファイルを作る）
+            LoadKeys();
+            var root = JsonNode.Parse(File.ReadAllText(SecretFile)) as JsonObject
+                       ?? throw new FileFormatException("secrets.json の形式が正しくありません");
+            if (root["pokemon"] is not JsonObject pokemon)
             {
-                Twitch = keys.Twitch,
-                DeepL = keys.DeepL,
-                BouyomiChan = keys.BouyomiChan,
-                Event = keys.Event,
-                CycleMessage = keys.CycleMessage,
-                FixedMessage = keys.FixedMessage,
-                BeatSaber = keys.BeatSaber,
-                Pokemon = new PokemonModel
-                {
-                    BattleFormat = battleFormat,
-                    DataSource = keys.Pokemon.DataSource,
-                    SyncKey = keys.Pokemon.SyncKey
-                }
-            });
+                pokemon = new JsonObject();
+                root["pokemon"] = pokemon;
+            }
+            pokemon["battleFormat"] = battleFormat;
+
+            var options = new JsonSerializerOptions
+            {
+                Encoder = JavaScriptEncoder.Create(UnicodeRanges.All),
+                WriteIndented = true
+            };
+            WriteAtomically(root.ToJsonString(options).Replace("\\u003C", "<"));
         }
     }
 
