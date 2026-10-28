@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -168,6 +169,17 @@ public class TwitchAuthService
                 };
             }).ToArray();
         return new string(stateChars);
+    }
+
+    /// <summary>
+    /// 戻りの URL（?code=…&amp;scope=…&amp;state=… の形）から、パラメーターの値を取り出します（URL デコード済み）。無ければ空。
+    /// </summary>
+    /// <param name="url">戻りの URL</param>
+    /// <param name="name">パラメーターの名前（code・state など）</param>
+    internal static string ExtractQueryValue(string url, string name)
+    {
+        var match = Regex.Match(url, "[?&]" + Regex.Escape(name) + "=([^&#]*)");
+        return match.Success ? Uri.UnescapeDataString(match.Groups[1].Value) : string.Empty;
     }
 
     /// <summary>

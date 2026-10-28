@@ -545,8 +545,9 @@ public partial class MainWindow : INotifyPropertyChanged
     /// <param name="url"></param>
     private async Task UpdateAccessTokenAsync(string url)
     {
-        var state = Regex.Match(url, @"state=(.*)").Groups[1].ToString();
-        var code = Regex.Match(url, @"code=(.*)&").Groups[1].ToString();
+        // 戻りの URL は ?code=…&scope=…&state=… の形。値だけを取り出す（貪欲な一致だと、後ろの &scope=… まで code に入ってしまう）
+        var state = TwitchAuthService.ExtractQueryValue(url, "state");
+        var code = TwitchAuthService.ExtractQueryValue(url, "code");
 
         var success = await _twitchAuthService.ExchangeAuthorizationCodeAsync(
             code,
