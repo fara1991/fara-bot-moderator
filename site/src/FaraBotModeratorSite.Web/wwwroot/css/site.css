@@ -264,10 +264,12 @@ h1, h2, h3, h4 { color: var(--on-surface); font-weight: 700; }
 }
 .hero h1 {
     margin: 0 0 16px;
-    font-size: clamp(2.2rem, 6vw, 3.4rem);
+    /* 360px 幅でも、「FaraBotModerator」が単語の途中で折れない大きさにする（最小 1.9rem） */
+    font-size: clamp(1.9rem, 6vw, 3.4rem);
     line-height: 1.2;
     font-weight: 800;
     color: var(--on-surface);
+    overflow-wrap: anywhere;
 }
 .hero .button-row { justify-content: center; }
 .hero-note { margin: 20px 0 0; font-size: 0.88rem; color: var(--on-surface-variant); }
@@ -598,4 +600,27 @@ html:has(.fsk-notice) .doc-toc { max-height: calc(100vh - 3.5rem - var(--notice-
 }
 @media (min-width: 768px) and (max-width: 1199.98px) {
     .site-search-hint { display: none; }
+}
+
+/* ---- キーボードのフォーカス枠（MudBlazor が outline: none にしているので、詳細度を上げて出す） ---- */
+.fsk-header :is(a, button):focus-visible,
+html body .mud-button-root:focus-visible,
+html body .fsk-skip-link:focus-visible,
+html body .mud-nav-link:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+/* ---- スマホ（600px 以下）の操作の大きさ（指で押せるように 44px 以上） ---- */
+@media (max-width: 600px) {
+    .fsk-menu-toggle,
+    .fsk-search-toggle { min-width: 44px; min-height: 44px; }
+    .fsk-sidebar .mud-nav-link { min-height: 44px; display: flex; align-items: center; }
+    .fsk-theme-switch { min-height: 44px; display: inline-flex; align-items: center; }
+}
+
+/* ---- 表の中のコマンド（狭い幅では、長い英数字をどこでも折れるようにして、字を少し小さくする） ---- */
+.prose table code { overflow-wrap: anywhere; }
+@media (max-width: 479.98px) {
+    .prose table code { font-size: 0.82em; }
 }
