@@ -610,17 +610,33 @@ html body .mud-nav-link:focus-visible {
     outline: 2px solid var(--primary);
     outline-offset: 2px;
 }
+/* 検索欄（.site-search-input は :focus で枠を消しているので、キーボードのときだけ枠を出す。kit の検索欄に枠が入るまでの暫定。
+   色はヘッダーの他のフォーカス枠と同じ #c4a5ff（ヘッダーは暗い地色）） */
+html body .site-search-input:focus-visible {
+    outline: 2px solid #c4a5ff;
+    outline-offset: 2px;
+}
 
-/* ---- スマホ（600px 以下）の操作の大きさ（指で押せるように 44px 以上） ---- */
+/* ---- スマホ（600px 以下）の操作の大きさ（指で押せるように 44px 以上）。見た目の幅・色は変えず、高さの下限だけを足す ---- */
 @media (max-width: 600px) {
     .fsk-menu-toggle,
     .fsk-search-toggle { min-width: 44px; min-height: 44px; }
     .fsk-sidebar .mud-nav-link { min-height: 44px; display: flex; align-items: center; }
     .fsk-theme-switch { min-height: 44px; display: inline-flex; align-items: center; }
+    .button { min-block-size: 2.75rem; }
+    .side-settings .mud-button-root { min-height: 44px; }
+    .fsk-footer a:not(.fsk-footer-social) { min-height: 44px; display: inline-flex; align-items: center; }
+    .breadcrumb a,
+    .card > a,
+    .link-list a,
+    .page-section > p > a { min-height: 44px; display: inline-flex; align-items: center; }
 }
 
 /* ---- 表の中のコマンド（狭い幅では、長い英数字をどこでも折れるようにして、字を少し小さくする） ---- */
 .prose table code { overflow-wrap: anywhere; }
 @media (max-width: 479.98px) {
     .prose table code { font-size: 0.82em; }
+    /* コードの例（pre）は、横にスクロールすると右側が切れて見える（スクロールバーも出ない）ので、狭い画面では折り返す */
+    .prose pre, .code-sample { white-space: pre-wrap; overflow-wrap: anywhere; }
+    .prose pre code, .code-sample code { white-space: pre-wrap; overflow-wrap: anywhere; }
 }
