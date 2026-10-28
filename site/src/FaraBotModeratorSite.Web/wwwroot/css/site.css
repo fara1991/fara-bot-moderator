@@ -653,6 +653,10 @@ html body .fsk-sidebar .mud-nav-link.active .mud-nav-link-text { color: #c4b5fd;
     .card > a,
     .link-list a,
     .page-section > p > a { min-height: 44px; display: inline-flex; align-items: center; }
+    /* 表のセルの中のリンク（Beat Saber の表の「Releases」など。文字が横にあっても、表のセルは文中のリンクから外れない）。
+       見た目（行の高さ・文字の位置）は変えず、押せる範囲だけを 44px 以上にする（上下の余白を足し、負の margin で打ち消す） */
+    .prose td a,
+    .prose th a { display: inline-block; padding-block: 12px; margin-block: -12px; }
 }
 
 /* ---- 表の中のコマンド（狭い幅では、長い英数字をどこでも折れるようにして、字を少し小さくする） ---- */
