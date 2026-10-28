@@ -499,7 +499,7 @@ html:has(.fsk-notice) .doc-toc { max-height: calc(100vh - 3.5rem - var(--notice-
 }
 .site-search-input {
     width: 100%;
-    height: 42px;
+    height: 44px;
     padding: 0 76px 0 42px;
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 999px;
@@ -520,7 +520,7 @@ html:has(.fsk-notice) .doc-toc { max-height: calc(100vh - 3.5rem - var(--notice-
     background: transparent;
     color: #d8c7f5;
     font: inherit;
-    font-size: 0.72rem;
+    font-size: 0.75rem;   /* 12px 以上（レビュー: 11.5px は小さすぎる） */
 }
 .site-search-close {
     position: absolute;
@@ -603,10 +603,21 @@ html:has(.fsk-notice) .doc-toc { max-height: calc(100vh - 3.5rem - var(--notice-
 }
 
 /* ---- キーボードのフォーカス枠（MudBlazor が outline: none にしているので、詳細度を上げて出す） ---- */
-.fsk-header :is(a, button):focus-visible,
-html body .mud-button-root:focus-visible,
-html body .fsk-skip-link:focus-visible,
-html body .mud-nav-link:focus-visible {
+/* 暗い地色（ヘッダー・左のメニュー）の上は #c4a5ff（ライトでも暗い地色なので見える色で固定） */
+html body .fsk-header :is(a, button):focus-visible,
+html body .fsk-sidebar :is(a, button):focus-visible,
+html body .fsk-skip-link:focus-visible {
+    outline: 2px solid #c4a5ff;
+    outline-offset: 2px;
+}
+/* 左のメニューの項目は、ドロワーの端で枠が切れないように内側に描く */
+html body .fsk-sidebar .mud-nav-link:focus-visible {
+    outline-offset: -2px;
+}
+/* 本文の部品（主要ボタン・カードのリンク・本文のリンク）。本文の色（ライトは紫、ダークは明るい紫）に合わせる */
+html body a:focus-visible,
+html body button:focus-visible,
+html body .mud-button-root:focus-visible {
     outline: 2px solid var(--primary);
     outline-offset: 2px;
 }
@@ -617,12 +628,24 @@ html body .site-search-input:focus-visible {
     outline-offset: 2px;
 }
 
+/* ---- 押せる大きさ（44px 以上）。見た目の幅・色は変えず、高さ（と幅）の下限だけを足す。幅によらず効かせる（768px 以上の左のメニューも含む） ---- */
+.fsk-menu-toggle,
+.fsk-search-toggle { min-width: 44px; min-height: 44px; }
+.fsk-sidebar .mud-nav-link { min-height: 44px; display: flex; align-items: center; }
+.fsk-theme-switch { min-height: 44px; display: inline-flex; align-items: center; }
+.fsk-theme-switch .mud-switch { min-height: 44px; }
+.site-search-input { height: 44px; }
+.button { min-block-size: 2.75rem; }
+.card > a,
+.link-list a,
+.page-section > p > a,
+.fsk-footer a:not(.fsk-footer-social) { min-height: 44px; display: inline-flex; align-items: center; }
+.fsk-header .mud-icon-button { min-width: 44px; min-height: 44px; }
+/* 左のメニューの「現在のページ」: MudBlazor の既定（テーマの主色 #6d28d9）は暗い地色の上で 2.6:1 しかないので、明るい紫にする */
+html body .fsk-sidebar .mud-nav-link.active .mud-nav-link-text { color: #c4b5fd; }
+
 /* ---- スマホ（600px 以下）の操作の大きさ（指で押せるように 44px 以上）。見た目の幅・色は変えず、高さの下限だけを足す ---- */
 @media (max-width: 600px) {
-    .fsk-menu-toggle,
-    .fsk-search-toggle { min-width: 44px; min-height: 44px; }
-    .fsk-sidebar .mud-nav-link { min-height: 44px; display: flex; align-items: center; }
-    .fsk-theme-switch { min-height: 44px; display: inline-flex; align-items: center; }
     .button { min-block-size: 2.75rem; }
     .side-settings .mud-button-root { min-height: 44px; }
     .fsk-footer a:not(.fsk-footer-social) { min-height: 44px; display: inline-flex; align-items: center; }
