@@ -14,7 +14,7 @@ const sets = {
 };
 const browser = await chromium.launch();
 const ctx = await browser.newContext({ viewport: { width: +vw, height: 900 }, colorScheme: scheme });
-await ctx.addInitScript(([s]) => { try { localStorage.setItem("fara-bot-moderator-site.theme", s); } catch {} }, [scheme]);
+await ctx.addInitScript(([s]) => { try { localStorage.setItem("fara-bot-moderator-site.theme", s); } catch { /* 保存できないときは、既定のまま */ } }, [scheme]);
 const page = await ctx.newPage();
 const result = {};
 for (const [path, sels] of Object.entries(sets)) {

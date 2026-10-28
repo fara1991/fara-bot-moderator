@@ -16,7 +16,7 @@ for (const [vn, [w, h]] of Object.entries(viewports)) {
       try {
         if (k === "old") localStorage.setItem("fara-bot-moderator-site.theme", s);
         else localStorage.setItem("fara-bot-moderator-site.theme", JSON.stringify({ Theme: s }));
-      } catch {}
+      } catch { /* 保存できないとき（プライベート閲覧など）は、そのまま */ }
     }, [kind, scheme]);
     const page = await ctx.newPage();
     const problems = [];

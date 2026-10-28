@@ -1,0 +1,25 @@
+<Project>
+
+  <!--
+    C# の静的解析（ラチェット）。アプリ（FaraBotModerator.csproj・tests/）と紹介サイト（site/src・site/tests）に効く。
+    ルールの中身と理由は external/fara-site-kit/tools/lint/dotnet.editorconfig と external/fara-site-kit/docs/lint.md。
+    pokemon（external/fara-pokemon-battle-assistant）は、自分の Directory.Build.props を持つので、ここは読まれない（MSBuild は最も近い 1 つだけを読む）。
+    FaraBotModerator.csproj の <EnforceCodeStyleInBuild>False</EnforceCodeStyleInBuild> は、アプリ側で残す（IDE の規則は dotnet build で見ない。重大度の設定は editorconfig のまま効く）。
+  -->
+
+  <PropertyGroup>
+    <!-- IDE の規則（IDE0059 など）を dotnet build でも検査する -->
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <GlobalAnalyzerConfigFiles Include="$(MSBuildThisFileDirectory)external/fara-site-kit/tools/lint/dotnet.editorconfig" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- 非同期の誤用（async void・同期の待ち）を見る。PrivateAssets=all なので、参照するプロジェクトには流れない -->
+    <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" Version="17.14.15" PrivateAssets="all" />
+  </ItemGroup>
+
+</Project>

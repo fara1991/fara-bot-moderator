@@ -11,7 +11,7 @@ Cloudflare の Worker 名は本番 `fara-twitch-bot`、確認用 `fara-twitch-bo
 
 ## 作り
 
-- .NET 10 の Blazor WebAssembly + MudBlazor。ヘッダー・サイドバー・フッター・テーマ・問い合わせフォーム・404・お知らせは、共通部品 [fara-site-kit](https://github.com/fara1991/fara-site-kit)（`external/fara-site-kit`、v0.3.0）
+- .NET 10 の Blazor WebAssembly + MudBlazor。ヘッダー・サイドバー・フッター・テーマ・問い合わせフォーム・404・お知らせは、共通部品 [fara-site-kit](https://github.com/fara1991/fara-site-kit)（`external/fara-site-kit`、v0.6.0）
 - 公開物（`publish/wwwroot`）は、アプリ（WebAssembly）と、ページごとの**本文入りの静的 HTML**（検索エンジンと、JavaScript が使えない環境のため。ブラウザは起動すると、同じ内容の画面に置き換える）。Cloudflare Workers（Static Assets）でホスティング
 - 説明ページの本文は、リポジトリ直下の `Manual.md` を見出しで切り分けたものです。**文章を直すときは `Manual.md` を直します**（アプリに同梱する操作説明書と同じ内容になります）。ビルドが `data/site.json` に変換するので、ブラウザは Markdown を読みません
 - どの見出しをどのページにするか、ページの題名・グループ・説明は `Content/pages.json` に書きます。見出しの名前を変えたときは、`pages.json` の `heading` も合わせてください（見つからないとビルドが失敗します）
@@ -32,6 +32,14 @@ npx wrangler dev --env dev    # Cloudflare と同じ動き（Worker 経由）で
 
 `Manual.md` や `Content/*.json` を変えたら、`npm run build:site` をやり直します（`dotnet watch` の開発サーバーでは `data/site.json` と静的な本文は作られません）。
 
+## 品質チェック（レイアウト・ESLint・C#）
+
+- **レイアウトの自動計測**: `npm run layout-check`。ビルド済みの `publish/wwwroot` を配って、トップ・ドキュメント・コマンド・ポケモン・Beat Saber・問い合わせ・404 の画面を、360〜1440px の 5 幅で開き、数値で決まる崩れ（横スクロール・h1 の数・フォーカスの見え方・画面の外へのフォーカス・押せる範囲・文字の大きさ・メニューの Esc）を見る。設定は `layout-check.config.mjs`。CI は `build.yml` の `Layout check (site)`
+  - 除外は `rule`・`selector`・`reason`（必須・具体的に）・`page`（任意）で書く。直せるものは CSS・Razor で直す（今の除外は、kit の計測の制限による本文の項目と、フッターの SNS アイコン、受け付け停止中の送信ボタン、トップの一覧のリンク。それぞれの理由は設定ファイルに書いてある）
+  - 使い方と制限は kit の `docs/layout-check.md`。計測の依存は kit の中の `node_modules` から読むため、`external/fara-site-kit` でも `npm ci` する
+- **ESLint**: `npm run lint`（`eslint.config.mjs`。共通のルールは kit の `tools/lint/`）。対象は `worker/`・`tools/`・`tests/`・画面の `wwwroot/js/`。`.github/scripts` は対象外（基準パスの外。node --test で確かめる）
+- **C#**: リポジトリ直下の `Directory.Build.props` が kit の `dotnet.editorconfig` を読む。`CS4014`・`CA1816`・`IDE0059` は error（違反 0 件）。`CA1031`・`CA2000`・`VSTHRD100` は warning のまま（件数は `CLAUDE.md` の表）。ルート `.editorconfig` で `VSTHRD100` だけ warning に下げている（理由は `CLAUDE.md`）
+
 ## CSP
 
 `_headers` の `Content-Security-Policy` は、`build/site.json` の `csp` から kit が作ります（Worker は付けません）。以前の静的サイトとの違い:
@@ -46,7 +54,7 @@ npx wrangler dev --env dev    # Cloudflare と同じ動き（Worker 経由）で
 
 ワークフローは fara-pokemon-battle-assistant などと同じ 3 つです。公開の 2 つは `site/`・`Manual.md`・`external/fara-site-kit` などを変えたときだけ動き、自分でビルドして公開します（成果物（artifact）は使いません）。ほかに、アプリのインストーラーのリリース用の `release-app.yml`（タグ `v*` か手動実行）があります。
 
-- `.github/workflows/build.yml`（Build and test (site)）: PR と、develop・master への push で、アプリ本体（Windows）と紹介サイトのビルドとテスト。サイトは本番用・確認用の両方を書き出して確かめる。公開しない
+- `.github/workflows/build.yml`（Build and test (site)）: PR と、develop・master への push で、アプリ本体（Windows）と紹介サイトのビルドとテスト。サイトは本番用・確認用の両方を書き出して確かめる。公開しない。あわせて、`Layout check (site)`（レイアウトの自動計測）と `Lint (site JS)`（ESLint）も動く
 - `.github/workflows/deploy-develop.yml`（Deploy (develop)）: `develop` への push で、確認用に公開
 - `.github/workflows/deploy.yml`（Deploy (production)）: `master` への push で、本番に公開
 

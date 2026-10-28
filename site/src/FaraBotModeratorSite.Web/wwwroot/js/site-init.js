@@ -15,5 +15,5 @@
                 localStorage.setItem(KEY, JSON.stringify({ Theme: "dark" }));
             }
         }
-    } catch (e) { /* localStorage が使えないときは、kit の既定（ライト）のまま */ }
+    } catch { /* localStorage が使えないときは、kit の既定（ライト）のまま */ }
 })();

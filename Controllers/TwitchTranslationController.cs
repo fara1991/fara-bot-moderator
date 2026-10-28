@@ -92,6 +92,7 @@ public partial class TwitchTranslationController : System.IDisposable
     public void Dispose()
     {
         _deepLTranslator?.Dispose();
+        System.GC.SuppressFinalize(this);
     }
 
     [GeneratedRegex(@"[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]")]
