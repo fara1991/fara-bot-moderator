@@ -19,7 +19,6 @@ using FaraBotModerator.Properties;
 using Microsoft.Web.WebView2.Core;
 using BattleFormat = FaraPokemonBattleAssistant.Core.Models.BattleFormat;
 using RemoteRosterStore = FaraPokemonBattleAssistant.Core.Roster.RemoteRosterStore;
-using RotateFinishResult = FaraBotModerator.Controllers.PokemonSyncKeyController.RotateFinishResult;
 using RosterUnavailableException = FaraPokemonBattleAssistant.Core.Roster.RosterUnavailableException;
 
 namespace FaraBotModerator.Views;
@@ -1399,40 +1398,19 @@ public partial class MainWindow : INotifyPropertyChanged
         PokemonSyncStatusTextBlock.Text = "作り直し中…";
         try
         {
-            // 1. 新しいキーの置き場へ写す（古いキーはまだ消さない。今のキーもまだ画面と設定ファイルに残したまま）
-            var pending = await PokemonSyncKeyController.PrepareRotateAsync(SelectedPokemonDataSourceValue(), _pokemonSyncKey);
-            // 2. 新しいキーを設定ファイルへ保存できてから、画面を切り替える。保存できなければ今のキーのまま（古いキーは消さない）
-            if (!await ApplyPokemonSyncKeyAsync(pending.NewKey))
+            // 写す → 新しいキーを保存（ApplyPokemonSyncKeyAsync。保存できたら画面を切り替える）→ 古いキーを消す、の順（Core の RosterRotation）
+            var outcome = await PokemonSyncKeyController.RotateAsync(SelectedPokemonDataSourceValue(), _pokemonSyncKey, ApplyPokemonSyncKeyAsync);
+            if (!outcome.Saved)
             {
-                // 新しいキーは使わないので、写し終えた置き場を消す。キーは画面に出していないので、消せなくても使われない（その場合は案内する）
-                var discarded = await PokemonSyncKeyController.DiscardKeyAsync(SelectedPokemonDataSourceValue(), pending.NewKey);
+                // 保存できなかったので、今のキーのまま。新しいキーは画面に出していないので、消せなくても使われない（その場合は案内する）
                 PokemonSyncStatusTextBlock.Text = "作り直しましたが、保存できませんでした（今のアクセスキーのまま）";
-                if (!discarded)
+                if (!outcome.DiscardedNewKey)
                     MessageBox.Show("新しいアクセスキーの置き場を消せませんでした（そのキーは画面に出していないので、使われません）。今のアクセスキーは変わっていません。",
                         "アクセスキー", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
-            // 3. 古いキーを消す（消せなくても、新しいキーへの切り替えは済んでいる。ここで例外が出ても、作り直し自体は済んでいるので警告にする）
-            RotateFinishResult finished;
-            try
-            {
-                finished = await PokemonSyncKeyController.FinishRotateAsync(SelectedPokemonDataSourceValue(), pending);
-            }
-            catch (Exception ex)
-            {
-                LogController.OutputLog($"<Error> 古いアクセスキーの削除に失敗しました: {ex.GetType().Name}");
-                finished = new RotateFinishResult(false, 0);
-            }
-            // 内容を省いて写した試合（サーバーの上限）は、前半と後半の合計を出す
-            var trimmed = pending.TrimmedMatches + finished.TrimmedMatches;
-            MessageBox.Show(
-                (finished.OldKeyDeleted
-                    ? "アクセスキーを作り直しました。古いアクセスキーは使えなくなりました。"
-                    : "アクセスキーを作り直しました。ただし、古いアクセスキーは残っています。写している間に古いアクセスキーへ書かれた内容は、新しいアクセスキーに入っていないかもしれません。古いアクセスキーは使わないでください。") +
-                "\n\nサイトの「データ共有」ページで、新しいアクセスキーを入力し直してください（「コピー」でコピーできます）。" +
-                (trimmed > 0
-                    ? $"\n\n内容を省いて写した試合が {trimmed} 件あります（サーバーの上限のため。その試合の内容は、新しいアクセスキーに入っていません）。"
-                    : ""),
+            var finished = outcome.Finished!;
+            MessageBox.Show(PokemonSyncKeyController.RotateResultMessage(finished),
                 "アクセスキー", MessageBoxButton.OK, finished.OldKeyDeleted ? MessageBoxImage.Information : MessageBoxImage.Warning);
         }
         catch (RosterUnavailableException ex)
