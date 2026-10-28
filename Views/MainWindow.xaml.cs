@@ -563,7 +563,7 @@ public partial class MainWindow : INotifyPropertyChanged
 
         // 失敗したら、次の refresh は一定時間（30 秒）空けて試す（毎秒の再試行にしない）
         _nextRefreshAttemptAt = DateTime.Now + TokenMonitorPolicy.RefreshRetryInterval;
-        // 認可の試行が進行中（認可画面を開いてから期限内）なら、開き直さない。開き直すと state が変わり、進行中の認可が合わなくなる
+        // 認可の試行が進行中（認可画面を開いてから、または失敗してから期限内）なら、開き直さない。開き直すと state が変わり、進行中の認可が合わなくなる。失敗のあとに開き直すと、30 秒ごとに認可画面が出てしまう
         if (!TokenMonitorPolicy.IsAuthorizationInProgress(_authorizationStartedAt, DateTime.Now))
             RequestApiAccessToken();
     }
@@ -574,7 +574,7 @@ public partial class MainWindow : INotifyPropertyChanged
     private DateTime _nextRefreshAttemptAt = DateTime.MinValue;
 
     /// <summary>
-    /// 認可画面を開いた時刻（監視から開き直さないための判断に使う）。認可が成功したとき・開けなかったときは null。
+    /// 監視が認可画面を開き直さないための起点の時刻（認可画面を開いた時刻、または認可が失敗した時刻）。認可が成功したとき・開けなかったときは null。
     /// </summary>
     private DateTime? _authorizationStartedAt;
 
@@ -615,11 +615,12 @@ public partial class MainWindow : INotifyPropertyChanged
         }
 
         // 失敗（コードの無効・通信や応答の例外）: 認可の試行は終わったので、ロックを解く。理由を画面に出し、Authorize からやり直せるようにする。
-        // 試行の時刻も消す（消さないと、監視が 10 分間は認可画面を開き直さない）
+        // 監視からは、失敗した時刻から 10 分間は認可画面を開き直さない（消すと、リフレッシュ失敗のたびに 30 秒ごとに開き直してしまう）。
+        // Authorize ボタンは抑止を受けないので、手動の再認可はできる
         LogController.OutputLog(error is null
             ? "<Error> 認可のトークン取得に失敗しました（認可コードが無効、または期限切れ）"
             : $"<Error> 認可のトークン取得で例外が起きました: {error.Message}");
-        _authorizationStartedAt = null;
+        _authorizationStartedAt = TokenMonitorPolicy.AuthorizationAnchorAfterEnd(false, DateTime.Now);
         TwitchAuthStatusTextBlock.Text = TwitchAuthService.AuthorizationFailureStatus(error);
         UnlockWindowControl();
     }
@@ -629,6 +630,8 @@ public partial class MainWindow : INotifyPropertyChanged
     /// </summary>
     private void RequestApiAccessToken()
     {
+        // 前の失敗の文は、新しい認可を始めるときに消す
+        TwitchAuthStatusTextBlock.Text = "";
         try
         {
             var requestUrl = _twitchAuthService.GenerateAuthorizationUrl(TwitchApiClientIdPasswordBox.Password);

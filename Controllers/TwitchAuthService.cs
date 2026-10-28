@@ -14,6 +14,21 @@ using FaraBotModerator.Properties;
 namespace FaraBotModerator.Controllers;
 
 /// <summary>
+/// 認可の戻りの state が、認可のときに作った state と一致しなかったときの例外（CSRF の検査）。
+/// 通信の失敗（<see cref="HttpRequestException"/>）とは区別して、画面には state の不一致として出す。
+/// </summary>
+public sealed class AuthorizationStateMismatchException : Exception
+{
+    /// <summary>
+    /// state が一致しないことを表す例外を作ります（メッセージはログ用の英語の文）。
+    /// </summary>
+    public AuthorizationStateMismatchException()
+        : base("The token differs between request and response.")
+    {
+    }
+}
+
+/// <summary>
 /// Twitch OAuth認証を管理するサービスクラス
 /// </summary>
 public class TwitchAuthService
@@ -67,14 +82,15 @@ public class TwitchAuthService
     /// <param name="expectedState">期待されるstateパラメータ</param>
     /// <param name="actualState">実際のstateパラメータ</param>
     /// <returns>成功した場合はtrue</returns>
+    /// <exception cref="AuthorizationStateMismatchException">state が一致しない（空同士も含む）。通信は行わない</exception>
     public async Task<bool> ExchangeAuthorizationCodeAsync(string authorizationCode, string clientId,
         string clientSecret, string expectedState, string actualState)
     {
         if (!StatesMatch(expectedState, actualState))
         {
-            var message = "The token differs between request and response.";
-            LogController.OutputLog(message);
-            throw new HttpRequestException(message);
+            var exception = new AuthorizationStateMismatchException();
+            LogController.OutputLog(exception.Message);
+            throw exception;
         }
 
         var form = new[]
@@ -200,9 +216,12 @@ public class TwitchAuthService
     /// 認可（認証コードの交換）が失敗したときに画面に出す文。理由は大まかに書き、通信の例外の中身（URL・応答の本文など）は出さない。
     /// </summary>
     /// <param name="error">例外で失敗したときの例外（コードが無効などで false を返したときは null）</param>
-    internal static string AuthorizationFailureStatus(Exception? error) => error is null
-        ? "認可に失敗しました（認可コードが無効、または期限切れ）。Authorize からもう一度認可してください。"
-        : "認可に失敗しました（Twitch との通信・応答の処理に失敗）。Authorize からもう一度認可してください。";
+    internal static string AuthorizationFailureStatus(Exception? error) => error switch
+    {
+        null => "認可に失敗しました（認可コードが無効、または期限切れ）。Authorize からもう一度認可してください。",
+        AuthorizationStateMismatchException => "認可の検証（state）が一致しませんでした。Authorize からもう一度認可してください。",
+        _ => "認可に失敗しました（Twitch との通信・応答の処理に失敗）。Authorize からもう一度認可してください。",
+    };
 
     /// <summary>
     /// トークンの有効期限が切れているかどうかを確認します。

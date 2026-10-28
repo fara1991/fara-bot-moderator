@@ -79,6 +79,29 @@ public class TwitchAuthServiceTests
 
         Assert.DoesNotContain("secret-body", status);
     }
+
+    [Fact]
+    public void A_state_mismatch_is_reported_as_a_state_check_failure_not_a_connection_failure()
+    {
+        // state の不一致は CSRF の検査で、通信の失敗ではない。文は state を案内し、通信の文を出さない
+        var status = TwitchAuthService.AuthorizationFailureStatus(new AuthorizationStateMismatchException());
+
+        Assert.Contains("state", status);
+        Assert.Contains("もう一度", status);
+        Assert.DoesNotContain("通信", status);
+    }
+
+    [Fact]
+    public async Task A_state_mismatch_throws_the_state_exception_without_a_request()
+    {
+        // 空の期待 state も一致とみなさない（通信の前に例外になる）
+        var service = new TwitchAuthService();
+
+        await Assert.ThrowsAsync<AuthorizationStateMismatchException>(() =>
+            service.ExchangeAuthorizationCodeAsync("code", "id", "secret", expectedState: "", actualState: ""));
+        await Assert.ThrowsAsync<AuthorizationStateMismatchException>(() =>
+            service.ExchangeAuthorizationCodeAsync("code", "id", "secret", expectedState: "abc", actualState: "xyz"));
+    }
 }
 
 /// <summary>
