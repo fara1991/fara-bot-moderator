@@ -11,7 +11,7 @@ Cloudflare の Worker 名は本番 `fara-twitch-bot`、確認用 `fara-twitch-bo
 
 ## 作り
 
-- .NET 10 の Blazor WebAssembly + MudBlazor。ヘッダー・サイドバー・フッター・テーマ・問い合わせフォーム・404・お知らせは、共通部品 [fara-site-kit](https://github.com/fara1991/fara-site-kit)（`external/fara-site-kit`、v0.7.0）
+- .NET 10 の Blazor WebAssembly + MudBlazor。ヘッダー・サイドバー・フッター・テーマ・問い合わせフォーム・404・お知らせは、共通部品 [fara-site-kit](https://github.com/fara1991/fara-site-kit)（`external/fara-site-kit`、v0.8.0）
 - 公開物（`publish/wwwroot`）は、アプリ（WebAssembly）と、ページごとの**本文入りの静的 HTML**（検索エンジンと、JavaScript が使えない環境のため。ブラウザは起動すると、同じ内容の画面に置き換える）。Cloudflare Workers（Static Assets）でホスティング
 - 説明ページの本文は、リポジトリ直下の `Manual.md` を見出しで切り分けたものです。**文章を直すときは `Manual.md` を直します**（アプリに同梱する操作説明書と同じ内容になります）。ビルドが `data/site.json` に変換するので、ブラウザは Markdown を読みません
 - どの見出しをどのページにするか、ページの題名・グループ・説明は `Content/pages.json` に書きます。見出しの名前を変えたときは、`pages.json` の `heading` も合わせてください（見つからないとビルドが失敗します）
@@ -49,6 +49,15 @@ npx wrangler dev --env dev    # Cloudflare と同じ動き（Worker 経由）で
 - `challenges.cloudflare.com`（問い合わせの Turnstile）を、`/report` だけでなく全ページで許可（`/report` へは画面の移動で行き、ドキュメントを取り直さないため、ページごとの CSP にできない）
 - `static.cloudflareinsights.com`（script-src）と `cloudflareinsights.com`（connect-src）は、Cloudflare Web Analytics のビーコン用（ゾーンの設定で自動に差し込まれる）
 - 外部のフォント・スクリプト・画像は、引き続き使いません
+
+## 問い合わせの回数制限
+
+問い合わせ（`/api/report`）は、送信元（`CF-Connecting-IP`）ごとに **1 日 3 回まで**（日本時間の日付で数える）です。超えると 429 を返し、画面には「1 日の送信上限（3 回）に達しました。明日もう一度お試しください。」を出します。数えるのは、Turnstile を通って Discord へ送る直前の 1 回です（Turnstile の失敗や、本文の不正で弾いたものは数えません）。Discord への送信に失敗したときは、数えた分を戻します。
+
+- 仕組みは kit の `worker/report-rate-limit.js`（Durable Object の `ReportRateLimiter`）。`worker/index.js` が公開し、`wrangler.toml` の `durable_objects`・`migrations` が、トップレベル・`env.production`・`env.dev` の 3 か所にあります。どれかを消すと、制限が効かなくなります（バインディングが無ければ制限しない）
+- 保存するのは、送信元の IP アドレスから作った識別子（`TURNSTILE_SECRET` から導いた鍵の HMAC。IP アドレスそのものは保存しません）と回数だけで、日付ごとに分けて、日本時間の翌 0 時に消します。**`TURNSTILE_SECRET` を変えると、計数はリセットされます**
+- 同じ回線（共有 IP）の人は枠を共有します。数えられないとき（Durable Object が使えないなど）は、制限せずに送ります（fail-open。Turnstile は残ります）
+- 方針の詳細とプライバシーの書き方は、kit の `docs/usage.md` の 2.2。プライバシーポリシーは `/privacy`（「問い合わせで送る情報」の節）
 
 ## 公開
 
