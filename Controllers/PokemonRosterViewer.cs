@@ -37,6 +37,8 @@ public static class PokemonRosterViewer
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
+            // 取れないときは、ゲームの名前を出さずに登録データだけ出す（理由はログに残す）
+            LogController.OutputLog($"<Error> ポケモンのゲーム一覧を取得できませんでした: {ex.GetType().Name}");
             dataSets = Array.Empty<DataSetInfo>();
         }
 
@@ -54,6 +56,7 @@ public static class PokemonRosterViewer
                 }
                 catch (Exception ex) when (ex is not OperationCanceledException)
                 {
+                    LogController.OutputLog($"<Error> ポケモンのデータ（{key}）を取得できませんでした: {ex.GetType().Name}");
                     data = null;
                 }
             }

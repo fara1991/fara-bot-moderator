@@ -29,7 +29,9 @@ export default {
       let res;
       try {
         res = await handleReport(request, env, SITE_NAME);
-      } catch {
+      } catch (e) {
+        // 利用者には中身を出さず、原因は Worker のログ（wrangler tail）に残す
+        console.error(e);
         res = new Response("internal error", { status: 500 });
       }
       res.headers.set("X-Content-Type-Options", "nosniff");

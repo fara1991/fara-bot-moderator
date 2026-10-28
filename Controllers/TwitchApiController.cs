@@ -191,19 +191,13 @@ public class TwitchApiController
     public async Task<List<StreamingUserModel>> GetStreamingSameGameUsersAsync()
     {
         if (_twitchApi == null || _myStreamInfo == null) return new List<StreamingUserModel>();
+        // 配信中でない（ゲームが無い）ときは、絞り込めないので空を返す（ゲームの条件を外すと、配信中の全チャンネルが出てしまう）
+        if (_myStreamInfo.GameId == null) return new List<StreamingUserModel>();
         try
         {
             var userIds = new List<string>();
             var userLoginNames = new List<string> {_secretKeyModel.Twitch.Client.UserName};
-            var gameIds = new List<string>();
-            if (_myStreamInfo.GameId != null)
-            {
-                gameIds.Add(_myStreamInfo.GameId);
-            }
-            else
-            {
-                userLoginNames.Clear();
-            }
+            var gameIds = new List<string> {_myStreamInfo.GameId};
 
             var sameGameUsers = await _twitchApi.Helix.Streams.GetStreamsAsync(userIds: userIds, userLogins: userLoginNames, gameIds: gameIds,
                     type: "live");
@@ -327,7 +321,7 @@ public class TwitchApiController
     /// アクセストークンが有効かどうかを検証します。
     /// </summary>
     /// <returns>有効であればtrue</returns>
-    public bool ValidateToken()
+    public async Task<bool> ValidateTokenAsync()
     {
         if (_twitchApi == null) return false;
         try
@@ -338,7 +332,8 @@ public class TwitchApiController
                 LogController.OutputLog("AccessToken is empty.");
                 return false;
             }
-            var validation = Task.Run(() => _twitchApi.Auth.ValidateAccessTokenAsync(accessToken)).Result;
+            // UI スレッドを止めないように、await で待つ（.Result で待つと、UI が固まり、例外も AggregateException で包まれる）
+            var validation = await _twitchApi.Auth.ValidateAccessTokenAsync(accessToken);
             // _twitchApi.Settings.Scopes = validation.Scopes;
             LogController.OutputLog(
                 $"Token is valid. Client ID: {validation.ClientId}, User ID: {validation.UserId}, Expires in: {validation.ExpiresIn} seconds");
