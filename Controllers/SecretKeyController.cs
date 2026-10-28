@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
@@ -52,7 +53,10 @@ public static class SecretKeyController
             SecretKeyModel? secretKeys;
             try
             {
-                secretKeys = JsonSerializer.Deserialize<SecretKeyModel>(File.ReadAllText(path));
+                var root = JsonNode.Parse(File.ReadAllText(path));
+                // 入れ子の項目が null（"twitch": null など）でも、既定の値で補ってから読む（そのままだと、画面の読み込みで NRE になる）
+                FillNullsWithDefaults(root, DefaultNode);
+                secretKeys = root?.Deserialize<SecretKeyModel>();
             }
             catch (JsonException)
             {
@@ -67,6 +71,30 @@ public static class SecretKeyController
             quarantinedPath = Quarantine(path);
             LogController.OutputLog($"<Error> secrets.json が壊れていたため退避し、初期値で作り直しました: {quarantinedPath}");
             return CreateKeys(path);
+        }
+    }
+
+    /// <summary>
+    /// 既定の設定（モデルを既定の値で作って JSON にしたもの）。読んだ JSON の null を補うときの元になる。
+    /// </summary>
+    private static readonly JsonNode? DefaultNode = JsonSerializer.SerializeToNode(new SecretKeyModel());
+
+    /// <summary>
+    /// 読んだ JSON で、既定の値がある項目が null のときは、既定の値で置き換えます（再帰）。既定の値も null の項目（パスワードの無い設定など）は、そのまま null。
+    /// </summary>
+    /// <param name="current">読んだ JSON</param>
+    /// <param name="defaults">既定の JSON（同じ位置の項目）</param>
+    private static void FillNullsWithDefaults(JsonNode? current, JsonNode? defaults)
+    {
+        if (current is not JsonObject obj || defaults is not JsonObject defaultObj) return;
+
+        foreach (var key in obj.Select(p => p.Key).ToList())
+        {
+            var defaultValue = defaultObj[key];
+            if (obj[key] is null && defaultValue is not null)
+                obj[key] = defaultValue.DeepClone();
+            else
+                FillNullsWithDefaults(obj[key], defaultValue);
         }
     }
 

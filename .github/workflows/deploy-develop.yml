@@ -57,6 +57,13 @@ jobs:
         with:
           node-version: 22
 
+      # お知らせの文は、Cloudflare の変数に入れる前に検査する（改行は表示を壊し、200 文字を超えると公開の途中で失敗するため）。空（変更しない）は通す。
+      # 検査は deploy.yml と同じ（.github/scripts/check-maintenance-message.mjs）
+      - name: Validate maintenance_message
+        env:
+          MAINTENANCE_MESSAGE_INPUT: ${{ inputs.maintenance_message }}
+        run: node .github/scripts/check-maintenance-message.mjs
+
       - name: Build site (develop)
         working-directory: site
         run: node tools/build-site.mjs --env develop

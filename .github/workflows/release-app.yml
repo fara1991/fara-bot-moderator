@@ -1,6 +1,7 @@
 name: Release (app installer)
 
 # アプリ本体のインストーラーを作り、GitHub の Release に公開する。タグ v* の push か、バージョンを入れた手動実行で動く（紹介サイトの公開は deploy.yml・deploy-develop.yml）。
+# job を 2 つに分けている。build（ビルド・署名。書き込み権限なし。証明書を持つのはこの job だけ）→ release（タグと Release の作成。contents: write はこの job だけ）。
 
 on:
   push:
@@ -19,15 +20,17 @@ permissions:
 jobs:
   build:
     runs-on: windows-latest
-    # タグの作成・push（手動実行）と、Release の作成に contents: write が要る（この job だけ）
-    permissions:
-      contents: write
+    # 書き込み権限は持たない（ビルドのスクリプトや依存関係が、リポジトリに書き込めないように）
+    outputs:
+      version: ${{ steps.version.outputs.VERSION }}
 
     steps:
+      # 取得した認証情報（GITHUB_TOKEN）はディスクに残さない（以降のステップで使わない）
       - name: Checkout
         uses: actions/checkout@v4
         with:
           submodules: true
+          persist-credentials: false
 
       # 入力は式展開でスクリプトに埋め込まず、環境変数で受ける（引用符を含む入力で、スクリプトを壊したり、命令を混ぜられないように）。
       # 形式は vX.Y.Z（任意で -prerelease）だけを受ける
@@ -54,27 +57,6 @@ jobs:
           }
           echo "VERSION=$version" >> $env:GITHUB_OUTPUT
           echo "Version: $version"
-        shell: pwsh
-
-      - name: Check and create tag (manual)
-        if: github.event_name == 'workflow_dispatch'
-        run: |
-          $version = "${{ steps.version.outputs.VERSION }}"
-
-          # タグが存在するか確認
-          git fetch --tags
-          $tagExists = git tag -l $version
-
-          if (-not $tagExists) {
-            Write-Host "Tag $version does not exist. Creating..." -ForegroundColor Yellow
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git tag $version
-            git push origin $version
-            Write-Host "Tag $version created and pushed." -ForegroundColor Green
-          } else {
-            Write-Host "Tag $version already exists." -ForegroundColor Green
-          }
         shell: pwsh
 
       - name: Setup .NET
@@ -173,13 +155,57 @@ jobs:
           ./.github/scripts/sign.ps1 -Path "Releases\FaraBotModerator_Setup.exe"
         shell: pwsh
 
+      # 署名済みのインストーラーを、release の job へ渡す（build の成果物は、ここで作ったものだけ）
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: installer
+          path: Releases/FaraBotModerator_Setup.exe
+          if-no-files-found: error
+          retention-days: 7
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    # タグの作成（手動実行）と、Release の作成に contents: write が要る（この job だけ）
+    permissions:
+      contents: write
+
+    steps:
+      # 認証情報はディスクに残さない（タグの作成は、下のステップで GH_TOKEN を明示して行う）
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Download installer
+        uses: actions/download-artifact@v4
+        with:
+          name: installer
+          path: Releases
+
+      - name: Check and create tag (manual)
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ needs.build.outputs.version }}
+        run: |
+          # タグが存在するか確認（公開リポジトリなので、認証なしで読める）
+          if git ls-remote --tags origin "refs/tags/$VERSION" | grep -q .; then
+            echo "Tag $VERSION already exists."
+            exit 0
+          fi
+          # ビルドしたのと同じコミットに付ける
+          gh api --method POST "repos/$GITHUB_REPOSITORY/git/refs" -f ref="refs/tags/$VERSION" -f sha="$GITHUB_SHA"
+          echo "Tag $VERSION created."
+
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ steps.version.outputs.VERSION }}
-          name: FaraBotModerator ${{ steps.version.outputs.VERSION }}
+          tag_name: ${{ needs.build.outputs.version }}
+          name: FaraBotModerator ${{ needs.build.outputs.version }}
           body: |
-            ## FaraBotModerator ${{ steps.version.outputs.VERSION }}
+            ## FaraBotModerator ${{ needs.build.outputs.version }}
 
             ### インストール方法
             1. `FaraBotModerator_Setup.exe` をダウンロード

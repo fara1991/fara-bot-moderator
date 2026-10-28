@@ -51,6 +51,29 @@ public class TextRegexControllerTests : IDisposable
     }
 
     [Fact]
+    public void ConvertText_does_not_replace_a_placeholder_that_came_from_the_chat_text()
+    {
+        // チャット文に "{1}" が入っていても、次の一致の文で書き換わらない（1 回の走査で置き換える）
+        var model = new TextRegexModel
+        {
+            BeatSaberChat = [new BeatSaberChatModel(@"\S+", "{0}-{1}")]
+        };
+
+        Assert.Equal("{1}-b", TextRegexController.ConvertText("{1} b", model));
+    }
+
+    [Fact]
+    public void ConvertText_keeps_dollar_signs_in_the_chat_text_as_they_are()
+    {
+        var model = new TextRegexModel
+        {
+            BeatSaberChat = [new BeatSaberChatModel(".*", "[{0}]")]
+        };
+
+        Assert.Equal("[$1 $$]", TextRegexController.ConvertText("$1 $$", model));
+    }
+
+    [Fact]
     public void ConvertText_returns_the_input_when_no_line_matches()
     {
         var model = new TextRegexModel

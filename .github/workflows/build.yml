@@ -76,7 +76,9 @@ jobs:
           node --test ../external/fara-site-kit/worker/report.test.mjs ../external/fara-site-kit/worker/maintenance.test.mjs
 
       - name: Deploy gate test
-        run: node --test .github/scripts/require-maintenance.test.mjs
+        run: |
+          node --test .github/scripts/require-maintenance.test.mjs
+          node --test .github/scripts/check-maintenance-message.test.mjs
 
       # 公開物を、本番用と確認用の両方で作れること（公開のワークフローは、どちらか一方だけを作る）
       - name: Build site (production)

@@ -41,10 +41,13 @@ public class TwitchAuthService
             var (responseBody, option) = await PostRequestAsync(form, "https://id.twitch.tv/oauth2/token");
             var tokenResponse = JsonSerializer.Deserialize<TwitchRefreshTokenModel>(responseBody, option);
 
-            if (tokenResponse?.AccessToken == null) return false;
+            if (string.IsNullOrEmpty(tokenResponse?.AccessToken)) return false;
 
             Settings.Default.AccessToken = tokenResponse.AccessToken;
-            Settings.Default.RefreshToken = tokenResponse.RefreshToken;
+            // 新しいリフレッシュトークンが返ったときだけ置き換える（空で上書きして、次から refresh できなくならないように）
+            if (!string.IsNullOrEmpty(tokenResponse.RefreshToken)) Settings.Default.RefreshToken = tokenResponse.RefreshToken;
+            // 期限を更新しないと、監視が毎秒 refresh し続けるので、認証コードの交換と同じ計算で更新する
+            Settings.Default.expiresDateTime = ExpiryFrom(DateTime.Now, tokenResponse.ExpiresIn);
             Settings.Default.Save();
             return true;
         }
@@ -92,7 +95,7 @@ public class TwitchAuthService
 
         Settings.Default.AccessToken = tokenResponse.AccessToken;
         Settings.Default.RefreshToken = tokenResponse.RefreshToken;
-        Settings.Default.expiresDateTime = DateTime.Now.AddSeconds(tokenResponse.ExpiresIn);
+        Settings.Default.expiresDateTime = ExpiryFrom(DateTime.Now, tokenResponse.ExpiresIn);
         // 使い終わった state は消す（同じ認証の戻りを、もう一度受け付けないように）
         Settings.Default.OAuth2State = "";
         Settings.Default.Save();
@@ -111,13 +114,29 @@ public class TwitchAuthService
         Settings.Default.OAuth2State = state;
         Settings.Default.Save();
 
+        return BuildAuthorizationUrl(clientId, Settings.Default.Port, state);
+    }
+
+    /// <summary>
+    /// 認可の URL を組み立てます（保存はしない）。スコープは空白を %20 にして、URL の中に生の空白を残さない。
+    /// </summary>
+    /// <param name="clientId">クライアントID</param>
+    /// <param name="port">認可の戻り先（http://localhost:ポート）</param>
+    /// <param name="state">認可の state</param>
+    internal static string BuildAuthorizationUrl(string clientId, int port, string state)
+    {
         return "https://id.twitch.tv/oauth2/authorize" +
                $"?client_id={clientId}" +
-               $"&redirect_uri=http://localhost%3A{Settings.Default.Port}" +
+               $"&redirect_uri=http://localhost%3A{port}" +
                "&response_type=code" +
-               "&scope=" + string.Join(" ", Scopes) +
+               "&scope=" + string.Join("%20", Scopes) +
                $"&state={state}";
     }
+
+    /// <summary>
+    /// 期限（今から有効秒数後）を求めます。認証コードの交換と refresh の両方で同じ計算を使う。
+    /// </summary>
+    internal static DateTime ExpiryFrom(DateTime now, int expiresInSeconds) => now.AddSeconds(expiresInSeconds);
 
     /// <summary>
     /// 認可を求める権限（スコープ）。同じ権限を 2 度書かない（<see cref="GenerateAuthorizationUrl"/> が使う）。
@@ -170,7 +189,11 @@ public class TwitchAuthService
     {
         if (string.IsNullOrEmpty(expectedState)) return false;
         if (url == lastHandled) return false;
-        return url.Contains($"http://localhost:{port}") && url.Contains("code=") && url.Contains("scope=") && url.Contains("state=");
+        // 部分一致では、localhost:30001 や、クエリの中に localhost:3000 を入れた別の URL も通ってしまうので、スキーム・ホスト・ポートを比べる
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri)) return false;
+        if (uri.Scheme != Uri.UriSchemeHttp || uri.Port != port) return false;
+        if (!string.Equals(uri.Host, "localhost", StringComparison.OrdinalIgnoreCase)) return false;
+        return url.Contains("code=") && url.Contains("scope=") && url.Contains("state=");
     }
 
     /// <summary>

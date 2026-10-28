@@ -83,13 +83,28 @@ public partial class RaidListWindow : Window
 
     private async void TwitchStreamingFollowerButton_OnClick(object sender, RoutedEventArgs e)
     {
-        var streamingUsers = await _twitchApiController.GetStreamingFollowerUsersAsync();
-        SetRaidDataGridView(streamingUsers);
+        try
+        {
+            var streamingUsers = await _twitchApiController.GetStreamingFollowerUsersAsync();
+            SetRaidDataGridView(streamingUsers);
+        }
+        catch (Exception ex)
+        {
+            // async void の中で例外を出すとアプリが落ちるので、必ず受けてログに残す
+            LogController.OutputLog($"<Error> フォロー中の配信の取得に失敗しました: {ex.GetType().Name}");
+        }
     }
 
     private async void TwitchStreamingSameGameButton_OnClick(object sender, RoutedEventArgs e)
     {
-        var streamingUsers = await _twitchApiController.GetStreamingSameGameUsersAsync();
-        SetRaidDataGridView(streamingUsers);
+        try
+        {
+            var streamingUsers = await _twitchApiController.GetStreamingSameGameUsersAsync();
+            SetRaidDataGridView(streamingUsers);
+        }
+        catch (Exception ex)
+        {
+            LogController.OutputLog($"<Error> 同じゲームの配信の取得に失敗しました: {ex.GetType().Name}");
+        }
     }
 }

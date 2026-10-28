@@ -74,4 +74,37 @@ public class SecretKeyControllerTests : IDisposable
         Assert.False(string.IsNullOrEmpty(model.Event.Follow.Message));
         Assert.Empty(Directory.GetFiles(_directory, "secrets.broken-*"));
     }
+
+    [Theory]
+    [InlineData("{ \"twitch\": null }")]
+    [InlineData("{ \"twitch\": { \"client\": null } }")]
+    [InlineData("{ \"event\": { \"follow\": null } }")]
+    [InlineData("{ \"cycleMessage\": null }")]
+    public void A_null_section_is_filled_with_defaults_and_the_file_is_not_quarantined(string json)
+    {
+        var path = Path.Combine(_directory, "secrets.json");
+        File.WriteAllText(path, json);
+
+        var model = SecretKeyController.LoadKeys(path, out var quarantined);
+
+        // 入れ子の null は、既定の値で補う（画面の読み込みで NRE にならない）。壊れた扱いにはしない
+        Assert.Null(quarantined);
+        Assert.NotNull(model.Twitch);
+        Assert.NotNull(model.Twitch.Client);
+        Assert.NotNull(model.Twitch.Api);
+        Assert.NotNull(model.Event.Follow);
+        Assert.NotNull(model.CycleMessage.Timer1);
+        Assert.Empty(Directory.GetFiles(_directory, "secrets.broken-*"));
+    }
+
+    [Fact]
+    public void Other_settings_in_a_file_with_a_null_section_are_kept()
+    {
+        var path = Path.Combine(_directory, "secrets.json");
+        File.WriteAllText(path, "{ \"twitch\": null, \"deepL\": { \"apiKey\": \"KEEP-KEY\" } }");
+
+        var model = SecretKeyController.LoadKeys(path, out _);
+
+        Assert.Equal("KEEP-KEY", model.DeepL.ApiKey);
+    }
 }
