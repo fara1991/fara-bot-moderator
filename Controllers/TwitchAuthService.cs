@@ -197,6 +197,14 @@ public class TwitchAuthService
     }
 
     /// <summary>
+    /// 認可（認証コードの交換）が失敗したときに画面に出す文。理由は大まかに書き、通信の例外の中身（URL・応答の本文など）は出さない。
+    /// </summary>
+    /// <param name="error">例外で失敗したときの例外（コードが無効などで false を返したときは null）</param>
+    internal static string AuthorizationFailureStatus(Exception? error) => error is null
+        ? "認可に失敗しました（認可コードが無効、または期限切れ）。Authorize からもう一度認可してください。"
+        : "認可に失敗しました（Twitch との通信・応答の処理に失敗）。Authorize からもう一度認可してください。";
+
+    /// <summary>
     /// トークンの有効期限が切れているかどうかを確認します。
     /// </summary>
     /// <returns>期限切れの場合はtrue</returns>

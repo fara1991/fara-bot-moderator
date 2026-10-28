@@ -379,7 +379,7 @@ public partial class MainWindow : INotifyPropertyChanged
         while (true)
         {
             await Task.Delay(100);
-            // 1 周期の失敗で監視を止めない（戻りの URL を処理できなくても、次の周期でまた見る）
+            // 1 周期の失敗で監視を止めない。処理済みの URL は _lastHandledAuthUrl で 2 度処理しない（失敗した認可は、Authorize からやり直す）
             try
             {
                 if (FaraBotModeratorWebView.Source is null) continue;
@@ -394,7 +394,7 @@ public partial class MainWindow : INotifyPropertyChanged
             }
             catch (Exception ex)
             {
-                LogController.OutputLog($"<Error> 認証の戻りの処理に失敗しました（次の周期で続けます）: {ex.Message}");
+                LogController.OutputLog($"<Error> 認証の戻りの処理に失敗しました（監視は続けます。認可は Authorize からやり直してください）: {ex.Message}");
             }
         }
     }
@@ -554,7 +554,12 @@ public partial class MainWindow : INotifyPropertyChanged
             TwitchApiClientIdPasswordBox.Password,
             TwitchApiClientSecretPasswordBox.Password);
 
-        if (success) return;
+        if (success)
+        {
+            // 更新できたので、前の認可の失敗の文は消す
+            TwitchAuthStatusTextBlock.Text = "";
+            return;
+        }
 
         // 失敗したら、次の refresh は一定時間（30 秒）空けて試す（毎秒の再試行にしない）
         _nextRefreshAttemptAt = DateTime.Now + TokenMonitorPolicy.RefreshRetryInterval;
@@ -584,18 +589,39 @@ public partial class MainWindow : INotifyPropertyChanged
         var state = TwitchAuthService.ExtractQueryValue(url, "state");
         var code = TwitchAuthService.ExtractQueryValue(url, "code");
 
-        var success = await _twitchAuthService.ExchangeAuthorizationCodeAsync(
-            code,
-            TwitchApiClientIdPasswordBox.Password,
-            TwitchApiClientSecretPasswordBox.Password,
-            Settings.Default.OAuth2State,
-            state);
+        bool success;
+        Exception? error = null;
+        try
+        {
+            success = await _twitchAuthService.ExchangeAuthorizationCodeAsync(
+                code,
+                TwitchApiClientIdPasswordBox.Password,
+                TwitchApiClientSecretPasswordBox.Password,
+                Settings.Default.OAuth2State,
+                state);
+        }
+        catch (Exception ex)
+        {
+            error = ex;
+            success = false;
+        }
 
         if (success)
         {
             _authorizationStartedAt = null;
+            TwitchAuthStatusTextBlock.Text = "";
             UnlockWindowControl();
+            return;
         }
+
+        // 失敗（コードの無効・通信や応答の例外）: 認可の試行は終わったので、ロックを解く。理由を画面に出し、Authorize からやり直せるようにする。
+        // 試行の時刻も消す（消さないと、監視が 10 分間は認可画面を開き直さない）
+        LogController.OutputLog(error is null
+            ? "<Error> 認可のトークン取得に失敗しました（認可コードが無効、または期限切れ）"
+            : $"<Error> 認可のトークン取得で例外が起きました: {error.Message}");
+        _authorizationStartedAt = null;
+        TwitchAuthStatusTextBlock.Text = TwitchAuthService.AuthorizationFailureStatus(error);
+        UnlockWindowControl();
     }
 
     /// <summary>

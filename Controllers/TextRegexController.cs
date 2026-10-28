@@ -82,11 +82,20 @@ public static class TextRegexController
     /// <returns>変換後のテキスト</returns>
     public static string LoadBsrChat(string bsrText)
     {
-        return ConvertText(bsrText, CachedBsrChatModel(BeatSaberFile));
+        return LoadBsrChat(bsrText, BeatSaberFile);
+    }
+
+    /// <summary>
+    /// 指定した設定ファイルを使って変換します（<see cref="LoadBsrChat(string)"/> と同じ。テストで別のファイルを使うため）。
+    /// </summary>
+    internal static string LoadBsrChat(string bsrText, string path)
+    {
+        return ConvertText(bsrText, CachedBsrChatModel(path));
     }
 
     /// <summary>
     /// 読み込み済みの設定を返します。ファイルの更新日時が前と同じなら、ファイルを読まずに前のものを返します。
+    /// 読めなかったとき（ファイルのロックなど）は既定の設定を返すだけで、覚えません（次のチャットで読み直し、直ったら反映するため）。
     /// </summary>
     private static TextRegexModel CachedBsrChatModel(string path)
     {
@@ -96,7 +105,13 @@ public static class TextRegexController
             if (_cachedBsrChat is { } cached && cached.Path == path && cached.WriteTimeUtc == writeTime)
                 return cached.Model;
 
-            var model = LoadBsrChatModel(path);
+            var model = LoadBsrChatModel(path, out var readFailed);
+            if (readFailed)
+            {
+                _cachedBsrChat = null;
+                return model;
+            }
+
             // 読むときに作った（または退避した）ファイルの更新日時で覚える
             var loadedWriteTime = File.Exists(path) ? File.GetLastWriteTimeUtc(path) : DateTime.MinValue;
             _cachedBsrChat = (path, loadedWriteTime, model);
@@ -109,10 +124,18 @@ public static class TextRegexController
     /// 指定したファイルから設定を読みます（ファイルが無ければ既定の設定を書きます）。
     /// </summary>
     /// <param name="path">設定ファイルのパス</param>
-    internal static TextRegexModel LoadBsrChatModel(string path)
+    internal static TextRegexModel LoadBsrChatModel(string path) => LoadBsrChatModel(path, out _);
+
+    /// <summary>
+    /// 指定したファイルから設定を読みます。読めなかった（IOException など）ときは <paramref name="readFailed"/> を true にして既定の設定を返します。
+    /// </summary>
+    /// <param name="path">設定ファイルのパス</param>
+    /// <param name="readFailed">読めなかったか（既定の設定を返したが、ファイルの内容としては確かめられていないとき true）</param>
+    internal static TextRegexModel LoadBsrChatModel(string path, out bool readFailed)
     {
         lock (FileLock)
         {
+            readFailed = false;
             try
             {
                 if (!File.Exists(path)) WriteModel(path, DefaultModel());
@@ -127,6 +150,7 @@ public static class TextRegexController
             catch (Exception e) when (e is IOException or UnauthorizedAccessException)
             {
                 // 読めないだけ（ファイルのロックなど）のときは、ファイルには触らず既定の設定を使う
+                readFailed = true;
                 LogController.OutputLog($"<Error> BeatSaber設定を読めませんでした（既定の設定を使います）: {e.Message}");
             }
 

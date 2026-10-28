@@ -226,6 +226,9 @@
                                                TextWrapping="Wrap" Text="Token expiration: 2023/01/01 12:00:00"
                                                Canvas.Top="75" HorizontalAlignment="Left" VerticalAlignment="Top"
                                                Height="20" Width="205" />
+                                    <!-- 認可（Authorize）が失敗したときの理由と、もう一度行う案内。成功したら空にする -->
+                                    <TextBlock x:Name="TwitchAuthStatusTextBlock" Canvas.Left="10" Canvas.Top="140"
+                                               Width="510" Height="20" Foreground="Red" TextWrapping="NoWrap" />
                                     <Button x:Name="TwitchApiAuthorizeButton" Content="Authorize"
                                             HorizontalAlignment="Center" VerticalAlignment="Top" Height="30"
                                             Width="105"
