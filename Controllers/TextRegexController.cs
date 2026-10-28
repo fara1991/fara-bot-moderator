@@ -101,7 +101,9 @@ public static class TextRegexController
     {
         lock (FileLock)
         {
-            var writeTime = File.Exists(path) ? File.GetLastWriteTimeUtc(path) : DateTime.MinValue;
+            var existedBefore = File.Exists(path);
+            // 読む前に更新日時を取る（読んだあとに取ると、読みと取得の間の編集で、古い内容に新しい日時が付いてしまう）
+            var writeTime = existedBefore ? File.GetLastWriteTimeUtc(path) : DateTime.MinValue;
             if (_cachedBsrChat is { } cached && cached.Path == path && cached.WriteTimeUtc == writeTime)
                 return cached.Model;
 
@@ -112,9 +114,12 @@ public static class TextRegexController
                 return model;
             }
 
-            // 読むときに作った（または退避した）ファイルの更新日時で覚える
-            var loadedWriteTime = File.Exists(path) ? File.GetLastWriteTimeUtc(path) : DateTime.MinValue;
-            _cachedBsrChat = (path, loadedWriteTime, model);
+            // ファイルが無くて作った場合は、作ったファイルの更新日時で覚える。退避して無くなった場合は、無いものとして覚える（次のチャットで作り直さないため）
+            if (!existedBefore)
+                writeTime = File.Exists(path) ? File.GetLastWriteTimeUtc(path) : DateTime.MinValue;
+            else if (!File.Exists(path))
+                writeTime = DateTime.MinValue;
+            _cachedBsrChat = (path, writeTime, model);
             CompiledPatterns.Clear();
             return model;
         }

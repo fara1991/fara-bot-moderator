@@ -87,6 +87,29 @@ public class TwitchTokenMonitorTests
         Assert.False(TokenMonitorPolicy.IsAuthorizationInProgress(null, Now));
     }
 
+    [Fact]
+    public void After_an_authorization_failure_the_monitor_does_not_reopen_for_ten_minutes_from_the_failure()
+    {
+        // 認可を T に開き、T+9 分に失敗した。抑止は開いた時刻ではなく失敗した時刻から 10 分（T+19 分まで）
+        var openedAt = Now;
+        var failedAt = openedAt + TimeSpan.FromMinutes(9);
+        var anchor = TokenMonitorPolicy.AuthorizationAnchorAfterEnd(succeeded: false, endedAt: failedAt);
+
+        // 失敗のあと、30 秒ごとの refresh の試行の時刻でも開き直さない（開き直すと、認可画面が 30 秒ごとに出る）
+        Assert.True(TokenMonitorPolicy.IsAuthorizationInProgress(anchor, failedAt + TokenMonitorPolicy.RefreshRetryInterval));
+        Assert.True(TokenMonitorPolicy.IsAuthorizationInProgress(anchor, openedAt + TimeSpan.FromMinutes(18) + TimeSpan.FromSeconds(59)));
+        Assert.False(TokenMonitorPolicy.IsAuthorizationInProgress(anchor, openedAt + TimeSpan.FromMinutes(19)));
+    }
+
+    [Fact]
+    public void A_successful_authorization_leaves_no_anchor_so_nothing_is_blocked()
+    {
+        var anchor = TokenMonitorPolicy.AuthorizationAnchorAfterEnd(succeeded: true, endedAt: Now);
+
+        Assert.Null(anchor);
+        Assert.False(TokenMonitorPolicy.IsAuthorizationInProgress(anchor, Now));
+    }
+
     [Theory]
     [InlineData("http://localhost:30001/?code=abc&scope=bits%3Aread&state=xyz")]
     [InlineData("http://localhost:3000x/?code=abc&scope=bits%3Aread&state=xyz")]

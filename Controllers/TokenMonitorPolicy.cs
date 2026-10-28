@@ -13,7 +13,7 @@ internal static class TokenMonitorPolicy
     internal static readonly TimeSpan RefreshRetryInterval = TimeSpan.FromSeconds(30);
 
     /// <summary>
-    /// 認可画面を開いてから、この時間は監視から開き直さない。放置された認可の試行で、監視が止まらないようにするための期限。
+    /// 認可画面を開いてから（認可が失敗してから）、この時間は監視から開き直さない。放置された認可の試行で、監視が止まらないようにするための期限。
     /// </summary>
     internal static readonly TimeSpan AuthorizationTimeout = TimeSpan.FromMinutes(10);
 
@@ -33,7 +33,16 @@ internal static class TokenMonitorPolicy
     /// 認可の試行が進行中か（認可画面を開いてから <see cref="AuthorizationTimeout"/> を過ぎていない）。
     /// 進行中の間は、監視から認可画面を開き直さない（state が書き換わり、進行中の認可が合わなくなるため）。
     /// </summary>
-    /// <param name="openedAt">認可画面を開いた時刻（開いていない・成功して終わったときは null）</param>
+    /// <param name="openedAt">抑止の起点の時刻（認可画面を開いた時刻、または認可が失敗した時刻。開いていない・成功して終わったときは null）</param>
     internal static bool IsAuthorizationInProgress(DateTime? openedAt, DateTime now) =>
         openedAt is { } opened && now - opened < AuthorizationTimeout;
+
+    /// <summary>
+    /// 認可の試行が終わったあとの、抑止の起点。成功したら null（抑止しない）。失敗したら、失敗した時刻を起点にする。
+    /// 開いた時刻のままだと、終わり近くで失敗したとき、10 分の抑止が数十秒で切れてしまうため。
+    /// </summary>
+    /// <param name="succeeded">認可が成功したか</param>
+    /// <param name="endedAt">試行が終わった時刻（失敗のときは抑止の起点になる）</param>
+    internal static DateTime? AuthorizationAnchorAfterEnd(bool succeeded, DateTime endedAt) =>
+        succeeded ? null : endedAt;
 }
