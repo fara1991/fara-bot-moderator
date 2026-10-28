@@ -1140,7 +1140,10 @@ public partial class MainWindow : INotifyPropertyChanged
         _twitchClientController?.SetPokemonSyncKey(key);
         UpdatePokemonSyncKeyButtons();
         await LoadPokemonRosterAsync();
-        if (!saved)
+        if (!saved && string.IsNullOrEmpty(key))
+            MessageBox.Show("データ共有の設定を設定ファイル（secrets.json）へ保存できませんでした（ログを確認してください）。",
+                "アクセスキー", MessageBoxButton.OK, MessageBoxImage.Warning);
+        else if (!saved)
             MessageBox.Show("アクセスキーを設定ファイル（secrets.json）へ保存できませんでした。このアプリを閉じると、このアクセスキーは残りません。\n今のアクセスキーを控えてください（「コピー」でコピーできます）:\n\n" + key,
                 "アクセスキー", MessageBoxButton.OK, MessageBoxImage.Warning);
         return saved;
@@ -1293,8 +1296,17 @@ public partial class MainWindow : INotifyPropertyChanged
                 PokemonSyncStatusTextBlock.Text = "作り直しましたが、保存できませんでした（古いアクセスキーは消していません）";
                 return;
             }
-            // 3. 古いキーを消す（消せなくても、新しいキーへの切り替えは済んでいる）
-            var oldKeyDeleted = await PokemonSyncKeyController.FinishRotateAsync(SelectedPokemonDataSourceValue(), pending);
+            // 3. 古いキーを消す（消せなくても、新しいキーへの切り替えは済んでいる。ここで例外が出ても、作り直し自体は済んでいるので警告にする）
+            bool oldKeyDeleted;
+            try
+            {
+                oldKeyDeleted = await PokemonSyncKeyController.FinishRotateAsync(SelectedPokemonDataSourceValue(), pending);
+            }
+            catch (Exception ex)
+            {
+                LogController.OutputLog($"<Error> 古いアクセスキーの削除に失敗しました: {ex.GetType().Name}");
+                oldKeyDeleted = false;
+            }
             MessageBox.Show(
                 (oldKeyDeleted
                     ? "アクセスキーを作り直しました。古いアクセスキーは使えなくなりました。"
