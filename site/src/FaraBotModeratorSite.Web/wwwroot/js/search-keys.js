@@ -52,7 +52,7 @@ window.faraScrollToHash = function () {
 };
 
 // 同じページの #見出し へのリンク（目次・本文の中のリンク）をクリックしたとき、その見出しまでスクロールする。
-// Blazor はこのリンクを自分で処理する（履歴に足すだけ）が、本文は .fsk-content の中だけがスクロールする作りで、既定のスクロールが動かないため
+// Blazor はこのリンクを自分で処理する（履歴に足すだけ）が、本文は .fbc-content の中だけがスクロールする作りで、既定のスクロールが動かないため
 document.addEventListener("click", function (e) {
     var a = e.target && e.target.closest && e.target.closest("a[href]");
     if (!a || e.defaultPrevented === undefined || e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;

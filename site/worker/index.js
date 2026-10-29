@@ -1,18 +1,18 @@
 // Cloudflare Worker。すべてのリクエストがまずここを通る（wrangler.toml の run_worker_first = true）。
 // サイト本体（Blazor WebAssembly と、本文入りの静的 HTML。publish/wwwroot）は、静的アセットとしてそのまま返す。
-// セキュリティ用のヘッダー（CSP など）は、静的アセットに付く _headers が唯一の情報源（fara-site-kit の csp/render-headers.mjs が書く。
+// セキュリティ用のヘッダー（CSP など）は、静的アセットに付く _headers が唯一の情報源（fara-blazor-component の csp/render-headers.mjs が書く。
 // Blazor WebAssembly の 'wasm-unsafe-eval' と、問い合わせの Turnstile を全ページで許可する。README の「CSP」）。ここでは CSP を付けない。
-// 共有の JS（報告の受け口・メンテナンス）は fara-site-kit（external/fara-site-kit）。
+// 共有の JS（報告の受け口・メンテナンス）は fara-blazor-component（external/fara-blazor-component）。
 //   - /api/maintenance: Worker の変数 MAINTENANCE_MODE / MAINTENANCE_MESSAGE の状態（{state, message}）。アプリが起動時に読んで、お知らせの帯を出す（Razor の MaintenanceBanner）
 //   - MAINTENANCE_MODE=true: /api/maintenance 以外は、すべて 503 のメンテナンス画面（検索エンジンには載せない）
 //   - /api/report: 作者への報告（Turnstile → Discord）
 
-import { handleReport } from "../../external/fara-site-kit/worker/report.js";
-import { getMaintenance, maintenanceResponse } from "../../external/fara-site-kit/worker/maintenance.js";
-import { errorSummary } from "../../external/fara-site-kit/worker/error-summary.js";
+import { handleReport } from "../../external/fara-blazor-component/worker/report.js";
+import { getMaintenance, maintenanceResponse } from "../../external/fara-blazor-component/worker/maintenance.js";
+import { errorSummary } from "../../external/fara-blazor-component/worker/error-summary.js";
 
 // 報告の 1 日の送信回数の制限（送信元ごと 3 回）の Durable Object。クラスを公開する（wrangler.toml の durable_objects と migrations が要る）
-export { ReportRateLimiter } from "../../external/fara-site-kit/worker/report-rate-limit.js";
+export { ReportRateLimiter } from "../../external/fara-blazor-component/worker/report-rate-limit.js";
 
 const SITE_NAME = "FaraBotModerator";
 

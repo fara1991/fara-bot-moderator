@@ -8,7 +8,7 @@ CI では動かさない（ブラウザが要る）。サイトの見た目を�
 ```bash
 # 比べる 2 つのサイトを、それぞれ http://127.0.0.1:8801 と :8802 で配信する（wrangler dev。new は site/ で npm run build:site のあと）
 node capture.mjs http://127.0.0.1:8801 shots-old old       # 旧い側（old: 保存は "dark" の文字・本文は #main-content）
-node capture.mjs http://127.0.0.1:8802 shots-new new       # 新しい側（new: 保存は JSON・本文は #fsk-main .fsk-content）
+node capture.mjs http://127.0.0.1:8802 shots-new new       # 新しい側（new: 保存は JSON・本文は #fbc-main .fbc-content）
 node compare-text.mjs shots-old/result.json shots-new/result.json pc1280-dark   # 本文テキスト・題名・ステータスの一致
 python3 side.py pc1280-dark-home                           # 2 枚を横に並べた画像（shots-old / shots-new の下）
 

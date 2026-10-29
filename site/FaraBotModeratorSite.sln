@@ -17,9 +17,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FaraBotModeratorSite.Shared
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FaraBotModeratorSite.Pages", "src\FaraBotModeratorSite.Pages\FaraBotModeratorSite.Pages.csproj", "{D7CD06BE-4119-4BAD-8D3F-56B41FCEBBCF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FaraSiteKit.Core", "..\external\fara-site-kit\src\FaraSiteKit.Core\FaraSiteKit.Core.csproj", "{F7FCE1E0-5F5F-47BF-B793-C0232BC7F56E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FaraBlazorComponent.Core", "..\external\fara-blazor-component\src\FaraBlazorComponent.Core\FaraBlazorComponent.Core.csproj", "{F7FCE1E0-5F5F-47BF-B793-C0232BC7F56E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FaraSiteKit.Razor", "..\external\fara-site-kit\src\FaraSiteKit.Razor\FaraSiteKit.Razor.csproj", "{9E9CDBFB-FE4E-4BA6-98B5-5AACDD5D6C94}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FaraBlazorComponent.Razor", "..\external\fara-blazor-component\src\FaraBlazorComponent.Razor\FaraBlazorComponent.Razor.csproj", "{9E9CDBFB-FE4E-4BA6-98B5-5AACDD5D6C94}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FaraBotModeratorSite.Web", "src\FaraBotModeratorSite.Web\FaraBotModeratorSite.Web.csproj", "{01FE183F-1F78-4A1E-94A6-51D157BE0C85}"
 EndProject

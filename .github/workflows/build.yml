@@ -73,7 +73,7 @@ jobs:
         working-directory: site
         run: |
           node --test worker/index.test.mjs tests/js/site-init.test.mjs
-          node --test ../external/fara-site-kit/worker/report.test.mjs ../external/fara-site-kit/worker/report-rate-limit.test.mjs ../external/fara-site-kit/worker/maintenance.test.mjs
+          node --test ../external/fara-blazor-component/worker/report.test.mjs ../external/fara-blazor-component/worker/report-rate-limit.test.mjs ../external/fara-blazor-component/worker/maintenance.test.mjs
 
       - name: Deploy gate test
         run: |
@@ -108,7 +108,7 @@ jobs:
 
       # kit の計測と、site の設定は、それぞれ自分の node_modules を見る（kit の依存は kit の中から読まれるため、kit でも npm ci する）
       - name: Install (kit)
-        working-directory: external/fara-site-kit
+        working-directory: external/fara-blazor-component
         run: npm ci
 
       - name: Install (site)
@@ -141,7 +141,7 @@ jobs:
           node-version: 22
 
       - name: Install (kit)
-        working-directory: external/fara-site-kit
+        working-directory: external/fara-blazor-component
         run: npm ci
 
       - name: Install (site)

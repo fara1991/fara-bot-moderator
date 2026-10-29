@@ -26,14 +26,14 @@ for (const [vn, [w, h]] of Object.entries(viewports)) {
       const key = `${vn}-${scheme}-${p === "/" ? "home" : p.slice(1).replace(/\//g, "_")}`;
       const resp = await page.goto(base + p, { waitUntil: "load" });
       // 新しい側は WASM の起動を待つ
-      if (kind === "new") { await page.waitForSelector("#fsk-main .fsk-content, .fsk-maintenance", { timeout: 60000 }).catch(() => {}); await page.waitForFunction(() => !document.getElementById("boot-indicator"), null, { timeout: 30000 }).catch(() => {}); }
+      if (kind === "new") { await page.waitForSelector("#fbc-main .fbc-content, .fbc-maintenance", { timeout: 60000 }).catch(() => {}); await page.waitForFunction(() => !document.getElementById("boot-indicator"), null, { timeout: 30000 }).catch(() => {}); }
       await page.waitForTimeout(400);
       await page.screenshot({ path: `${out}/${key}.png` });
       const r = await page.evaluate((kind) => {
-        const root = document.querySelector(kind === "old" ? "#main-content" : "#fsk-main .fsk-content") ;
+        const root = document.querySelector(kind === "old" ? "#main-content" : "#fbc-main .fbc-content") ;
         const clone = root ? root.cloneNode(true) : null;
-        if (clone) clone.querySelectorAll("footer, .maintenance-notice, .fsk-notice, script, style").forEach(e => e.remove());
-        const sidebar = document.querySelector(kind === "old" ? ".sidebar" : "#fsk-sidebar");
+        if (clone) clone.querySelectorAll("footer, .maintenance-notice, .fbc-notice, script, style").forEach(e => e.remove());
+        const sidebar = document.querySelector(kind === "old" ? ".sidebar" : "#fbc-sidebar");
         return {
           title: document.title,
           text: clone ? clone.innerText.replace(/[ \t ]+/g, " ").replace(/\s*\n\s*/g, "\n").trim() : null,

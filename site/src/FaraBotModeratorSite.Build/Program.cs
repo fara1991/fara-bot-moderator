@@ -7,7 +7,7 @@ using FaraBotModeratorSite.Content;
 
 // 使い方（site/ で）:
 //   dotnet run --project src/FaraBotModeratorSite.Build -c Release -- --out <dir> [--content-out <path>]
-//   --out          fara-site-kit の build-pages に渡す site.json と pages.json の書き出し先
+//   --out          fara-blazor-component の build-pages に渡す site.json と pages.json の書き出し先
 //   --content-out  ブラウザが起動時に読む data/site.json の書き出し先（既定: src/FaraBotModeratorSite.Web/wwwroot/data/site.json）
 // npm run build:site（リポジトリ直下の package.json）が、dotnet publish・build-pages と合わせて実行する。
 

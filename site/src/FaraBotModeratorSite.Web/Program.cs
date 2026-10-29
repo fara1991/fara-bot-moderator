@@ -3,23 +3,23 @@ using FaraBotModeratorSite.Search;
 using FaraBotModeratorSite.Web;
 using FaraBotModeratorSite.Web.Layout;
 using FaraBotModeratorSite.Web.Services;
-using FaraSiteKit.Core;
-using FaraSiteKit.Razor;
+using FaraBlazorComponent.Core;
+using FaraBlazorComponent.Razor;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 var baseAddress = builder.HostEnvironment.BaseAddress;
 
-// 共通部品（fara-site-kit の Razor。ヘッダー・フッター・テーマ・報告フォームなど）の設定・テーマの状態・MudBlazor（通知の位置など）。
+// 共通部品（fara-blazor-component の Razor。ヘッダー・フッター・テーマ・報告フォームなど）の設定・テーマの状態・MudBlazor（通知の位置など）。
 // メンテナンス画面（下）も SiteOptions を読むので、メンテナンスの分岐より前に登録する。値は SiteInfo（Shared）
-builder.Services.AddFaraSiteKit(SiteConfig.Configure);
+builder.Services.AddFaraBlazorComponent(SiteConfig.Configure);
 
 // 報告フォーム（kit の ReportFormView）が使う。メンテナンスの状態・説明ページの中身の取得にも使う
 var http = new HttpClient { BaseAddress = new Uri(baseAddress) };
 builder.Services.AddSingleton(http);
 
-// メンテナンスの状態（Worker の変数 MAINTENANCE_MODE。external/fara-site-kit/worker/maintenance.js）。読めなければ通常。
+// メンテナンスの状態（Worker の変数 MAINTENANCE_MODE。external/fara-blazor-component/worker/maintenance.js）。読めなければ通常。
 // メンテナンス中（MAINTENANCE_MODE=true）は、アプリの代わりに、メンテナンス画面だけを動かす
 var maintenance = await MaintenanceInfo.LoadAsync(http);
 builder.Services.AddSingleton(maintenance);

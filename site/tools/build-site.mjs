@@ -2,7 +2,7 @@
 //   node tools/build-site.mjs [--env production|develop]      （site/ で。npm run build:site）
 // 1. Build（C#）: Manual.md・Content/*.json から、ブラウザが読む data/site.json と、build-pages 用の pages.json・site.json を作る
 // 2. dotnet publish: Blazor WebAssembly（Web）の出力。index.html は、本文が空のテンプレート
-// 3. build-pages（external/fara-site-kit）: ページごとの本文入りの静的 HTML・404.html・robots.txt・sitemap.xml・_headers を publish/wwwroot に書く
+// 3. build-pages（external/fara-blazor-component）: ページごとの本文入りの静的 HTML・404.html・robots.txt・sitemap.xml・_headers を publish/wwwroot に書く
 // 書き出し前に publish と artifacts を消す（前回の古いファイルを残さない）。
 import { spawnSync } from "node:child_process";
 import { cpSync, existsSync, mkdirSync, readdirSync, rmSync, statSync } from "node:fs";
@@ -22,7 +22,7 @@ const publishDir = join(siteDir, "publish");
 const artifactsDir = join(siteDir, "artifacts");
 const pagesDir = join(artifactsDir, "pages");
 const templateDir = join(artifactsDir, "template");   // テンプレートは、出力先（publish/wwwroot）とは別のフォルダに置く（build-pages の決まり）
-const kitBuild = resolve(siteDir, "..", "external", "fara-site-kit", "build", "build-pages.mjs");
+const kitBuild = resolve(siteDir, "..", "external", "fara-blazor-component", "build", "build-pages.mjs");
 
 function run(command, commandArgs) {
     console.log(`\n> ${command} ${commandArgs.join(" ")}`);
@@ -34,7 +34,7 @@ function run(command, commandArgs) {
 }
 
 if (!existsSync(kitBuild)) {
-    console.error("external/fara-site-kit がありません（git submodule update --init external/fara-site-kit）");
+    console.error("external/fara-blazor-component がありません（git submodule update --init external/fara-blazor-component）");
     process.exit(2);
 }
 

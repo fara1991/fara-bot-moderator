@@ -2,7 +2,7 @@
 
   <!--
     C# の静的解析（ラチェット）。アプリ（FaraBotModerator.csproj・tests/）と紹介サイト（site/src・site/tests）に効く。
-    ルールの中身と理由は external/fara-site-kit/tools/lint/dotnet.editorconfig と external/fara-site-kit/docs/lint.md。
+    ルールの中身と理由は external/fara-blazor-component/tools/lint/dotnet.editorconfig と external/fara-blazor-component/docs/lint.md。
     pokemon（external/fara-pokemon-battle-assistant）は、自分の Directory.Build.props を持つので、ここは読まれない（MSBuild は最も近い 1 つだけを読む）。
     FaraBotModerator.csproj の <EnforceCodeStyleInBuild>False</EnforceCodeStyleInBuild> は、アプリ側で残す（IDE の規則は dotnet build で見ない。重大度の設定は editorconfig のまま効く）。
   -->
@@ -14,7 +14,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <GlobalAnalyzerConfigFiles Include="$(MSBuildThisFileDirectory)external/fara-site-kit/tools/lint/dotnet.editorconfig" />
+    <GlobalAnalyzerConfigFiles Include="$(MSBuildThisFileDirectory)external/fara-blazor-component/tools/lint/dotnet.editorconfig" />
   </ItemGroup>
 
   <ItemGroup>

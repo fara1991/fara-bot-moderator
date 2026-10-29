@@ -6,11 +6,11 @@ import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { startStaticServer } from "../../external/fara-site-kit/tools/layout-check/serve-static.mjs";
+import { startStaticServer } from "../../external/fara-blazor-component/tools/layout-check/serve-static.mjs";
 
 const siteDir = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const wwwroot = join(siteDir, "publish", "wwwroot");
-const cli = resolve(siteDir, "..", "external", "fara-site-kit", "tools", "layout-check", "cli.mjs");
+const cli = resolve(siteDir, "..", "external", "fara-blazor-component", "tools", "layout-check", "cli.mjs");
 const PORT = 8880; // layout-check.config.mjs の baseURL と同じ
 
 if (!existsSync(join(wwwroot, "index.html"))) {
@@ -18,7 +18,7 @@ if (!existsSync(join(wwwroot, "index.html"))) {
     process.exit(2);
 }
 if (!existsSync(cli)) {
-    console.error("external/fara-site-kit がありません（git submodule update --init external/fara-site-kit。kit の npm ci も必要）");
+    console.error("external/fara-blazor-component がありません（git submodule update --init external/fara-blazor-component。kit の npm ci も必要）");
     process.exit(2);
 }
 
