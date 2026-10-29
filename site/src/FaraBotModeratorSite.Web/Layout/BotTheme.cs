@@ -3,7 +3,7 @@ using MudBlazor;
 namespace FaraBotModeratorSite.Web.Layout;
 
 /// <summary>
-/// このサイトの MudBlazor のテーマ。色は以前の静的サイト（site.css の :root）と同じ紫系、字体は同じシステムフォント
+/// このサイトの MudBlazor のテーマ。色は site.css の「テーマ」の節（:root）と同じインディゴ〜ブルー系（変えるときは、両方をそろえる）、字体は同じシステムフォント
 /// （外部のフォントは使わない。site/CLAUDE.md の CSP の方針）。サイドバーの幅も以前と同じ 270px。
 /// </summary>
 public static class BotTheme
@@ -14,25 +14,25 @@ public static class BotTheme
     {
         PaletteLight = new PaletteLight
         {
-            Primary = "#6d28d9",
+            Primary = "#3447c9",
             PrimaryContrastText = "#ffffff",
-            Background = "#f7f4fd",
+            Background = "#f4f6fd",
             Surface = "#ffffff",
-            TextPrimary = "#1e1433",
-            TextSecondary = "#574c73",
-            DrawerBackground = "#1e0e2c",
-            AppbarBackground = "#2a1240",
+            TextPrimary = "#121933",
+            TextSecondary = "#454f73",
+            DrawerBackground = "#0d1329",
+            AppbarBackground = "#16214a",
         },
         PaletteDark = new PaletteDark
         {
-            Primary = "#c4a5ff",
-            PrimaryContrastText = "#1f0d45",
-            Background = "#0c0616",
-            Surface = "#1a1030",
-            TextPrimary = "#f3edff",
-            TextSecondary = "#b4a7d1",
-            DrawerBackground = "#1e0e2c",
-            AppbarBackground = "#2a1240",
+            Primary = "#9fb0ff",
+            PrimaryContrastText = "#0f1a52",
+            Background = "#090d1c",
+            Surface = "#131a33",
+            TextPrimary = "#eaeefc",
+            TextSecondary = "#aab4d6",
+            DrawerBackground = "#0d1329",
+            AppbarBackground = "#16214a",
         },
         Typography = new Typography
         {
@@ -41,7 +41,7 @@ public static class BotTheme
         },
         LayoutProperties = new LayoutProperties
         {
-            DefaultBorderRadius = "6px",
+            DefaultBorderRadius = "4px",
             AppbarHeight = "56px",
             DrawerWidthLeft = "270px",
             DrawerMiniWidthLeft = "56px",

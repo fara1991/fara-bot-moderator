@@ -40,6 +40,7 @@ CSP は `build/site.json` の `csp` から kit の `csp/render-headers.mjs` が 
 
 - localStorage: テーマ `fara-bot-moderator-site.theme`（値は kit の JSON `{"Theme":"dark"}`。以前の `"dark"` の文字だけの値は `wwwroot/js/site-init.js` が書き直す）、サイドバー `fara-bot-moderator-site.sidebar-hidden`（`"1"` で隠す）。`SiteInfo` の値と `index.html` の `theme-init.js` の `data-*-key` は同じにする（テストが見る）
 - ヘッダー・サイドバー・フッター・お知らせ・404・問い合わせのフォームは kit の部品。本文の見た目は `wwwroot/css/site.css`（色は `:root` の変数。ダークは `html[data-bs-theme="dark"]`）
+- **色（テーマ）は `site.css` の先頭の「テーマ」の節にまとめる**（インディゴ〜ブルー。fara-labs・pokemon の紫、avatar のティールとは別の方向）。kit の `--fbc-*` もここで上書きし、kit の CSS に直書きの色（サイドバーの地色など）は、同じ節の下の方で上書きする。MudBlazor の色は `Layout/BotTheme.cs`（同じ値にそろえる）、読み込み表示は `index.html`、背景の吹き出しは `js/bgscene.js`、メンテナンス画面（kit の HTML）の色は `worker/index.js` の `themedMaintenanceResponse`。色を変えたら、文字・リンク・ボタン・枠・フォーカスの組み合わせを WCAG AA（4.5:1・大きい文字と枠は 3:1）で測り直す
 - `site.css` は、以前の BeerCSS の既定のうち本文の見た目に効いていたもの（前に兄弟がある要素の上の間隔 1rem・リンクの inline-flex・コード）を、本文の中（`.hero` `.page-section` `.doc-layout`）だけに置いている。見た目を変えたら `tools/compare/` で現行と比べる
 - 名前の衝突に注意: kit は `fbc-` の接頭辞、MudBlazor は `mud-`。このサイトのクラス名は `site-`・本文用の短い名前（`card`・`button`・`prose` など）
 - 本文は `.fbc-content` の中だけがスクロールする（kit の既定。フッターは画面の下に固定）。`MobilePageScroll` は false のまま（true にするとスマホでフッターがページの最後に出る）。見出しへのジャンプの余白（`scroll-padding-top`）と目次の高さ（`.doc-toc`）は、この枠が基準

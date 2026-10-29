@@ -16,6 +16,18 @@ export { ReportRateLimiter } from "../../external/fara-blazor-component/worker/r
 
 const SITE_NAME = "FaraBotModerator";
 
+/**
+ * メンテナンス画面（kit の HTML。色が紫で決め打ち）を、このサイトの色（site.css の「テーマ」の節。インディゴ〜ブルー）に合わせる。
+ * HTML のときだけ、色の文字列を置き換える（JSON・短い文字の応答はそのまま）。kit の HTML の色が変わると、置き換えは何もしないだけ（画面は kit の色のまま）。
+ */
+const MAINTENANCE_COLORS = [["#0c0616", "#090d1c"], ["#f3edff", "#eaeefc"], ["#b39ddb", "#9fb0ff"], ["#b4a7d1", "#aab4d6"], ["#7c3aed", "#4a5ee0"]];
+export async function themedMaintenanceResponse(res) {
+  if (!(res.headers.get("Content-Type") ?? "").includes("text/html")) return res;
+  let html = await res.text();
+  for (const [from, to] of MAINTENANCE_COLORS) html = html.split(from).join(to);
+  return new Response(html, { status: res.status, headers: res.headers });
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -27,7 +39,7 @@ export default {
       });
     }
     // メンテナンス中は、すべて 503 のメンテナンス画面
-    if (maintenance.state === "on") return maintenanceResponse(request, maintenance, SITE_NAME);
+    if (maintenance.state === "on") return themedMaintenanceResponse(maintenanceResponse(request, maintenance, SITE_NAME));
     // 作者への報告の受け口（kit の worker/report.js）
     if (url.pathname === "/api/report" || url.pathname === "/api/report/config") {
       let res;

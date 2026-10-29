@@ -94,6 +94,8 @@ test("MAINTENANCE_MODE=true: すべてのページが 503 のメンテナンス�
     assert.match(html, /21:00 ごろ終了予定/);
     assert.match(html, /twitter\.com\/game_fara/);
     assert.ok(!html.includes("本文"));
+    // 色はこのサイト（インディゴ〜ブルー）に合わせる（kit の紫の決め打ちを置き換える）
+    assert.ok(html.includes("#090d1c") && !html.includes("#0c0616") && !html.includes("#7c3aed"), "メンテナンス画面の色");
   }
 });
 

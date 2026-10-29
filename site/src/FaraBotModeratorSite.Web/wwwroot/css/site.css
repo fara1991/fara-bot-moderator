@@ -3,76 +3,151 @@
    - 色は :root の変数にまとめる（名前は以前と同じ: --primary・--surface・--on-surface など）。ライト（既定）とダーク（html の data-bs-theme="dark"。kit の theme-init.js と SiteThemeState が付ける）
    - 外部のフォント・CSS は読み込まない（システムフォントのみ）。アイコンはインライン SVG（CSP） */
 
-/* ---- 色（Material 3 の役割名） ---- */
+/* ======================================================================================================
+   テーマ（このサイトの色と、見た目の性格）。色の調整は、ここ（この節）だけで行う。
+   - 方向: Twitch 配信者向けのツール。インディゴ〜ブルー寄りの、少しクールで引き締まった色味（fara-labs・pokemon の紫、avatar のティールとは別）
+   - 変数の意味・調整のしかたは、PR の本文に書いてある。kit（fara-blazor-component）は変えず、kit の --fbc-* を同じ名前で上書きする
+   - 色は 2 つのブロック: :root（ライト）と :root[data-bs-theme="dark"]（ダーク）。ライトでもヘッダー・左のメニューは暗い地色（共通）
+   - 文字の色の組み合わせは WCAG AA（通常の文字 4.5:1・大きい文字と枠 3:1）を満たす値にしてある。変えたら測り直すこと
+   ====================================================================================================== */
 :root {
     color-scheme: light;
-    --primary: #6d28d9;
+    /* アクセント（インディゴ）。主ボタン・リンク・見出しの線・手順の丸 */
+    --primary: #3447c9;
     --on-primary: #ffffff;
-    --primary-container: #ebdeff;
-    --on-primary-container: #2a0a66;
-    --secondary: #5f5673;
+    --primary-container: #dfe5ff;
+    --on-primary-container: #0f1b5c;
+    --secondary: #4a5578;
     --on-secondary: #ffffff;
-    --secondary-container: #ebe4f7;
-    --on-secondary-container: #1e1433;
-    --tertiary: #8a2a98;
+    --secondary-container: #e1e7f8;
+    --on-secondary-container: #151c33;
+    --tertiary: #0369a1;
     --on-tertiary: #ffffff;
-    --background: #f7f4fd;
-    --on-background: #1e1433;
-    --surface: #f7f4fd;
-    --on-surface: #1e1433;
-    --surface-variant: #efe9fb;
-    --on-surface-variant: #574c73;
+    /* 面（青みのある淡いグレー）。背景 → 面 → カード（low）→ 表の見出し・hover（high）の順に濃くなる */
+    --background: #f4f6fd;
+    --on-background: #121933;
+    --surface: #f4f6fd;
+    --on-surface: #121933;
+    --surface-variant: #e9edfa;
+    --on-surface-variant: #454f73;
     --surface-container-lowest: #ffffff;
-    --surface-container-low: #f3effc;
-    --surface-container: #efe9fb;
-    --surface-container-high: #e7e0f7;
-    --surface-container-highest: #dfd6f2;
-    --outline: #7a6ea0;
-    --outline-variant: #d8cdf2;
-    --link: #6d28d9;
-    --link-hover: #4c1d95;
-    --glow-1: rgba(168, 85, 247, 0.16);
-    --glow-2: rgba(124, 58, 237, 0.10);
-    --glow-3: rgba(168, 85, 247, 0.05);
+    --surface-container-low: #eef1fb;
+    --surface-container: #e9edfa;
+    --surface-container-high: #dfe5f6;
+    --surface-container-highest: #d3dbf1;
+    --outline: #66729e;
+    --outline-variant: #ccd4ec;
+    --link: #2f3fb8;
+    --link-hover: #1c2a8a;
+    /* 背景の光のにじみ（html の背景）。右上 → 左下 → 中央 */
+    --glow-1: rgba(79, 102, 230, 0.14);
+    --glow-2: rgba(59, 130, 246, 0.10);
+    --glow-3: rgba(99, 102, 241, 0.05);
+    /* 暗い地色（ヘッダー・左のメニュー・検索のシート）。ライトでも共通 */
+    --chrome-bg: linear-gradient(90deg, #0b1024 0%, #16214a 100%);
+    --chrome-focus: #a9b9ff;          /* 暗い地色の上のフォーカス枠 */
+    --chrome-active: #a9b9ff;         /* 左のメニューの現在のページの文字 */
+    --chrome-text-muted: #b4bddb;     /* 検索欄のプレースホルダー・アイコン */
+    --chrome-text-soft: #d5dbf2;      /* 検索の Ctrl K の表示・閉じるボタン */
+    --chrome-accent: #8ea2ff;         /* 検索欄のフォーカス枠・見出しの線のグラデーションの終点 */
+    /* 囲み（補足・注意など）の線と記号 */
+    --callout-note: #3447c9;
+    --callout-tip: #15803d;
+    --callout-important: #0369a1;
+    --callout-warning: #b45309;
+    --callout-caution: #b91c1c;
+    /* 形（角丸）。少し小さめにして引き締める（以前: 12px / 16px） */
+    --shape-s: 8px;
+    --shape-m: 12px;
+    --shape-button: 10px;
     --font: "Segoe UI", "Hiragino Sans", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
     --font-mono: ui-monospace, "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
-    --shape-s: 12px;
-    --shape-m: 16px;
     --footer-h: 3.25rem;    /* PC の固定フッターの実高さ（約 52px。目次の高さを、フッターの上で止めるため） */
     --notice-h: 3.75rem;    /* お知らせの帯の高さの目安（見出し 1 行 + 本文 1 行） */
+
+    /* kit（fara-blazor-component.css）の変数の上書き */
+    --fbc-header-bg: var(--chrome-bg);
+    --fbc-header-accent: linear-gradient(90deg, #6ea8ff 0%, #8b8dfc 100%);
+    --fbc-header-track: rgba(110, 168, 255, 0.22);
+    --fbc-sidebar-bg: linear-gradient(180deg, rgba(10, 15, 36, 0.94) 0%, rgba(20, 31, 70, 0.94) 60%, rgba(26, 40, 88, 0.94) 100%);
+    --fbc-sidebar-text: #d4daee;
+    --fbc-body-bg: #f4f6fd;
+    --fbc-border: #ccd4ec;
+    --fbc-muted: #4f5a82;
+    --fbc-field-bg: rgba(255, 255, 255, 0.7);
+    --fbc-brand: #3447c9;
+    --fbc-grad: linear-gradient(120deg, #3447c9 0%, #4f5fe0 50%, #0369a1 100%);
+    --fbc-focus: #3447c9;
+    --fbc-maintenance-bg: #090d1c;
+    --fbc-maintenance-text: #eaeefc;
+    --fbc-maintenance-muted: #aab4d6;
 }
 
 :root[data-bs-theme="dark"] {
     color-scheme: dark;
-    --primary: #c4a5ff;
-    --on-primary: #1f0d45;
-    --primary-container: #3b1d6e;
-    --on-primary-container: #ead9ff;
-    --secondary: #b4a7d1;
-    --on-secondary: #1a1030;
-    --secondary-container: #2a1f45;
-    --on-secondary-container: #e9e0ff;
-    --tertiary: #f0b6ff;
-    --on-tertiary: #3c0d4c;
-    --background: #0c0616;
-    --on-background: #f3edff;
-    --surface: #0c0616;
-    --on-surface: #f3edff;
-    --surface-variant: #1a1030;
-    --on-surface-variant: #b4a7d1;
-    --surface-container-lowest: #07030f;
-    --surface-container-low: #140a26;
-    --surface-container: #1a1030;
-    --surface-container-high: #241640;
-    --surface-container-highest: #2e1d52;
-    --outline: #7d6ea3;
-    --outline-variant: rgba(200, 170, 255, 0.2);
-    --link: #c4b5fd;
-    --link-hover: #e9ddff;
-    --glow-1: rgba(168, 85, 247, 0.22);
-    --glow-2: rgba(124, 58, 237, 0.30);
-    --glow-3: rgba(168, 85, 247, 0.05);
+    --primary: #9fb0ff;
+    --on-primary: #0f1a52;
+    --primary-container: #26357f;
+    --on-primary-container: #dde3ff;
+    --secondary: #aab4d6;
+    --on-secondary: #121a33;
+    --secondary-container: #1f2a4f;
+    --on-secondary-container: #e0e5fb;
+    --tertiary: #8ec5ff;
+    --on-tertiary: #062744;
+    --background: #090d1c;
+    --on-background: #eaeefc;
+    --surface: #090d1c;
+    --on-surface: #eaeefc;
+    --surface-variant: #131a33;
+    --on-surface-variant: #aab4d6;
+    --surface-container-lowest: #060914;
+    --surface-container-low: #0f1428;
+    --surface-container: #131a33;
+    --surface-container-high: #1b2444;
+    --surface-container-highest: #242f58;
+    --outline: #7480ad;
+    --outline-variant: rgba(150, 170, 255, 0.2);
+    --link: #a5b4fc;
+    --link-hover: #d6ddff;
+    --glow-1: rgba(79, 110, 255, 0.20);
+    --glow-2: rgba(37, 99, 235, 0.28);
+    --glow-3: rgba(99, 102, 241, 0.05);
+    --callout-note: #9fb0ff;
+    --callout-tip: #6ee7a0;
+    --callout-important: #7dc3ff;
+    --callout-warning: #fbbf24;
+    --callout-caution: #fca5a5;
+    --fbc-body-bg: #090d1c;
+    --fbc-border: rgba(150, 170, 255, 0.18);
+    --fbc-muted: #aab4d6;
+    --fbc-field-bg: rgba(15, 20, 40, 0.7);
+    --fbc-brand: #4a5ee0;
+    --fbc-grad: linear-gradient(120deg, #6ea8ff 0%, #8b8dfc 50%, #5eb4ff 100%);
+    --fbc-focus: #c7d2fe;
 }
+
+/* kit の CSS に直接書かれている色（変数が無いもの）の上書き。kit の後に読まれるので、同じ詳細度で勝つ */
+.fbc-sidebar.mud-drawer { background-color: #0d1329; border-right-color: rgba(160, 180, 255, 0.14); }
+.fbc-sidebar .mud-nav-link { color: #e6eaf8; }
+.fbc-sidebar .mud-nav-link.active .mud-icon-root,
+.fbc-sidebar .mud-nav-link.active .mud-nav-link-icon { color: #e8edff !important; }
+.fbc-maintenance h1 { color: #9fb0ff; }
+.fbc-btn-primary.mud-button-root { background: linear-gradient(135deg, #4560e6, #3447c9); box-shadow: 0 10px 30px -8px rgba(69, 96, 230, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.25); }
+.fbc-skip-link { color: #121933; }
+.fbc-header :focus-visible { outline-color: var(--chrome-focus); }
+
+/* 見た目の性格（少しだけ）: 角を少し小さく、カードに細い枠、手順の番号は角丸の四角（コンソールのような印象）、見出しの線はアクセントのグラデーション */
+.button { border-radius: var(--shape-button); }
+.eyebrow { border-radius: 6px; }
+.card { border: 1px solid var(--outline-variant); }
+.card.highlight { border-color: var(--outline-variant); }
+.steps li::before,
+.prose ol > li::before { border-radius: var(--shape-s); }
+.prose code, .policy code { border-radius: 4px; }
+.doc-toc a, .doc-layout .inline-toc a { border-radius: var(--shape-s); }
+.prose :is(h2, h3).faq-q,
+.policy h2.policy-part-title { border-image: linear-gradient(180deg, var(--primary), var(--chrome-accent)) 1; }
 
 /* ---- 基本 ---- */
 * { box-sizing: border-box; }
@@ -183,7 +258,7 @@ h1, h2, h3, h4 { color: var(--on-surface); font-weight: 700; }
     z-index: 2147483001;
     padding: 0.6rem 1.25rem 0.7rem;
     background: #ffffe0;
-    color: #1a0b33;
+    color: #121933;
     box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
 }
 #blazor-error-ui .dismiss { position: absolute; right: 0.75rem; top: 0.5rem; cursor: pointer; }
@@ -577,7 +652,7 @@ html:has(.fbc-notice) .doc-toc { max-height: calc(100vh - 3.5rem - var(--notice-
     stroke-width: 2;
     stroke-linecap: round;
     stroke-linejoin: round;
-    color: #b9acd6;
+    color: var(--chrome-text-muted);
     pointer-events: none;
 }
 .site-search-input {
@@ -591,8 +666,8 @@ html:has(.fbc-notice) .doc-toc { max-height: calc(100vh - 3.5rem - var(--notice-
     font: inherit;
     font-size: 0.95rem;
 }
-.site-search-input::placeholder { color: #b9acd6; }
-.site-search-input:focus { outline: none; border-color: #c084fc; background: rgba(255, 255, 255, 0.14); }
+.site-search-input::placeholder { color: var(--chrome-text-muted); }
+.site-search-input:focus { outline: none; border-color: var(--chrome-accent); background: rgba(255, 255, 255, 0.14); }
 .site-search-input::-webkit-search-cancel-button { display: none; }
 .site-search-hint { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); display: flex; gap: 4px; pointer-events: none; }
 .site-search:focus-within .site-search-hint { opacity: 0; }
@@ -601,7 +676,7 @@ html:has(.fbc-notice) .doc-toc { max-height: calc(100vh - 3.5rem - var(--notice-
     border: 1px solid rgba(255, 255, 255, 0.3);
     border-radius: 5px;
     background: transparent;
-    color: #d8c7f5;
+    color: var(--chrome-text-soft);
     font: inherit;
     font-size: 0.75rem;   /* 12px 以上（レビュー: 11.5px は小さすぎる） */
 }
@@ -619,7 +694,7 @@ html:has(.fbc-notice) .doc-toc { max-height: calc(100vh - 3.5rem - var(--notice-
     border: 0;
     border-radius: 10px;
     background: transparent;
-    color: #d8c7f5;
+    color: var(--chrome-text-soft);
     cursor: pointer;
 }
 .site-search-close svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
@@ -674,8 +749,8 @@ html:has(.fbc-notice) .doc-toc { max-height: calc(100vh - 3.5rem - var(--notice-
 @media (max-width: 767.98px) {
     html.fbc-search-open .fbc-search-sheet {
         padding: 8px 56px 8px 12px;
-        background: linear-gradient(90deg, #140a26 0%, #241243 100%);
-        border-bottom: 1px solid rgba(200, 170, 255, 0.14);
+        background: var(--chrome-bg);
+        border-bottom: 1px solid rgba(160, 180, 255, 0.14);
         box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
     }
     .site-search-sheet .site-search-input { height: 44px; padding: 0 12px 0 38px; font-size: 1rem; }   /* 16px 未満だと、iOS は入力のとき拡大する */
@@ -690,7 +765,7 @@ html:has(.fbc-notice) .doc-toc { max-height: calc(100vh - 3.5rem - var(--notice-
 html body .fbc-header :is(a, button):focus-visible,
 html body .fbc-sidebar :is(a, button):focus-visible,
 html body .fbc-skip-link:focus-visible {
-    outline: 2px solid #c4a5ff;
+    outline: 2px solid var(--chrome-focus);
     outline-offset: 2px;
 }
 /* 左のメニューの項目は、ドロワーの端で枠が切れないように内側に描く */
@@ -707,7 +782,7 @@ html body .mud-button-root:focus-visible {
 /* 検索欄（.site-search-input は :focus で枠を消しているので、キーボードのときだけ枠を出す。kit の検索欄に枠が入るまでの暫定。
    色はヘッダーの他のフォーカス枠と同じ #c4a5ff（ヘッダーは暗い地色）） */
 html body .site-search-input:focus-visible {
-    outline: 2px solid #c4a5ff;
+    outline: 2px solid var(--chrome-focus);
     outline-offset: 2px;
 }
 
@@ -728,7 +803,7 @@ html body .site-search-input:focus-visible {
 }
 .fbc-header .mud-icon-button { min-width: 44px; min-height: 44px; }
 /* 左のメニューの「現在のページ」: MudBlazor の既定（テーマの主色 #6d28d9）は暗い地色の上で 2.6:1 しかないので、明るい紫にする */
-html body .fbc-sidebar .mud-nav-link.active .mud-nav-link-text { color: #c4b5fd; }
+html body .fbc-sidebar .mud-nav-link.active .mud-nav-link-text { color: var(--chrome-active); }
 
 /* ---- スマホ（600px 以下）の操作の大きさ（指で押せるように 44px 以上）。見た目の幅・色は変えず、高さの下限だけを足す ---- */
 @media (max-width: 600px) {
@@ -756,7 +831,7 @@ html body .fbc-sidebar .mud-nav-link.active .mud-nav-link-text { color: #c4b5fd;
 /* ---- 問い合わせフォーム（kit の部品）。レイアウト計測（layout-check）の指摘を直す ----
    入力欄は MudBlazor が outline:0 にする（.mud-input > input:focus など）。その規則に負けない詳細度で、フォーカス中の枠を出す（色は kit の --fbc-focus）。
    送信ボタンは高さ 48px（タップの大きさ。44px ちょうどだと、判定の端が隣の要素に当たるため）。 */
-html :is(input, textarea).mud-input-slot.mud-input-root:is(:focus, :focus-visible) { outline: 2px solid var(--fbc-focus, #e9d5ff); outline-offset: 2px; }
+html :is(input, textarea).mud-input-slot.mud-input-root:is(:focus, :focus-visible) { outline: 2px solid var(--fbc-focus); outline-offset: 2px; }
 .fbc-report-submit { min-height: 48px; }
 
 /* ---- ドキュメントの読みやすさ（文章が続くページを、区切り・囲み・手順・表で見やすくする） ----
@@ -766,21 +841,6 @@ html :is(input, textarea).mud-input-slot.mud-input-root:is(:focus, :focus-visibl
    - 長い項目のある箇条書き（ContentBuilder が long-list を付ける）は、項目ごとの面にして、文章の壁にしない
    - 番号付きの手順は、番号の丸と間隔で「手順」に見せる
    - 囲み（Manual.md の > [!NOTE] など。ContentBuilder が見出しを日本語にする）は、色に加えて「補足」「注意」の文字と記号で区別する */
-:root {
-    --callout-note: #6d28d9;
-    --callout-tip: #15803d;
-    --callout-important: #8a2a98;
-    --callout-warning: #b45309;
-    --callout-caution: #b91c1c;
-}
-:root[data-bs-theme="dark"] {
-    --callout-note: #c4a5ff;
-    --callout-tip: #6ee7a0;
-    --callout-important: #f0b6ff;
-    --callout-warning: #fbbf24;
-    --callout-caution: #fca5a5;
-}
-
 .prose { line-height: 1.85; }
 .prose :is(p, ul, ol, .markdown-alert) { max-width: 46rem; }
 
