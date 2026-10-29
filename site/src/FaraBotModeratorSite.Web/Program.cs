@@ -16,7 +16,7 @@ var baseAddress = builder.HostEnvironment.BaseAddress;
 builder.Services.AddFaraBlazorComponent(SiteConfig.Configure);
 
 // 報告フォーム（kit の ReportFormView）が使う。メンテナンスの状態・説明ページの中身の取得にも使う
-var http = new HttpClient { BaseAddress = new Uri(baseAddress) };
+using var http = new HttpClient { BaseAddress = new Uri(baseAddress) };
 builder.Services.AddSingleton(http);
 
 // メンテナンスの状態（Worker の変数 MAINTENANCE_MODE。external/fara-blazor-component/worker/maintenance.js）。読めなければ通常。

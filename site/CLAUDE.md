@@ -49,18 +49,19 @@ CSP は `build/site.json` の `csp` から kit の `csp/render-headers.mjs` が 
   - kit の計測には制限がある（除外の理由の元）: 2xx 以外のページは開けない（404 は `/404.html` の画面で測る）。`/docs` のように同名のフォルダがあると `docs.html` を指定する（`serve-static` がフォルダの `index.html` を探すため）。本文の下の方の項目は、Tab で「画面の外」と数えられる（`no-offscreen-focus`）
   - 計測の前に kit の依存を入れる: `cd external/fara-blazor-component && npm ci`（kit の `tools/` は、`playwright-core` や `globals` を kit の中の `node_modules` から読むため）
 - **ESLint**（`npm run lint`）: 設定は `eslint.config.mjs`。共通のルールは kit の `tools/lint/eslint.config.shared.mjs`。対象は site/ の JS（`worker/`・`tools/`・`tests/`・画面の `wwwroot/js/`）。`tools/compare/` は `page.evaluate` の中がブラウザで動くので、ブラウザの環境も使う。**`.github/scripts` は ESLint の基準パス（site/）の外なので対象外**（node --test で確かめる）
-- **C# のラチェット**（リポジトリ直下の `Directory.Build.props`。アプリ・テスト・site の両方に効く）: kit の `dotnet.editorconfig` を読む。`CS4014`・`CA1816`・`IDE0059` は error（違反 0 件）。違反が残るものは warning のまま（件数は下）。ルート `.editorconfig` の `[*.cs]` で `VSTHRD100`（async void）だけ warning に下げている（WPF のイベントハンドラーで型上必要な箇所が残るため）。新しく違反を作らないこと（error のルールは、ビルドが落ちる）
+- **C# のラチェット**（リポジトリ直下の `Directory.Build.props` と、ルート `.editorconfig` の `[*.cs]`。アプリ・テスト・site の両方に効く。pokemon・kit の submodule は自分の `.editorconfig`（`root = true`）を持つので、ここは効かない）: kit の `dotnet.editorconfig`（`CS4014`・`VSTHRD100`・`CA1816`・`IDE0059` は error、`CA1031`・`CA2000` は warning）を読み、その上に、このリポジトリで違反が 0 件になったもの（`CA2000`・`VSTHRD001`・`VSTHRD002`・`VSTHRD101`・`VSTHRD110`・`VSTHRD200`・`CS1573`・`xUnit2029`）を、ルート `.editorconfig` の `[*.cs]` で error に足している。**kit の写しではなく、kit の上書き**（kit の `dotnet.editorconfig` はそのまま）。新しく違反を作らないこと（error のルールは、ビルドが落ちる）。どうしても直せないもの（WPF・TwitchLib のイベントハンドラーの `async void`、WPF の `Dispatcher` など）だけ、`[SuppressMessage(..., Justification = "理由")]` を、そのメンバー 1 つにだけ付ける（`#pragma` と `.editorconfig` での一括の抑止はしない）
 
 | ルール | 重大度 | 違反（2026-10 時点） | 中身・方針 |
 | --- | --- | --- | --- |
 | `CS4014` | error | 0 | await していない非同期呼び出し |
 | `CA1816` | error | 0 | Dispose で `GC.SuppressFinalize` を呼んでいない（この PR で 4 箇所直した） |
 | `IDE0059` | error | 0 | 不要な代入（`EnforceCodeStyleInBuild` を `-p:` で付けて確認。アプリの csproj は `False` のまま） |
-| `CA1031` | warning | 47（アプリ） | 一般の例外の catch。イベントハンドラーの try/catch など、意図して握るもの。kit 側は 3 件 |
-| `CA2000` | warning | 1（アプリ）・1（site の `Program.cs` の `HttpClient`） | Dispose 漏れ |
-| `VSTHRD100` | warning（ルート `.editorconfig` で下げた） | 14（アプリ・場所の数） | `async void`。WPF・Twitch のイベントハンドラーは型上必要。残りは `async Task` にできるかを見る |
+| `CA1031` | warning | 14（アプリ） | 一般の例外の catch。画面・TwitchLib のイベントの最上位（例外で全体を止めない）は、理由つきの `SuppressMessage` で抑止済み。残りの 14 件は「失敗したら null・false・空を返す」層（`TwitchApiController`・`BouyomiChanController`・`TwitchAuthService`・`PokemonSyncKeyController.RotateAsync`・`GetChatIconAsync`）で、型を絞ると振る舞いが変わるので判断待ち。kit 側は 3 件 |
+| `CA2000` | error（ルート `.editorconfig`） | 0 | Dispose 漏れ（static の `HttpClient` 1 件は理由つきで抑止、site の `Program.cs` は `using var` に） |
+| `VSTHRD100` | error（kit） | 0 | `async void`。WPF・TwitchLib のイベントハンドラー 14 件は型上必要なので、理由つきで抑止（本文は try/catch で受ける） |
+| `VSTHRD001`・`VSTHRD002`・`VSTHRD101`・`VSTHRD110`・`VSTHRD200`・`CS1573`・`xUnit2029` | error（ルート `.editorconfig`） | 0 | `Dispatcher` の使用（JoinableTaskFactory 無し）・完了後の `Result`・`async` ラムダのイベント・結果の読み捨て・`Async` の接尾辞・XML コメントの `param` 漏れ・テストの `Assert.Empty` の誤用 |
 
-- **CS1573 など、ここに無い既定の警告は対象外**（`GenerateDocumentationFile` や VS Threading の既定）。pokemon（`external/fara-pokemon-battle-assistant`）は自分の `Directory.Build.props` を持つので、ルートの設定は読まれない
+- **pokemon（`external/fara-pokemon-battle-assistant`）と kit の警告は対象外**（submodule の中は変えない）。アプリのビルドには pokemon の `CS1573` が 30 件（15 箇所 × net8.0・net10.0 の 2 回）、site のビルドには kit の `CA1031` 3 件と `VSTHRD103` 1 件が出る。それぞれのリポジトリで直す
 
 ## 確認
 

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -61,6 +62,8 @@ public partial class PokemonRosterWindow : Window
         ShowGame(RosterGameComboBox.SelectedItem as RosterGameView);
     }
 
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "画面のイベントハンドラー。例外でアプリを落とさないよう、ここで受けてログ・メッセージで知らせる")]
+    [SuppressMessage("Usage", "VSTHRD100:Avoid async void methods", Justification = "イベントハンドラーの型（void を返すデリゲート）の都合で async void が必要。例外は本文の try/catch で受けて、ログ・画面で知らせている")]
     private async void RosterReloadButton_Click(object sender, RoutedEventArgs e)
     {
         try

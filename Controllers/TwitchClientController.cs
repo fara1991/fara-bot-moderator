@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -124,14 +125,15 @@ public class TwitchClientController
         
         // DisconnectをTask.Runで実行してUIスレッドのブロックを回避（TwitchLib内部で待機が発生する場合があるため）
         var client = _twitchClient;
-        Task.Run(() => client.Disconnect());
+        _ = Task.Run(() => client.Disconnect());
     }
 
     /// <summary>
     /// アプリケーションからTwitchへチャットメッセージを送信し、翻訳処理も行います。
     /// </summary>
     /// <param name="message">送信するメッセージ</param>
-    public async void SendApplicationMessage(string message)
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "TwitchLib のイベント・チャット処理の最上位。例外が他のイベント・チャットの処理を止めないよう、ここで受けてログに残す")]
+    public async Task SendApplicationMessageAsync(string message)
     {
         if (message.Equals("")) return;
         try
@@ -141,7 +143,7 @@ public class TwitchClientController
         }
         catch (Exception ex)
         {
-            // async void は例外を呼び出し元に返せず、そのままアプリが落ちるので、ここで受けてログに残す
+            // 呼び出し元は結果を待たない（_ = で捨てる）ので、例外はここで受けてログに残す（振る舞いは async void のときと同じ）
             LogController.OutputLog($"<Error> アプリからのメッセージの送信に失敗しました: {ex.Message}");
         }
     }
@@ -254,6 +256,8 @@ public class TwitchClientController
     /// <summary>
     /// /announcement を実行したときの処理
     /// </summary>
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "TwitchLib のイベント・チャット処理の最上位。例外が他のイベント・チャットの処理を止めないよう、ここで受けてログに残す")]
+    [SuppressMessage("Usage", "VSTHRD100:Avoid async void methods", Justification = "イベントハンドラーの型（void を返すデリゲート）の都合で async void が必要。例外は本文の try/catch で受けて、ログ・画面で知らせている")]
     private async void TwitchClientOnAnnouncement(object? sender, OnAnnouncementArgs e)
     {
         try
@@ -356,6 +360,8 @@ public class TwitchClientController
     /// <summary>
     /// 別チャンネルからRaidが来たときの処理を行います。
     /// </summary>
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "TwitchLib のイベント・チャット処理の最上位。例外が他のイベント・チャットの処理を止めないよう、ここで受けてログに残す")]
+    [SuppressMessage("Usage", "VSTHRD100:Avoid async void methods", Justification = "イベントハンドラーの型（void を返すデリゲート）の都合で async void が必要。例外は本文の try/catch で受けて、ログ・画面で知らせている")]
     public async void TwitchClientOnRaidNotification(object? sender, OnRaidNotificationArgs e)
     {
         try
@@ -380,6 +386,7 @@ public class TwitchClientController
     /// <summary>
     /// 新規サブスクライブ時の処理を行います。
     /// </summary>
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "TwitchLib のイベント・チャット処理の最上位。例外が他のイベント・チャットの処理を止めないよう、ここで受けてログに残す")]
     public void TwitchClientOnNewSubscriber(object? sender, OnNewSubscriberArgs e)
     {
         try
@@ -402,6 +409,7 @@ public class TwitchClientController
     /// <summary>
     /// Primeサブスクライブ時の処理を行います。
     /// </summary>
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "TwitchLib のイベント・チャット処理の最上位。例外が他のイベント・チャットの処理を止めないよう、ここで受けてログに残す")]
     private void TwitchClientOnPrimePaidSubscriber(object? sender, OnPrimePaidSubscriberArgs e)
     {
         try
@@ -424,6 +432,7 @@ public class TwitchClientController
     /// <summary>
     /// 継続サブスクライブ（再サブスク）時の処理を行います。
     /// </summary>
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "TwitchLib のイベント・チャット処理の最上位。例外が他のイベント・チャットの処理を止めないよう、ここで受けてログに残す")]
     private void TwitchClientOnReSubscriber(object? sender, OnReSubscriberArgs e)
     {
         try
@@ -455,6 +464,7 @@ public class TwitchClientController
     /// <summary>
     /// サブスクギフト受信時の処理を行います。
     /// </summary>
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "TwitchLib のイベント・チャット処理の最上位。例外が他のイベント・チャットの処理を止めないよう、ここで受けてログに残す")]
     public void TwitchClientOnGiftedSubscription(object? sender, OnGiftedSubscriptionArgs e)
     {
         try
@@ -476,6 +486,8 @@ public class TwitchClientController
     /// <summary>
     /// メッセージ受信時の処理を行います（ポケモンコマンド・翻訳・読み上げ）。
     /// </summary>
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "TwitchLib のイベント・チャット処理の最上位。例外が他のイベント・チャットの処理を止めないよう、ここで受けてログに残す")]
+    [SuppressMessage("Usage", "VSTHRD100:Avoid async void methods", Justification = "イベントハンドラーの型（void を返すデリゲート）の都合で async void が必要。例外は本文の try/catch で受けて、ログ・画面で知らせている")]
     private async void TwitchClientOnMessageReceived(object? sender, OnMessageReceivedArgs e)
     {
         if (_twitchClient == null) return;
@@ -570,6 +582,7 @@ public class TwitchClientController
     /// <summary>
     /// 実際の翻訳処理（DeepL）と、翻訳結果の送信および読み上げ処理を行います。
     /// </summary>
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "翻訳（DeepL）の失敗でチャットの処理を止めない。失敗はチャットとログで知らせる")]
     private async Task MessageTranslationProcessAsync(string sourceMessage, string userName, string displayName,
         bool isAnnouncement = false, string userId = "")
     {

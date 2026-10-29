@@ -69,6 +69,6 @@ public class UniqueChannelPointControllerTests : IDisposable
     public void Other_channel_point_titles_do_nothing()
     {
         Assert.Equal("", CreateController().Exec("viewer_1", "Something else"));
-        Assert.Empty(Directory.GetFiles(_directory).Where(f => f.Contains("SaberTailor")));
+        Assert.DoesNotContain(Directory.GetFiles(_directory), f => f.Contains("SaberTailor"));
     }
 }

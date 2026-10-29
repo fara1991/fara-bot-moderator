@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -112,17 +113,23 @@ public partial class MainWindow : INotifyPropertyChanged
         _ = RunWithExceptionHandlingAsync(StartMonitoringAsync, "Monitoring");
         _ = RunWithExceptionHandlingAsync(StartTwitchLibEventSubAsync, "TwitchPubSub");
 
-        Loaded += async (_, _) =>
-        {
-            // 初期化処理の実行
-            await InitializeApplicationAsync();
-        };
+        Loaded += MainWindow_Loaded;
+    }
+
+    /// <summary>
+    /// 画面が読み込まれたときの初期化処理（InitializeApplicationAsync）を始めます。
+    /// </summary>
+    [SuppressMessage("Usage", "VSTHRD100:Avoid async void methods", Justification = "イベントハンドラーの型（void を返すデリゲート）の都合で async void が必要。例外は本文の try/catch で受けて、ログ・画面で知らせている")]
+    private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
+    {
+        await InitializeApplicationAsync();
     }
 
     /// <summary>
     /// アプリケーションの初期化処理を非同期で行います。
     /// secrets.jsonの読み込みが完了するまでUIをブロックします。
     /// </summary>
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "画面の最上位（イベントハンドラー・起動・監視の周期処理）。例外で画面・ボット全体を止めないよう、ここで受けてログ・メッセージで知らせる")]
     private async Task InitializeApplicationAsync()
     {
         LoadingTextBlock.Text = "Loading secrets.json...";
@@ -255,6 +262,7 @@ public partial class MainWindow : INotifyPropertyChanged
         textBox.Text = model.Message;
     }
 
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "画面の最上位（イベントハンドラー・起動・監視の周期処理）。例外で画面・ボット全体を止めないよう、ここで受けてログ・メッセージで知らせる")]
     private async Task RunWithExceptionHandlingAsync(Func<Task> taskFunc, string taskName)
     {
         try
@@ -271,6 +279,7 @@ public partial class MainWindow : INotifyPropertyChanged
     /// <summary>
     /// </summary>
     /// <returns></returns>
+    [SuppressMessage("Usage", "VSTHRD001:Avoid legacy thread switching APIs", Justification = "WPF の Dispatcher で UI スレッドへ戻している。このアプリは JoinableTaskFactory を使っていないので、置き換え先が無い")]
     private async Task StartTimerAsync()
     {
         var cycleTimerCounts = new int[4];
@@ -374,6 +383,7 @@ public partial class MainWindow : INotifyPropertyChanged
     /// <summary>
     /// </summary>
     /// <returns></returns>
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "画面の最上位（イベントハンドラー・起動・監視の周期処理）。例外で画面・ボット全体を止めないよう、ここで受けてログ・メッセージで知らせる")]
     private async Task StartWebServerAsync()
     {
         while (true)
@@ -407,6 +417,7 @@ public partial class MainWindow : INotifyPropertyChanged
     /// <summary>
     /// </summary>
     /// <returns></returns>
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "画面の最上位（イベントハンドラー・起動・監視の周期処理）。例外で画面・ボット全体を止めないよう、ここで受けてログ・メッセージで知らせる")]
     private async Task StartMonitoringAsync()
     {
         while (true)
@@ -427,6 +438,7 @@ public partial class MainWindow : INotifyPropertyChanged
     /// <summary>
     /// 監視の 1 周期分（トークン期限・チャット表示・棒読みちゃんの接続確認）。
     /// </summary>
+    [SuppressMessage("Usage", "VSTHRD001:Avoid legacy thread switching APIs", Justification = "WPF の Dispatcher で UI スレッドへ戻している。このアプリは JoinableTaskFactory を使っていないので、置き換え先が無い")]
     private async Task MonitorOnceAsync()
     {
         // Token期限
@@ -454,11 +466,12 @@ public partial class MainWindow : INotifyPropertyChanged
             await await Dispatcher.InvokeAsync(async () =>
             {
                 MessageBox.Show("棒読みちゃんが終了しました。Disconnectする前に棒読みちゃんを閉じないでください。\n安全のためTwitchから切断します。", "警告", MessageBoxButton.OK, MessageBoxImage.Warning);
-                await TwitchDisconnect();
+                await TwitchDisconnectAsync();
             });
         }
     }
 
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "画面の最上位（イベントハンドラー・起動・監視の周期処理）。例外で画面・ボット全体を止めないよう、ここで受けてログ・メッセージで知らせる")]
     private async Task StartTwitchLibEventSubAsync()
     {
         while (true)
@@ -608,6 +621,7 @@ public partial class MainWindow : INotifyPropertyChanged
     ///     Token取得はPOST通信をするため、WebViewは通さずPostRequestを行う。
     /// </summary>
     /// <param name="url"></param>
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "画面の最上位（イベントハンドラー・起動・監視の周期処理）。例外で画面・ボット全体を止めないよう、ここで受けてログ・メッセージで知らせる")]
     private async Task UpdateAccessTokenAsync(string url)
     {
         // 戻りの URL は ?code=…&scope=…&state=… の形。値だけを取り出す（貪欲な一致だと、後ろの &scope=… まで code に入ってしまう）
@@ -654,6 +668,7 @@ public partial class MainWindow : INotifyPropertyChanged
     /// <summary>
     ///     accessTokenに必要な認証コードを取得するURLを開く（ボタンからは常に開く。監視からは <see cref="TokenMonitorPolicy.IsAuthorizationInProgress"/> を見て呼ぶ）
     /// </summary>
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "画面の最上位（イベントハンドラー・起動・監視の周期処理）。例外で画面・ボット全体を止めないよう、ここで受けてログ・メッセージで知らせる")]
     private void RequestApiAccessToken()
     {
         // 前の失敗の文は、新しい認可を始めるときに消す
@@ -689,6 +704,7 @@ public partial class MainWindow : INotifyPropertyChanged
         SetWindowControlEnabled(true);
     }
 
+    [SuppressMessage("Usage", "VSTHRD001:Avoid legacy thread switching APIs", Justification = "WPF の Dispatcher で UI スレッドへ戻している。このアプリは JoinableTaskFactory を使っていないので、置き換え先が無い")]
     private void SetWindowControlEnabled(bool isEnabled, bool isAuthorize = false)
     {
         Dispatcher.Invoke(() =>
@@ -921,7 +937,8 @@ public partial class MainWindow : INotifyPropertyChanged
 
     /// <summary>
     /// </summary>
-    private async Task TwitchConnect()
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "画面の最上位（イベントハンドラー・起動・監視の周期処理）。例外で画面・ボット全体を止めないよう、ここで受けてログ・メッセージで知らせる")]
+    private async Task TwitchConnectAsync()
     {
         LoadingTextBlock.Text = "Connecting to Twitch...";
         LoadingOverlay.Visibility = Visibility.Visible;
@@ -981,7 +998,8 @@ public partial class MainWindow : INotifyPropertyChanged
 
     /// <summary>
     /// </summary>
-    private async Task TwitchDisconnect()
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "画面の最上位（イベントハンドラー・起動・監視の周期処理）。例外で画面・ボット全体を止めないよう、ここで受けてログ・メッセージで知らせる")]
+    private async Task TwitchDisconnectAsync()
     {
         LoadingTextBlock.Text = "Disconnecting from Twitch...";
         LoadingOverlay.Visibility = Visibility.Visible;
@@ -1027,6 +1045,8 @@ public partial class MainWindow : INotifyPropertyChanged
     /// </summary>
     /// <param name="sender"></param>
     /// <param name="e"></param>
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "画面の最上位（イベントハンドラー・起動・監視の周期処理）。例外で画面・ボット全体を止めないよう、ここで受けてログ・メッセージで知らせる")]
+    [SuppressMessage("Usage", "VSTHRD100:Avoid async void methods", Justification = "イベントハンドラーの型（void を返すデリゲート）の都合で async void が必要。例外は本文の try/catch で受けて、ログ・画面で知らせている")]
     private async void TwitchConnectionButton_Click(object sender, RoutedEventArgs e)
     {
         try
@@ -1036,11 +1056,11 @@ public partial class MainWindow : INotifyPropertyChanged
             var state = TwitchConnectionStateLabel.Content.ToString();
             if (state is not null && state.Equals("State: Connect"))
             {
-                await TwitchDisconnect();
+                await TwitchDisconnectAsync();
             }
             else
             {
-                await TwitchConnect();
+                await TwitchConnectAsync();
             }
         }
         catch (Exception ex)
@@ -1053,11 +1073,13 @@ public partial class MainWindow : INotifyPropertyChanged
     /// </summary>
     /// <param name="sender"></param>
     /// <param name="e"></param>
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "画面の最上位（イベントハンドラー・起動・監視の周期処理）。例外で画面・ボット全体を止めないよう、ここで受けてログ・メッセージで知らせる")]
+    [SuppressMessage("Usage", "VSTHRD100:Avoid async void methods", Justification = "イベントハンドラーの型（void を返すデリゲート）の都合で async void が必要。例外は本文の try/catch で受けて、ログ・画面で知らせている")]
     private async void TwitchDisconnectButton_Click(object sender, RoutedEventArgs e)
     {
         try
         {
-            await TwitchDisconnect();
+            await TwitchDisconnectAsync();
         }
         catch (Exception ex)
         {
@@ -1204,9 +1226,10 @@ public partial class MainWindow : INotifyPropertyChanged
     /// <summary>
     /// チャットの format set / format clear で登録形式が変わったとき、画面の「対戦形式」を同じ値にします。
     /// </summary>
+    [SuppressMessage("Usage", "VSTHRD001:Avoid legacy thread switching APIs", Justification = "WPF の Dispatcher で UI スレッドへ戻している。このアプリは JoinableTaskFactory を使っていないので、置き換え先が無い")]
     private void OnPokemonRegisteredFormatChanged(string? battleFormat)
     {
-        Dispatcher.InvokeAsync(() => PokemonBattleFormatComboBox.SelectedIndex = PokemonBattleFormatIndex(battleFormat));
+        _ = Dispatcher.InvokeAsync(() => PokemonBattleFormatComboBox.SelectedIndex = PokemonBattleFormatIndex(battleFormat));
     }
 
     /// <summary>
@@ -1311,6 +1334,7 @@ public partial class MainWindow : INotifyPropertyChanged
     /// 設定ファイルへ保存します。失敗したら、理由（例外の種類だけ。キーは含めない）をログに残して false を返します。
     /// </summary>
     /// <param name="syncKey">保存するアクセスキー（省略時は今のアクセスキー）</param>
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "画面の最上位（イベントハンドラー・起動・監視の周期処理）。例外で画面・ボット全体を止めないよう、ここで受けてログ・メッセージで知らせる")]
     private bool TrySaveSecretValue(string? syncKey = null)
     {
         try
@@ -1341,6 +1365,7 @@ public partial class MainWindow : INotifyPropertyChanged
     /// <summary>
     /// 使用中のアクセスキーをクリップボードにコピーします（サイトの「アクセスキーを入力して共有」に貼り付ける用）。
     /// </summary>
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "画面の最上位（イベントハンドラー・起動・監視の周期処理）。例外で画面・ボット全体を止めないよう、ここで受けてログ・メッセージで知らせる")]
     private void PokemonSyncKeyCopyButton_Click(object sender, RoutedEventArgs e)
     {
         if (!RemoteRosterStore.IsValidKey(_pokemonSyncKey)) return;
@@ -1358,6 +1383,8 @@ public partial class MainWindow : INotifyPropertyChanged
     /// <summary>
     /// 新しいアクセスキーを発行します（クラウドの置き場は空から始まります）。
     /// </summary>
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "画面の最上位（イベントハンドラー・起動・監視の周期処理）。例外で画面・ボット全体を止めないよう、ここで受けてログ・メッセージで知らせる")]
+    [SuppressMessage("Usage", "VSTHRD100:Avoid async void methods", Justification = "イベントハンドラーの型（void を返すデリゲート）の都合で async void が必要。例外は本文の try/catch で受けて、ログ・画面で知らせている")]
     private async void PokemonSyncKeyIssueButton_Click(object sender, RoutedEventArgs e)
     {
         if (RemoteRosterStore.IsValidKey(_pokemonSyncKey) &&
@@ -1401,6 +1428,8 @@ public partial class MainWindow : INotifyPropertyChanged
     /// <summary>
     /// 入力欄に貼り付けたアクセスキー（サイトで作ったもの）を設定します。クラウドから読めることを確かめてから使います。
     /// </summary>
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "画面の最上位（イベントハンドラー・起動・監視の周期処理）。例外で画面・ボット全体を止めないよう、ここで受けてログ・メッセージで知らせる")]
+    [SuppressMessage("Usage", "VSTHRD100:Avoid async void methods", Justification = "イベントハンドラーの型（void を返すデリゲート）の都合で async void が必要。例外は本文の try/catch で受けて、ログ・画面で知らせている")]
     private async void PokemonSyncKeyJoinButton_Click(object sender, RoutedEventArgs e)
     {
         var key = EnteredPokemonSyncKey();
@@ -1442,6 +1471,8 @@ public partial class MainWindow : INotifyPropertyChanged
     /// <summary>
     /// アクセスキーを作り直します。登録データを新しいキーに移し、古いキーは使えなくします。
     /// </summary>
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "画面の最上位（イベントハンドラー・起動・監視の周期処理）。例外で画面・ボット全体を止めないよう、ここで受けてログ・メッセージで知らせる")]
+    [SuppressMessage("Usage", "VSTHRD100:Avoid async void methods", Justification = "イベントハンドラーの型（void を返すデリゲート）の都合で async void が必要。例外は本文の try/catch で受けて、ログ・画面で知らせている")]
     private async void PokemonSyncKeyRotateButton_Click(object sender, RoutedEventArgs e)
     {
         if (!RemoteRosterStore.IsValidKey(_pokemonSyncKey)) return;
@@ -1488,6 +1519,8 @@ public partial class MainWindow : INotifyPropertyChanged
     /// <summary>
     /// このボットでアクセスキーを使うのをやめます（クラウドのデータは残ります）。
     /// </summary>
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "画面の最上位（イベントハンドラー・起動・監視の周期処理）。例外で画面・ボット全体を止めないよう、ここで受けてログ・メッセージで知らせる")]
+    [SuppressMessage("Usage", "VSTHRD100:Avoid async void methods", Justification = "イベントハンドラーの型（void を返すデリゲート）の都合で async void が必要。例外は本文の try/catch で受けて、ログ・画面で知らせている")]
     private async void PokemonSyncKeyStopButton_Click(object sender, RoutedEventArgs e)
     {
         if (!RemoteRosterStore.IsValidKey(_pokemonSyncKey)) return;
@@ -1532,6 +1565,7 @@ public partial class MainWindow : INotifyPropertyChanged
     /// 登録したポケモン・チームを読み込み、Game タブの要約と「一覧を開く」のウィンドウに表示します（読むだけで、書き換えはしません）。
     /// 続けて呼ばれたときは、最後に始めた読み込みの結果だけを表示します。
     /// </summary>
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "画面の最上位（イベントハンドラー・起動・監視の周期処理）。例外で画面・ボット全体を止めないよう、ここで受けてログ・メッセージで知らせる")]
     private async Task LoadPokemonRosterAsync()
     {
         var version = ++_pokemonRosterLoadVersion;
@@ -1629,6 +1663,8 @@ public partial class MainWindow : INotifyPropertyChanged
         }
     }
 
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "画面の最上位（イベントハンドラー・起動・監視の周期処理）。例外で画面・ボット全体を止めないよう、ここで受けてログ・メッセージで知らせる")]
+    [SuppressMessage("Usage", "VSTHRD100:Avoid async void methods", Justification = "イベントハンドラーの型（void を返すデリゲート）の都合で async void が必要。例外は本文の try/catch で受けて、ログ・画面で知らせている")]
     private async void PokemonRosterReloadButton_Click(object sender, RoutedEventArgs e)
     {
         try
