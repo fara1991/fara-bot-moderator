@@ -125,7 +125,7 @@ public class PagesTests
     public async Task Privacy_page_covers_the_topics_and_does_not_claim_services_the_site_does_not_use()
     {
         var text = Text(await RenderAsync<Privacy>());
-        foreach (var topic in new[] { "運営者", "ブラウザに保存する情報", "アクセス解析・広告", "Web Analytics", "問い合わせで送る情報", "Turnstile", "Discord", "外部のサービス", "第三者への提供", "開示・訂正・削除", "アプリ（FaraBotModerator）で扱う情報", "Windows アプリ", "利用目的", PrivacyDates })
+        foreach (var topic in new[] { "運営者", "ブラウザに保存する情報", "アクセス解析・広告", "Web Analytics", "問い合わせで送る情報", "Turnstile", "Discord", "外部のサービス", "第三者への提供", "開示・訂正・削除", "このサイトで扱う情報", "アプリ（FaraBotModerator）で扱う情報", "Windows アプリ", "利用目的", PrivacyDates })
             Assert.Contains(topic, text);
         // 問い合わせの回数制限（1 日 3 回・送信元の識別子を当日だけ保存）の記載。「匿名」とは書かない（識別子は送信元に結びつくため）
         Assert.Contains("1 日 3 回", text);
@@ -134,6 +134,7 @@ public class PagesTests
         Assert.DoesNotContain("掃除", text);
         Assert.Contains("EU 圏内からのアクセスは計測の対象外です", text);
         Assert.Contains("Cloudflare（Turnstile など）は、その仕組みで、ブラウザに情報を保存することがあります", text);
+        Assert.Contains("ブラウザの保存領域", text);
         Assert.Contains("送った内容（本文・連絡先など）そのものは、サイトの側では保存しません", text);
         Assert.DoesNotContain("匿名", text);
         Assert.Contains("広告は、いま使っていません。", text);
@@ -148,13 +149,27 @@ public class PagesTests
     }
 
     [Fact]
+    public async Task Privacy_page_does_not_show_implementation_details_to_readers()
+    {
+        // 閲覧者に要らない技術の詳細（内部の仕組みの名前・保存のキー名・開発用の URL）は出さない（サービスの名前は出す）
+        var html = await RenderAsync<Privacy>();
+        foreach (var jargon in new[] { "ハッシュ", "トークン", "token", "Token", "localStorage", "Bearer", "pokemon-dev", "localhost", "Durable", "Cloudflare Workers", "秘密の鍵", "OAuth", "fara-bot-moderator-site." })
+            Assert.DoesNotContain(jargon, html);
+        // 表のセルには、列の見出しを小さい画面で出すための data-label がある（4 列の表は 3 つのセル、権限の表は 1 つ）
+        Assert.Equal(5 * 3 + 4 * 3 + 7, Regex.Matches(html, "<td data-label=\"").Count);
+        Assert.Equal(5 + 4 + 7, Regex.Matches(html, "<th scope=\"row\">").Count);
+        Assert.Contains("class=\"policy-part-title\"", html);
+    }
+
+    [Fact]
     public async Task Privacy_page_describes_what_the_app_stores_and_sends()
     {
         var html = await RenderAsync<Privacy>();
         var text = Text(html);
-        foreach (var fact in new[] { "DeepL", "localhost", "Resources\\secrets.json", "暗号化せずに", "user.config", "Client Secret", "Bearer", "pokemon.fara-labs.com", "pokemon-dev.fara-labs.com", "Log", "視聴者のユーザー名とチャットの本文を含みます", "自動では削除されない", "Twitch との通信", "by 表示名" })
+        foreach (var fact in new[] { "DeepL", "Resources\\secrets.json", "暗号化せずに", "user.config", "Client Secret", "アクセスキーを添えて", "Log", "視聴者のユーザー名とチャットの本文", "自動では削除されない", "Twitch との通信", "by 表示名" })
             Assert.Contains(fact, text);
         Assert.DoesNotContain("平文", text);
+        Assert.Contains("href=\"https://pokemon.fara-labs.com/\"", html);
         Assert.Contains("href=\"https://pokemon.fara-labs.com/privacy\"", html);
         // アプリの外部との通信の表（Twitch・DeepL・ポケモンのサイト・棒読みちゃん）
         var appRows = Regex.Matches(html, "<tr data-app-service=\"(?<name>[^\"]+)\">").Select(m => m.Groups["name"].Value).ToList();
