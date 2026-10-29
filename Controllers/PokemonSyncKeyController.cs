@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Net.Http;
 using System.Threading;
@@ -71,6 +72,7 @@ public static class PokemonSyncKeyController
     /// <param name="cancellationToken">キャンセルトークン</param>
     /// <param name="http">通信に使う HttpClient（省略時は既定のもの。テスト用）</param>
     /// <exception cref="RosterUnavailableException">写せなかった（古いキーのまま）</exception>
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Core の FinishAsync は OperationCanceledException だけを外へ出す（HttpClient のタイムアウトの TaskCanceledException も含む）。新しいキーは保存済みの段階なので、外へ出さず、切り替え成功のまま Failed（古いキーが残っている）として知らせる")]
     public static async Task<RotateOutcome> RotateAsync(PokemonDataSource dataSource, string oldKey, Func<string, Task<bool>> saveNewKey,
         CancellationToken cancellationToken = default, HttpClient? http = null)
     {

@@ -83,11 +83,9 @@ indent_style = space
 indent_size = 4
 tab_width = 4
 
-# C# の静的解析（ラチェット）。kit の dotnet.editorconfig（v1.0.1 時点で CS4014・VSTHRD100・CA1816・IDE0059・CA1031・CA2000・VSTHRD002・VSTHRD003・VSTHRD103 は error）に、このリポジトリで違反が 0 件になったものを足し、CA1031 だけ warning に戻す。
+# C# の静的解析（ラチェット）。kit の dotnet.editorconfig（v1.0.1 時点で CS4014・VSTHRD100・CA1816・IDE0059・CA1031・CA2000・VSTHRD002・VSTHRD003・VSTHRD103 は error）に、このリポジトリで違反が 0 件になったものを足す（CA1031 も 0 件になったので、kit の error のまま）。
 # pokemon・kit の submodule は自分の .editorconfig（root = true）を持つので、ここは効かない。件数と理由は site/CLAUDE.md・README の「C#」
 [*.cs]
-# CA1031: 配信中にボットを落とさないため、例外を広く握る箇所を維持している。型を絞る判断は個別に行う。kit では error だが、bot では warning のまま。
-dotnet_diagnostic.CA1031.severity = warning
 dotnet_diagnostic.CA2000.severity = error
 dotnet_diagnostic.VSTHRD001.severity = error
 dotnet_diagnostic.VSTHRD002.severity = error

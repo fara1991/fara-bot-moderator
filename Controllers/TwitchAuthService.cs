@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -56,6 +57,7 @@ public class TwitchAuthService
     /// <param name="clientId">クライアントID</param>
     /// <param name="clientSecret">クライアントシークレット</param>
     /// <returns>成功・トークン無効・一時的な失敗のどれか（認可画面を開くのは <see cref="RefreshOutcome.TokenInvalid"/> のときだけ）</returns>
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "通信・解析のどの失敗も「一時的な失敗」として扱う設計（トークンの無効は 400・401 の状態コードだけで決める。判定は ClassifyRefreshException）。型を絞ると、想定外の例外が監視の周期の外へ出て、トークンの扱いが変わるため、種類を問わず受ける")]
     public async Task<RefreshOutcome> RefreshAccessTokenAsync(string clientId, string clientSecret)
     {
         var form = new[]
