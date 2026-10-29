@@ -133,15 +133,5 @@
     "sections": [
       { "heading": "8. トラブルシューティング" }
     ]
-  },
-  {
-    "slug": "changelog",
-    "title": "更新履歴",
-    "reading": "こうしんりれき",
-    "group": "困ったときは",
-    "description": "FaraBotModerator のバージョンごとの変更点。",
-    "sections": [
-      { "heading": "更新履歴" }
-    ]
   }
 ]

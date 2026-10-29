@@ -33,6 +33,16 @@ public class ContentStructureTests
     }
 
     [Fact]
+    public void Help_group_has_only_faq_and_troubleshooting_and_no_changelog_doc_page()
+    {
+        // 「更新履歴」はサイドメニューの「お知らせ」の /changelog だけ。ドキュメントの 1 ページとしては持たない
+        var content = LoadContent();
+        var group = content.Groups.Single(g => g.Name == "困ったときは");
+        Assert.Equal(new[] { "/docs/faq", "/docs/troubleshooting" }, group.Pages.Select(p => p.Url));
+        Assert.Null(content.Find("changelog"));
+    }
+
+    [Fact]
     public void Side_menu_names_are_short()
     {
         var content = LoadContent();
