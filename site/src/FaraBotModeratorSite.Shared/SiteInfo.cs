@@ -9,7 +9,7 @@ public static class SiteInfo
 {
     public const string Name = "FaraBotModerator";
 
-    public const string Description = "Twitch 配信者向けの多機能チャットボット。チャット表示・自動翻訳・読み上げ・イベント通知・タイマー・ポケモンのダメージ計算コマンドをひとつに。";
+    public const string Description = "Twitch 配信者向けの多機能チャットボット。チャット表示・自動翻訳・読み上げ・イベント通知・タイマー・ポケモンのダメージ計算コマンドを 1 つに。";
 
     public const string RepositoryUrl = "https://github.com/fara1991/fara-bot-moderator";
     public const string ReleasesUrl = "https://github.com/fara1991/fara-bot-moderator/releases/latest";
