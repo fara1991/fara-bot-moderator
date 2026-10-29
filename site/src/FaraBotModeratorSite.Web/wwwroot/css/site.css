@@ -448,6 +448,9 @@ code {
 /* 項目は、PC（1200px 以上）で 2 段組。CSS grid の既定の並び（左から右、上から下）のまま。スマホは 1 段 */
 .policy-grid { display: grid; grid-template-columns: minmax(0, 1fr); }
 .policy-item { margin-top: 28px; }
+/* 表・長い節は、2 段組でも 2 列ぶんの幅を使う */
+.policy-item-wide { grid-column: 1 / -1; }
+.policy-item h3 { font-size: 1.15rem; margin: 24px 0 8px; line-height: 1.4; }
 @media (min-width: 1200px) {
     .policy-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 48px; }
 }

@@ -1,5 +1,6 @@
 using FaraBotModeratorSite.Content;
 using FaraBotModeratorSite.Pages;
+using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
@@ -97,16 +98,77 @@ public class PagesTests
     public async Task Privacy_page_covers_the_topics_and_does_not_claim_services_the_site_does_not_use()
     {
         var text = Text(await RenderAsync<Privacy>());
-        foreach (var topic in new[] { "運営者", "ブラウザに保存する情報", "アクセス解析・広告", "Web Analytics", "問い合わせで送る情報", "Turnstile", "Discord", "外部のサービス", "第三者への提供", "Windows アプリ" })
+        foreach (var topic in new[] { "運営者", "ブラウザに保存する情報", "アクセス解析・広告", "Web Analytics", "問い合わせで送る情報", "Turnstile", "Discord", "外部のサービス", "第三者への提供", "開示・訂正・削除", "アプリ（FaraBotModerator）で扱う情報", "Windows アプリ", "最終改定: 2026 年 10 月 29 日" })
             Assert.Contains(topic, text);
         // 問い合わせの回数制限（1 日 3 回・送信元の識別子を当日だけ保存）の記載。「匿名」とは書かない（識別子は送信元に結びつくため）
         Assert.Contains("1 日 3 回", text);
         Assert.Contains("IP アドレスそのものは保存しません", text);
         Assert.Contains("日本時間の翌 0 時まで", text);
+        Assert.Contains("送った内容（本文・連絡先など）そのものは、サイトの側では保存しません", text);
         Assert.DoesNotContain("匿名", text);
+        // Cookie は「このサイトからは設定しない」と限定する。個人を特定する情報は「集めない」ではなく「運営者は受け取らない」
+        Assert.Contains("このサイトからは Cookie を設定しません", text);
+        Assert.Contains("サイトの運営者は、個人を特定する情報を受け取りません", text);
+        Assert.DoesNotContain("個人を特定する情報は集めません", text);
         // このサイトは外部のフォント・CDN を使わない（CSP が同じオリジンだけ）ので、載せない
         Assert.DoesNotContain("Google Fonts", text);
         Assert.DoesNotContain("jsDelivr", text);
+        // 運営者の運用の約束と、法的な適用の注記は書かない
+        foreach (var banned in new[] { "削除します", "保存期間は", "おすすめします", "専門家", "個人関連情報", "外部送信" })
+            Assert.DoesNotContain(banned, text);
+    }
+
+    [Fact]
+    public async Task Privacy_page_describes_what_the_app_stores_and_sends()
+    {
+        var html = await RenderAsync<Privacy>();
+        var text = Text(html);
+        foreach (var fact in new[] { "DeepL", "localhost", "Resources\\secrets.json", "暗号化せずに", "user.config", "Client Secret", "Bearer", "pokemon.fara-labs.com", "pokemon-dev.fara-labs.com", "Log", "視聴者のユーザー名とチャットの本文を含みます", "平文", "自動では削除されない" })
+            Assert.Contains(fact, text);
+        Assert.Contains("href=\"https://pokemon.fara-labs.com/privacy\"", html);
+        Assert.Contains("href=\"/docs/overview\"", html);
+        Assert.Contains("href=\"/docs/main-settings\"", html);
+        // アプリが Twitch に求める権限（TwitchAuthService.Scopes）は、すべてポリシーに載せる（増減したらここで気づく）
+        var scopes = AppScopes();
+        Assert.Equal(8, scopes.Count);
+        foreach (var scope in scopes)
+            Assert.Contains($">{scope}<", html);
+    }
+
+    private static List<string> AppScopes()
+    {
+        var source = File.ReadAllText(FindUp("Controllers/TwitchAuthService.cs"));
+        var block = Regex.Match(source, @"string\[\] Scopes\s*=\s*\[(?<items>[^\]]*)\]").Groups["items"].Value;
+        return Regex.Matches(block, "\"(?<scope>[a-z:_]+)\"").Select(m => m.Groups["scope"].Value).ToList();
+    }
+
+    [Fact]
+    public async Task Privacy_external_services_table_matches_the_csp_hosts()
+    {
+        var html = await RenderAsync<Privacy>();
+        var rows = Regex.Matches(html, "<tr data-service=\"(?<name>[^\"]+)\">")
+            .Select(m => m.Groups["name"].Value).ToList();
+        Assert.Equal(new[] { "Cloudflare Web Analytics", "Cloudflare Turnstile", "Cloudflare", "Discord", "GitHub" }, rows);
+
+        // ブラウザが読み込む外部ホスト（build/site.json の csp）は、表のどのサービスのものかを決めておく。
+        // 新しいホストを足したら、ここと表（Privacy.razor）に載せないとテストが落ちる
+        var serviceByHost = new Dictionary<string, string>
+        {
+            ["https://static.cloudflareinsights.com"] = "Cloudflare Web Analytics",
+            ["https://cloudflareinsights.com"] = "Cloudflare Web Analytics",
+            ["https://challenges.cloudflare.com"] = "Cloudflare Turnstile",
+        };
+        var json = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(Path.Combine(SiteDir, "build", "site.json")))!["csp"]!.AsObject();
+        var cspHosts = json.SelectMany(kv => kv.Value!.AsArray().Select(v => v!.GetValue<string>())).Distinct().Order().ToList();
+        Assert.NotEmpty(cspHosts);
+        foreach (var host in cspHosts)
+        {
+            Assert.True(serviceByHost.TryGetValue(host, out var service), $"CSP のホスト {host} がプライバシーポリシーの表に対応していません");
+            Assert.Contains(service!, rows);
+        }
+        // 逆に、表のブラウザ向けのサービス（アクセス解析・Turnstile）は、CSP のホストとして許可されている
+        foreach (var service in new[] { "Cloudflare Web Analytics", "Cloudflare Turnstile" })
+            Assert.Contains(service, serviceByHost.Values.Intersect(cspHosts.Select(h => serviceByHost[h])));
     }
 
     [Fact]

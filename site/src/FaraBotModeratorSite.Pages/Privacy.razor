@@ -4,8 +4,8 @@
 
 <section class="page-section narrow policy">
     <h1>プライバシーポリシー</h1>
-    <p class="lead">@SiteInfo.Name のサイト（このサイト）で、どんな情報を、何のために扱うかをまとめています。<span class="nowrap">制定: 2026 年 10 月 22 日</span> <span class="nowrap">改定: 2026 年 10 月 29 日</span></p>
-    <p class="note">この内容は、このサイトについてのものです。ダウンロードして使う Windows アプリ（FaraBotModerator）は、設定や認証情報をあなたのパソコンに保存し、Twitch・DeepL などのサービスと通信します。アプリの扱いは、説明ページ（<a href="/docs/overview">概要</a>・<a href="/docs/main-settings">初期設定</a>）に書いています。</p>
+    <p class="lead">@SiteInfo.Name のサイト（このサイト）と、ダウンロードして使う Windows アプリ（FaraBotModerator）で、どんな情報を、何のために扱うかをまとめています。<span class="nowrap">制定: 2026 年 10 月 22 日</span> <span class="nowrap">最終改定: 2026 年 10 月 29 日</span></p>
+    <p class="note">前半はこのサイトについて、後半の「アプリ（FaraBotModerator）で扱う情報」はアプリについて書いています。アプリの使い方は、説明ページ（<a href="/docs/overview">概要</a>・<a href="/docs/main-settings">初期設定</a>）に書いています。</p>
 
     <div class="policy-grid">
         <div class="policy-item">
@@ -18,24 +18,111 @@
         </div>
         <div class="policy-item">
         <h2>アクセス解析・広告</h2>
-        <p>このサイトは、Cloudflare Web Analytics を使って、閲覧数や、閲覧されたページ・国・ブラウザなどの統計を集めています。Cookie は使わず、個人を特定する情報は集めません。サイトの改善にだけ使います。広告は使っていません。Cloudflare が、サイトを配信するために通常のアクセスの記録（アクセス元の IP アドレス・ブラウザなど）を取ることもあります。広告（Google AdSense など）を表示することにしたときは、この項目に、使う事業者・Cookie の扱い・配信を止める方法を追記します。</p>
+        <p>このサイトは、Cloudflare Web Analytics を使って、閲覧数や、閲覧されたページ・参照元・国・ブラウザ・OS などの統計を集めています。このサイトからは Cookie を設定しません。サイトの運営者は、個人を特定する情報を受け取りません。サイトの改善にだけ使います。広告は使っていません。Cloudflare が、サイトを配信するために通常のアクセスの記録（アクセス元の IP アドレス・ブラウザなど）を取ることもあります。広告（Google AdSense など）を表示することにしたときは、この項目に、使う事業者・Cookie の扱い・配信を止める方法を追記します。</p>
         </div>
         <div class="policy-item">
         <h2>問い合わせで送る情報</h2>
-        <p>「問い合わせ」で送った内容（種類・内容・任意の連絡先・報告のきっかけのページ・国）は、作者のチャット（Discord）に通知されます。送った内容は、サイトの側では保存しません。返信が必要なときだけ、書いていただいた連絡先を使います。ボットによる送信を防ぐため、Cloudflare Turnstile を使っています（確認のために、あなたのブラウザの情報と IP アドレスが Cloudflare に送られます）。Discord 側には、通知された内容が残ります。報告には、パスワードや Twitch のトークンなどを書かないでください。</p>
-        <p>問い合わせの送信を、1 日 3 回までに制限するため、送信元の IP アドレスから作った識別子（秘密の鍵を使ったハッシュ。IP アドレスそのものは保存しません）を、その日の間（日本時間の翌 0 時まで）だけ保存します。日付が変わると、その識別子は削除されます（削除の処理が少し遅れることがあります）。</p>
-        </div>
-        <div class="policy-item">
-        <h2>外部のサービス</h2>
+        <p>「問い合わせ」で送った内容（種類・内容・任意の連絡先・報告のきっかけのページ）は、送信した日時と国とともに、作者のチャット（Discord）に通知されます。国は、Cloudflare が接続元から推定したものを、サイトが自動で付けます。返信が必要なときだけ、書いていただいた連絡先を使います。Discord 側には、通知された内容が残ります。報告には、パスワードやアクセスキーなどは書かないでください。</p>
+        <p>ボットによる送信を防ぐため、Cloudflare Turnstile を使っています。問い合わせのページ（/report）を開いたときに Turnstile が読み込まれ、あなたのブラウザの情報と IP アドレスが Cloudflare に送られます。送信したときは、サイトのサーバー（Cloudflare Workers で動く部分）も、確認のために、Turnstile のトークンと IP アドレスを Cloudflare に送ります。</p>
+        <p>送った内容（本文・連絡先など）そのものは、サイトの側では保存しません。問い合わせの送信を 1 日 3 回までに制限するためだけに、次の項目を一時的に保存します。</p>
         <ul>
-            <li>Cloudflare（サイトの配信・Turnstile・アクセス解析）</li>
-            <li>GitHub（アプリの配布・修正の提案の受け付け）</li>
-            <li>Discord（問い合わせの通知）</li>
+            <li>送信元の IP アドレスから作った識別子（秘密の鍵を使ったハッシュ。IP アドレスそのものは保存しません）</li>
+            <li>送信した日付（日本時間）と、その日の送信回数</li>
         </ul>
+        <p>これらは、その日の間（日本時間の翌 0 時まで）だけ保存し、日付が変わると削除されます（削除の処理が少し遅れることがあります）。</p>
+        </div>
+        <div class="policy-item policy-item-wide">
+        <h2>外部のサービス</h2>
+        <p>このサイトは、外部のフォントを使っていません。次の外部サービスの事業者は、国外（米国など）にあります。</p>
+        <div class="prose">
+        <div class="table-wrap">
+        <table class="external-services">
+            <thead>
+                <tr><th>サービス</th><th>送られる情報</th><th>目的</th><th>送られるとき</th></tr>
+            </thead>
+            <tbody>
+                <tr data-service="Cloudflare Web Analytics">
+                    <td>Cloudflare Web Analytics</td>
+                    <td>閲覧したページ・参照元・ブラウザ・OS・国などの統計</td>
+                    <td>アクセス解析（サイトの改善）</td>
+                    <td>このサイトを開いたとき</td>
+                </tr>
+                <tr data-service="Cloudflare Turnstile">
+                    <td>Cloudflare Turnstile</td>
+                    <td>ブラウザの情報と IP アドレス（送信時は、サイトのサーバーからトークンと IP アドレス）</td>
+                    <td>ボットによる送信の防止</td>
+                    <td>問い合わせのページ（/report）を開いたときと、送信したとき</td>
+                </tr>
+                <tr data-service="Cloudflare">
+                    <td>Cloudflare（サイトの配信）</td>
+                    <td>アクセス時の IP アドレスなど</td>
+                    <td>サイトの配信とセキュリティ（国外のサーバーで処理されることがあります）</td>
+                    <td>このサイトを開くたび</td>
+                </tr>
+                <tr data-service="Discord">
+                    <td>Discord</td>
+                    <td>問い合わせの内容（種類・内容・連絡先・ページ・国・送信日時）</td>
+                    <td>作者への通知</td>
+                    <td>問い合わせを送信したとき（サイトのサーバーから送ります）</td>
+                </tr>
+                <tr data-service="GitHub">
+                    <td>GitHub</td>
+                    <td>リンク先として開いたときのアクセスだけ（このサイトからは情報を送りません）</td>
+                    <td>アプリの配布・修正の提案の受け付け</td>
+                    <td>GitHub へのリンクを開いたとき</td>
+                </tr>
+            </tbody>
+        </table>
+        </div>
+        </div>
         </div>
         <div class="policy-item">
         <h2>第三者への提供</h2>
-        <p>法令に基づく場合を除いて、取得した情報を、本人の同意なく第三者に提供しません。</p>
+        <p>サービスの提供に必要な範囲で、上記の外部サービスに情報を渡します。それ以外の目的で第三者に提供しません（法令に基づく場合を除きます）。</p>
+        </div>
+        <div class="policy-item">
+        <h2>開示・訂正・削除</h2>
+        <p>問い合わせた内容や連絡先の開示・訂正・削除を希望するときは、<a href="/report">問い合わせ</a>のページからご連絡ください。回数制限の識別子は、元の IP アドレスを保存していないため、個別に特定して削除することはできません（日付が変わると消えます）。</p>
+        </div>
+        <div class="policy-item policy-item-wide">
+        <h2>アプリ（FaraBotModerator）で扱う情報</h2>
+        <p>アプリは、配信者のパソコンで動く Windows アプリです。設定や認証情報をそのパソコンに保存し、次のサービスと通信します。</p>
+        <h3>視聴者のチャット</h3>
+        <ul>
+            <li>翻訳の対象にしたチャットの本文は、配信者が設定した DeepL の API キーを使って、DeepL に送られます。送るのは、エモートを除いた本文だけで、送信者の名前は送りません。ボット名を含むもの・cheer・!bomb・URL だけのもの・!poke 系のコマンドは、翻訳の対象外です。DeepL 側の扱いは、DeepL の規約によります。</li>
+            <li>読み上げ（棒読みちゃん）を使うときは、同じパソコンの中（localhost）の棒読みちゃんに、ユーザー名・本文・イベントの文言を渡します。</li>
+        </ul>
+        <h3>認証情報の保存</h3>
+        <ul>
+            <li>Twitch の Client ID・Client Secret、DeepL の API キー、ポケモン連携のアクセスキーは、アプリのフォルダの <code>Resources\secrets.json</code> に、暗号化せずに保存されます。</li>
+            <li>Twitch のアクセストークン・リフレッシュトークンは、アプリのユーザー設定ファイル（user.config）に保存されます。</li>
+            <li>これらは、他の人に渡さない・配信画面に映さない・インターネットにアップロードしないでください。アプリを消すときは、これらのファイルも削除してください。</li>
+        </ul>
+        <h3>Twitch の認可で求める権限</h3>
+        <p>アプリは、Twitch での認可のときに、次の 8 つの権限を求めます。取得した情報は、アプリの画面への表示・読み上げ・ログに使います。</p>
+        <div class="prose">
+        <div class="table-wrap">
+        <table class="twitch-scopes">
+            <thead>
+                <tr><th>権限</th><th>用途</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><code>chat:read</code></td><td>チャットの読み取り</td></tr>
+                <tr><td><code>chat:edit</code></td><td>チャットの送信（翻訳の結果や自動メッセージなど）</td></tr>
+                <tr><td><code>channel:moderate</code></td><td>チャンネルのモデレーション</td></tr>
+                <tr><td><code>channel:read:redemptions</code></td><td>チャンネルポイントの引き換えの読み取り</td></tr>
+                <tr><td><code>bits:read</code></td><td>ビッツの読み取り</td></tr>
+                <tr><td><code>moderator:read:followers</code></td><td>フォロワーの読み取り</td></tr>
+                <tr><td><code>user:read:follows</code></td><td>自分のフォロー一覧の読み取り</td></tr>
+                <tr><td><code>moderator:manage:shoutouts</code></td><td>シャウトアウトの送信</td></tr>
+            </tbody>
+        </table>
+        </div>
+        </div>
+        <h3>ポケモン連携（!poke）</h3>
+        <p>!poke のコマンドを使うときは、<a href="https://pokemon.fara-labs.com/" target="_blank" rel="noopener noreferrer">ポケモンのサイト</a>（pokemon.fara-labs.com。開発用は pokemon-dev.fara-labs.com）と通信します。ゲームのデータを取得するほか、登録データ（ポケモン・チーム・相手チーム・履歴）の保存と読み書きのために、アクセスキーを Bearer（認証のヘッダー）で送ります。登録データの保存期間や削除の扱いは、<a href="https://pokemon.fara-labs.com/privacy" target="_blank" rel="noopener noreferrer">ポケモンのサイトのプライバシーポリシー</a>に従います。</p>
+        <h3>ログ</h3>
+        <p>アプリは、アプリのフォルダの <code>Log</code> フォルダに、日付ごとのログファイルを、暗号化せずに（平文で）保存します。接続の状況、イベント（フォロー・レイド・サブスク・ビッツ・チャンネルポイント・ギフトなど）、エラーの内容に加えて、視聴者のユーザー名とチャットの本文を含みます（Twitch の OAuth トークンは含まれません）。ログは自動では削除されないので、不要になったら削除してください。ログのファイルは、配信画面に映さない・他の人に渡さないでください。</p>
         </div>
         <div class="policy-item">
         <h2>変更について</h2>
