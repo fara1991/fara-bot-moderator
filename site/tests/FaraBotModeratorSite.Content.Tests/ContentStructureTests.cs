@@ -3,7 +3,7 @@ using Xunit;
 
 namespace FaraBotModeratorSite.Content.Tests;
 
-/// <summary>「コマンド実行」の親子構造（入口 → ゲームごとのページ）、旧 URL、検索の索引への出方、Manual.md から作ったページの形。</summary>
+/// <summary>「コマンド実行」の親子構造（入口 → ゲームごとのページ。ポケモンの説明は 1 ページにまとめてある）、旧 URL、検索の索引への出方、Manual.md から作ったページの形。</summary>
 public class ContentStructureTests
 {
     // ソースの site/ フォルダ（Content/pages.json のある場所）
@@ -22,15 +22,39 @@ public class ContentStructureTests
     }
 
     [Fact]
-    public void Games_are_children_of_the_hub_and_pokemon_pages_are_children_of_pokemon()
+    public void Games_are_children_of_the_hub_and_the_pokemon_page_has_no_sub_pages()
     {
         var content = LoadContent();
         var hub = content.Find("commands")!;
         Assert.Equal(new[] { "pokemon", "beatsaber" }, content.Children(hub).Select(p => p.Slug));
-        Assert.Equal(new[] { "pokemon-my", "pokemon-team", "pokemon-sync", "pokemon-battle", "pokemon-rival", "pokemon-notes" },
-            content.Children(content.Find("pokemon")!).Select(p => p.Slug));
-        Assert.Equal(new[] { "commands", "pokemon" }, content.Ancestors(content.Find("pokemon-my")!).Select(p => p.Slug));
+        Assert.Empty(content.Children(content.Find("pokemon")!));
+        Assert.Equal(new[] { "commands" }, content.Ancestors(content.Find("pokemon")!).Select(p => p.Slug));
         Assert.Empty(content.Ancestors(hub));
+    }
+
+    [Fact]
+    public void Side_menu_names_are_short()
+    {
+        var content = LoadContent();
+        Assert.Equal("各種コマンド", content.Find("commands")!.MenuTitle);
+        Assert.Equal("ポケモン", content.Find("pokemon")!.MenuTitle);
+        Assert.Equal("Beat Saber", content.Find("beatsaber")!.MenuTitle);
+    }
+
+    [Fact]
+    public void Pokemon_page_has_every_section_of_the_former_sub_pages_and_a_table_of_contents()
+    {
+        var page = LoadContent().Find("pokemon")!;
+        Assert.True(page.InlineToc);
+        var h2 = page.Toc.Where(t => t.Level == 2).Select(t => t.Text).ToList();
+        Assert.Equal(new[]
+        {
+            "接頭辞（データセット）", "育成ポケモン（配信者・モデレーターのみ）", "自分チーム（配信者・モデレーターのみ）",
+            "データ共有（アクセスキー）", "対戦（dmg・scan・faster）", "相手チーム（-r）と履歴（-h）", "注意",
+        }, h2);
+        // 注意の節にある「データ共有」へのリンクは、同じページの見出しに付く
+        Assert.Contains("href=\"/docs/pokemon#", page.Html);
+        Assert.DoesNotContain("href=\"#", page.Html);
     }
 
     [Fact]
@@ -41,30 +65,25 @@ public class ContentStructureTests
     }
 
     [Theory]
-    [InlineData("pokemon")]
     [InlineData("pokemon-my")]
     [InlineData("pokemon-team")]
     [InlineData("pokemon-sync")]
     [InlineData("pokemon-battle")]
     [InlineData("pokemon-rival")]
     [InlineData("pokemon-notes")]
-    public void Old_pokemon_urls_still_resolve(string slug) =>
-        Assert.NotNull(LoadContent().Find(slug));
+    public void Former_pokemon_sub_pages_are_gone(string slug) =>
+        Assert.Null(LoadContent().Find(slug));
 
     [Fact]
     public void Previous_and_next_follow_the_reading_order_through_the_hub()
     {
         var content = LoadContent();
-        var (prev, next) = content.Neighbors(content.Find("pokemon-my")!);
-        Assert.Equal("pokemon", prev!.Slug);
-        Assert.Equal("pokemon-team", next!.Slug);
-
-        var (beforeBeatSaber, afterBeatSaber) = content.Neighbors(content.Find("pokemon-notes")!);
-        Assert.Equal("pokemon-rival", beforeBeatSaber!.Slug);
-        Assert.Equal("beatsaber", afterBeatSaber!.Slug);
+        var (prev, next) = content.Neighbors(content.Find("pokemon")!);
+        Assert.Equal("commands", prev!.Slug);
+        Assert.Equal("beatsaber", next!.Slug);
 
         var (beforeFaq, afterFaq) = content.Neighbors(content.Find("beatsaber")!);
-        Assert.Equal("pokemon-notes", beforeFaq!.Slug);
+        Assert.Equal("pokemon", beforeFaq!.Slug);
         Assert.Equal("faq", afterFaq!.Slug);
     }
 
@@ -73,7 +92,8 @@ public class ContentStructureTests
     {
         var urls = LoadContent().Search.Select(e => e.Url).ToHashSet();
         Assert.Contains("/docs/commands", urls);
-        Assert.Contains("/docs/pokemon-my", urls);
+        Assert.Contains("/docs/pokemon", urls);
+        Assert.DoesNotContain("/docs/pokemon-my", urls);
         Assert.Contains("/docs/beatsaber", urls);
     }
 
@@ -147,12 +167,13 @@ public class ContentStructureTests
     }
 
     [Fact]
-    public void A_link_to_a_heading_on_the_same_page_stops_the_build_because_base_href_would_send_it_home()
+    public void A_link_to_a_heading_on_the_same_page_gets_the_page_path_because_base_href_would_send_it_home()
     {
         const string pages = """[ { "slug": "a", "title": "A", "group": "g", "sections": [ { "heading": "1. 最初" } ] } ]""";
         var manual = "# 本\n\n## 1. 最初\n\n### 小見出し\n\n[上へ](#小見出し)\n";
-        var error = Assert.Throws<InvalidOperationException>(() => ContentBuilder.Build(manual, pages, null));
-        Assert.Contains("/docs/a", error.Message);
+        var data = ContentBuilder.Build(manual, pages, null);
+        Assert.Contains("href=\"/docs/a#%E5%B0%8F%E8%A6%8B%E5%87%BA%E3%81%97\"", data.Pages[0].Html);
+        Assert.DoesNotContain("href=\"#", data.Pages[0].Html);
     }
 
     [Fact]

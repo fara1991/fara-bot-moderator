@@ -52,7 +52,7 @@
         builder.AddAttribute(2, "Match", NavLinkMatch.Prefix);
         builder.AddAttribute(3, "Icon", IconOf(page.Slug));
         builder.AddAttribute(4, "Class", cls);
-        builder.AddAttribute(5, "ChildContent", (RenderFragment)(b => b.AddContent(0, depth > 0 ? ShortTitle(page.Title) : page.Title)));
+        builder.AddAttribute(5, "ChildContent", (RenderFragment)(b => b.AddContent(0, page.MenuTitle ?? page.Title)));
         builder.CloseComponent();
         var children = Content.Children(page);
         if (children.Count > 0)
@@ -66,14 +66,6 @@
         }
     };
 
-    /// <summary>子ページのメニューの文言。題名の最後の補足（「（アクセスキー）」「（dmg・scan・faster）」など）を外して、字下げした狭い列でも 1 行に収める。
-    /// 補足は、ページの見出し（h1）と目次には、そのまま出る。</summary>
-    internal static string ShortTitle(string title)
-    {
-        var open = title.LastIndexOf('（');
-        return open > 0 && title.EndsWith('）') ? title[..open].TrimEnd() : title;
-    }
-
     /// <summary>ページごとのアイコン（MudBlazor の Material アイコン）。新しいページを足したら、ここにも書く（無ければ一覧のアイコンで出る）。</summary>
     private static string IconOf(string slug) => slug switch
     {
@@ -86,12 +78,6 @@
         "timer" => Icons.Material.Filled.Schedule,
         "commands" => Icons.Material.Filled.Terminal,
         "pokemon" => Icons.Material.Filled.Terminal,
-        "pokemon-my" => Icons.Material.Filled.CatchingPokemon,
-        "pokemon-team" => Icons.Material.Filled.Groups,
-        "pokemon-sync" => Icons.Material.Filled.VpnKey,
-        "pokemon-battle" => Icons.Material.Filled.Bolt,
-        "pokemon-rival" => Icons.Material.Filled.History,
-        "pokemon-notes" => Icons.Material.Filled.Warning,
         "faq" => Icons.Material.Filled.HelpOutline,
         "troubleshooting" => Icons.Material.Filled.Build,
         "changelog" => Icons.Material.Filled.Description,
