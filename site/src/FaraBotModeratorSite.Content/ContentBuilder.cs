@@ -260,14 +260,16 @@ public static partial class ContentBuilder
         {
             switch (block)
             {
-                case ListBlock { IsOrdered: false } list when list.OfType<ListItemBlock>().Any(i => TextLength(i) >= LongListItemLength):
+                // 囲み（補足・注意）の中の箇条書きには付けない（囲みの面の中に、さらに面を重ねないため）
+                case ListBlock { IsOrdered: false } list when !InsideQuote(list) && list.OfType<ListItemBlock>().Any(i => OwnTextLength(i) >= LongListItemLength):
                     list.GetAttributes().AddClass("long-list");
                     break;
-                // 見出し行にリンクがある表は、見出し行を隠す積み方にしない（隠した見出しの中のリンクに、キーボードのフォーカスが入ってしまう）
+                // 見出し行にリンクがある表は積まない（積んだ見出しの帯の中のリンクは、タップの大きさの計測に当たらず、layout-check の違反になるため）
                 case Table table when table.OfType<TableRow>().FirstOrDefault() is { } head && head.Count == 2 && !head.Descendants<LinkInline>().Any():
                     table.GetAttributes().AddClass("stack-sm");
                     break;
-                case HeadingBlock { Level: 3 } heading when heading.Inline is not null && TextOf(heading).StartsWith("Q.", StringComparison.Ordinal):
+                // Manual.md の見出しは Extract で深さがそろえられ、FAQ の質問（### Q.）は実ページでは h2 になる。h2・h3 のどちらでも付ける
+                case HeadingBlock { Level: 2 or 3 } heading when heading.Inline is not null && TextOf(heading).StartsWith("Q.", StringComparison.Ordinal):
                     heading.GetAttributes().AddClass("faq-q");
                     break;
             }
@@ -280,7 +282,15 @@ public static partial class ContentBuilder
 
     private static string TextOf(LeafBlock leaf) => leaf.Inline is null ? "" : string.Concat(leaf.Inline.Descendants<Inline>().Select(InlineText));
 
-    private static int TextLength(ContainerBlock container) => TextOf(container).Length;
+    /// <summary>項目の直下の段落の文字数（入れ子の子項目は数えない）。</summary>
+    private static int OwnTextLength(ListItemBlock item) => item.OfType<LeafBlock>().Sum(l => TextOf(l).Length);
+
+    private static bool InsideQuote(Block block)
+    {
+        for (var parent = block.Parent; parent is not null; parent = parent.Parent)
+            if (parent is QuoteBlock) return true;
+        return false;
+    }
 
     private static string InlineText(Inline inline) => inline switch
     {
@@ -292,10 +302,10 @@ public static partial class ContentBuilder
     [GeneratedRegex("<table(?: [^>]*)?>")]
     private static partial Regex TableOpenPattern();
 
-    [GeneratedRegex("<p class=\"markdown-alert-title\">(?:<svg.*?</svg>)?\\s*(.*?)</p>", RegexOptions.Singleline)]
+    [GeneratedRegex("<p class=\"markdown-alert-title\">(?:<svg.*?</svg>)?\\s*(.*?)</p>(?:\\s*<p></p>)?", RegexOptions.Singleline)]
     private static partial Regex AlertTitlePattern();
 
-    [GeneratedRegex("<h([1-6]) id=\"([^\"]+)\">(.*?)</h\\1>", RegexOptions.Singleline)]
+    [GeneratedRegex("<h([1-6]) id=\"([^\"]+)\"[^>]*>(.*?)</h\\1>", RegexOptions.Singleline)]
     private static partial Regex HeadingPattern();
 
     [GeneratedRegex("href=\"#([^\"]+)\"")]

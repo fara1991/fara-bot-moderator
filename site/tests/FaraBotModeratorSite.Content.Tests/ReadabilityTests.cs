@@ -24,7 +24,7 @@ public class ReadabilityTests
     [Fact]
     public void Tables_whose_header_has_a_link_are_not_stacked()
     {
-        // スマホで見出し行を隠す積み方にすると、隠した見出しの中のリンクにフォーカスが入ってしまうため
+        // 積んだ見出しの帯の中のリンクが、タップの大きさの計測（layout-check）に当たるため
         Assert.DoesNotContain("stack-sm", ContentBuilder.RenderHtml("| a | [b](https://example.com) |\n|---|---|\n| 1 | 2 |\n"));
     }
 
@@ -34,7 +34,41 @@ public class ReadabilityTests
         var html = ContentBuilder.RenderHtml("### Q. どうしますか\n\n### ふつうの見出し\n");
         Assert.Contains("faq-q", html);
         Assert.Equal(1, html.Split("faq-q").Length - 1);
+        Assert.Contains("faq-q", ContentBuilder.RenderHtml("## Q. 二段目でも付く\n"));
     }
+
+    [Fact]
+    public void Real_faq_page_has_seven_faq_questions()
+    {
+        // Extract が見出しの深さをそろえるので、実ページでは Q. の見出しは h2。RenderHtml への直接入力ではなく、実際に作ったページで確かめる
+        var page = LoadContent().Pages.Single(p => p.Slug == "faq");
+        // class が付いても、目次・検索の見出しの抽出が効くこと
+        Assert.Equal(7, page.Toc.Count(t => t.Text.StartsWith("Q.", StringComparison.Ordinal)));
+        var faq = page.Html;
+        Assert.Equal(7, System.Text.RegularExpressions.Regex.Matches(faq, "<h[23] id=\"[^\"]*\" class=\"faq-q\">").Count);
+    }
+
+    [Fact]
+    public void Nested_children_do_not_make_a_list_long_and_lists_in_alerts_are_not_long_lists()
+    {
+        var longChild = new string('あ', 150);
+        // 外側は long-list にならない（入れ子の子項目は数えない）
+        Assert.StartsWith("<ul>", ContentBuilder.RenderHtml($"- 短い\n  - {longChild}\n"));
+        Assert.DoesNotContain("long-list", ContentBuilder.RenderHtml($"> [!NOTE]\n> - {longChild}\n> - もう一つ\n"));
+    }
+
+    [Fact]
+    public void Real_alerts_have_no_empty_paragraph_and_no_long_list_inside()
+    {
+        foreach (var page in LoadContent().Pages)
+        {
+            Assert.DoesNotContain("<p></p>", page.Html);
+            foreach (System.Text.RegularExpressions.Match m in System.Text.RegularExpressions.Regex.Matches(page.Html, "<div class=\"markdown-alert.*?\n</div>", System.Text.RegularExpressions.RegexOptions.Singleline))
+                Assert.DoesNotContain("long-list", m.Value);
+        }
+    }
+
+    private static SiteContentData LoadContent() => ContentBuilder.LoadFrom(Path.GetDirectoryName(Path.GetDirectoryName(FindUp("Content/pages.json")))!);
 
     [Fact]
     public void Alerts_get_japanese_labels_after_the_build()

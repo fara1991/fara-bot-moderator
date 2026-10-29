@@ -762,7 +762,7 @@ html :is(input, textarea).mud-input-slot.mud-input-root:is(:focus, :focus-visibl
 /* ---- ドキュメントの読みやすさ（文章が続くページを、区切り・囲み・手順・表で見やすくする） ----
    本文（.prose）は Manual.md から作る。ここは見た目だけで、文章は変えない。
    - 1 行の長さ: 文章・箇条書き・囲みは 46rem（全角 46 文字ほど）まで。表・コードは本文の幅いっぱい
-   - 節の区切り: h2 は左の太い線と下線、h3 は点線の下線、h4（Manual.md の ##### から）は主色の小見出し
+   - 節の区切り: h2 は左の太い線と下線、h3 は点線の下線（Manual.md の ##### の小見出しも、ページでは h3 になる。ContentBuilder の Extract が見出しの深さをそろえるため。h4 は使っていない）
    - 長い項目のある箇条書き（ContentBuilder が long-list を付ける）は、項目ごとの面にして、文章の壁にしない
    - 番号付きの手順は、番号の丸と間隔で「手順」に見せる
    - 囲み（Manual.md の > [!NOTE] など。ContentBuilder が見出しを日本語にする）は、色に加えて「補足」「注意」の文字と記号で区別する */
@@ -781,7 +781,7 @@ html :is(input, textarea).mud-input-slot.mud-input-root:is(:focus, :focus-visibl
     --callout-caution: #fca5a5;
 }
 
-.prose { line-height: 1.9; }
+.prose { line-height: 1.85; }
 .prose :is(p, ul, ol, .markdown-alert) { max-width: 46rem; }
 
 .prose h2 {
@@ -796,23 +796,17 @@ html :is(input, textarea).mud-input-slot.mud-input-root:is(:focus, :focus-visibl
     padding-bottom: 6px;
     border-bottom: 1px dashed var(--outline-variant);
 }
-.prose h4 {
-    margin: 32px 0 10px;
-    font-size: 1.05rem;
-    color: var(--primary);
-}
-.prose h4::before { content: "▍"; margin-right: 0.15em; }
 .prose p { margin: 0 0 16px; }
 
-.prose li { margin: 6px 0; }
+.prose li { margin: 4px 0; }
 .prose li > p { margin: 0 0 8px; }
 .prose li > ul, .prose li > ol { margin: 6px 0 4px; }
 
 /* 長い項目のある箇条書き: 項目ごとの面 */
 .prose ul.long-list { list-style: none; padding: 0; }
 .prose ul.long-list > li {
-    margin: 0 0 12px;
-    padding: 12px 16px;
+    margin: 0 0 8px;
+    padding: 9px 14px;
     background: var(--surface-container-low);
     border: 1px solid var(--outline-variant);
     border-left: 4px solid var(--outline);
@@ -878,7 +872,7 @@ html :is(input, textarea).mud-input-slot.mud-input-root:is(:focus, :focus-visibl
 .prose pre { border-left: 4px solid var(--primary); }
 
 /* FAQ の質問（ContentBuilder が faq-q を付ける） */
-.prose h3.faq-q {
+.prose :is(h2, h3).faq-q {
     margin: 36px 0 12px;
     padding: 10px 14px;
     border: 0;
@@ -888,15 +882,19 @@ html :is(input, textarea).mud-input-slot.mud-input-root:is(:focus, :focus-visibl
     font-size: 1.1rem;
 }
 
-/* 2 列の表（コマンド → 説明など）は、スマホでは縦に積む（左の列が細くなって、コードが縦に折れるのを避ける）。見出し行は、読み上げ用に残す */
+/* 2 列の表（コマンド → 説明など）は、スマホでは縦に積む（左の列が細くなって、コードが縦に折れるのを避ける） */
 @media (max-width: 599.98px) {
     .prose table.stack-sm, .prose table.stack-sm tbody, .prose table.stack-sm tr, .prose table.stack-sm td { display: block; }
-    .prose table.stack-sm thead { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); }
+    /* 見出し行は消さず、「項目 ／ 項目」の 1 行の帯にする（ラベルと説明でない表でも、列の意味が分かる） */
+    .prose table.stack-sm thead { display: block; }
+    .prose table.stack-sm thead tr { background: var(--surface-container-high); }
+    .prose table.stack-sm thead th { display: inline; padding: 0; border: 0; background: none; font-size: 0.85rem; }
+    .prose table.stack-sm thead th + th::before { content: " ／ "; font-weight: 400; }
     .prose table.stack-sm tr { padding: 10px 14px; border-bottom: 1px solid var(--outline-variant); }
     .prose table.stack-sm tr:last-child { border-bottom: 0; }
     .prose table.stack-sm td { padding: 0; border: 0; }
     .prose table.stack-sm td:first-child { margin-bottom: 4px; font-weight: 700; }
-    .prose ul.long-list > li { padding: 10px 12px; }
+    .prose ul.long-list > li { padding: 8px 12px; }
     .prose h2 { margin-top: 48px; font-size: 1.35rem; }
     .prose .markdown-alert { padding-inline: 14px; }
 }
