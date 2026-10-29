@@ -15,7 +15,7 @@
     }
 
     <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">ホーム</MudNavLink>
-    <MudNavLink Href="/docs" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.FormatListBulleted">ドキュメント一覧</MudNavLink>
+    <MudNavLink Href="/docs" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.FormatListBulleted">ドキュメント</MudNavLink>
 
     @foreach (var group in Content.Groups)
     {
@@ -35,7 +35,7 @@
     <MudNavLink Href="@SiteInfo.PokemonSiteUrl" Target="_blank" rel="noopener noreferrer" Icon="@Icons.Material.Filled.OpenInNew">Pokémon Battle Assistant</MudNavLink>
     <MudNavLink Href="@SiteInfo.PortfolioUrl" Icon="@Icons.Material.Filled.Person">Fara のポートフォリオ</MudNavLink>
 
-    <div class="fbc-nav-section">このサイト</div>
+    <div class="fbc-nav-section">サポート</div>
     <MudNavLink Href="/report" Icon="@Icons.Material.Filled.MailOutline">問い合わせ</MudNavLink>
     <MudNavLink Href="/privacy" Icon="@Icons.Material.Filled.PrivacyTip">プライバシーポリシー</MudNavLink>
 </MudNavMenu>

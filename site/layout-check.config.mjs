@@ -6,7 +6,7 @@ export default {
   pages: [
     { path: "/", name: "トップ" },
     // 一覧は本当の URL が /docs。serve-static は同名のフォルダ（docs/）があると index.html を探すため、ファイルの docs.html を指定する（同じ画面）
-    { path: "/docs.html", name: "ドキュメント一覧" },
+    { path: "/docs.html", name: "ドキュメント" },
     { path: "/docs/commands", name: "コマンド" },
     { path: "/docs/pokemon-battle", name: "ポケモン（バトル）" },
     { path: "/docs/beatsaber", name: "Beat Saber コマンド" },
