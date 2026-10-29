@@ -97,8 +97,25 @@ public class PagesTests
     [Fact]
     public async Task Pages_without_inline_toc_do_not_show_it()
     {
-        var html = await RenderAsync<Doc>(Slug("main-settings"));
+        var html = await RenderAsync<Doc>(Slug("timer"));
         Assert.DoesNotContain("inline-toc", html);
+    }
+
+    [Theory]
+    [InlineData("main-settings")]
+    [InlineData("reaction-events")]
+    [InlineData("beatsaber")]
+    [InlineData("faq")]
+    [InlineData("pokemon")]
+    public async Task Long_pages_show_an_inline_toc_whose_links_point_at_headings_that_exist(string slug)
+    {
+        var html = await RenderAsync<Doc>(Slug(slug));
+        Assert.Contains("inline-toc", html);
+        var toc = html[html.IndexOf("inline-toc", StringComparison.Ordinal)..];
+        toc = toc[..toc.IndexOf("</nav>", StringComparison.Ordinal)];
+        var ids = System.Text.RegularExpressions.Regex.Matches(toc, "href=\"/docs/" + slug + "#([^\"]+)\"").Select(m => m.Groups[1].Value).ToList();
+        Assert.NotEmpty(ids);
+        foreach (var id in ids) Assert.Contains($"id=\"{id}\"", html);
     }
 
     [Fact]

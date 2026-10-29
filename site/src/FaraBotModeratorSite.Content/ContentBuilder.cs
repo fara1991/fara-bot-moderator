@@ -1,6 +1,10 @@
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Markdig;
+using Markdig.Extensions.Tables;
+using Markdig.Renderers.Html;
+using Markdig.Syntax;
+using Markdig.Syntax.Inlines;
 
 namespace FaraBotModeratorSite.Content;
 
@@ -40,6 +44,7 @@ public static partial class ContentBuilder
 {
     private static readonly MarkdownPipeline Pipeline = new MarkdownPipelineBuilder()
         .UsePipeTables()
+        .UseAlertBlocks()
         .UseAutoIdentifiers(Markdig.Extensions.AutoIdentifiers.AutoIdentifierOptions.GitHub)
         .UseAutoLinks()
         .UseEmphasisExtras()
@@ -104,7 +109,7 @@ public static partial class ContentBuilder
         foreach (var d in definitions)
         {
             var markdown = string.Join("\n", d.Sections.Select((s, i) => manual.Extract(s.Heading, s.Own, includeHeading: i > 0)));
-            var html = Markdown.ToHtml(markdown, Pipeline);
+            var html = RenderHtml(markdown);
             var parent = d.Parent.Length > 0 ? d.Parent : null;
             pages.Add(new DocPage(d.Slug, d.Title, GroupOf(d, byDefinition), d.Description, html, ExtractToc(html), parent, d.Reading ?? "", string.IsNullOrWhiteSpace(d.MenuTitle) ? null : d.MenuTitle, d.InlineToc));
         }
@@ -225,8 +230,70 @@ public static partial class ContentBuilder
         // 外部サイトへのリンクは新しいタブで開く
         html = ExternalLinkPattern().Replace(html, m => $"<a href=\"{m.Groups[1].Value}\" target=\"_blank\" rel=\"noopener noreferrer\"");
         // 表は、狭い画面で横にスクロールできるようにする
-        return html.Replace("<table>", "<div class=\"table-wrap\"><table>").Replace("</table>", "</table></div>");
+        html = TableOpenPattern().Replace(html, m => "<div class=\"table-wrap\">" + m.Value);
+        html = html.Replace("</table>", "</table></div>");
+        // 補足・注意などの囲み（Markdig の alert）の見出しを日本語にする（色だけに頼らず、ラベルの文字で種類が分かるように）
+        return AlertTitlePattern().Replace(html, m => $"<p class=\"markdown-alert-title\">{AlertLabels.GetValueOrDefault(m.Groups[1].Value.ToLowerInvariant(), m.Groups[1].Value)}</p>");
     }
+
+    /// <summary>囲み（`> [!NOTE]` など）の見出しに出す日本語。</summary>
+    private static readonly Dictionary<string, string> AlertLabels = new()
+    {
+        ["note"] = "補足",
+        ["tip"] = "ヒント",
+        ["important"] = "重要",
+        ["warning"] = "注意",
+        ["caution"] = "警告",
+    };
+
+    /// <summary>この長さ（文字数）以上の項目がある箇条書きは、項目どうしの区切りを強める（文章の壁にならないように）。</summary>
+    private const int LongListItemLength = 100;
+
+    /// <summary>
+    /// Markdown を HTML にする。見た目のための印を、構造から付ける: 長い項目のある箇条書き（long-list）・
+    /// 2 列の表（stack-sm。スマホでは「コマンド → 説明」を縦に積む）・FAQ の質問の見出し（faq-q）。文章は変えない。
+    /// </summary>
+    public static string RenderHtml(string markdown)
+    {
+        var document = Markdown.Parse(markdown, Pipeline);
+        foreach (var block in document.Descendants().ToList())
+        {
+            switch (block)
+            {
+                case ListBlock { IsOrdered: false } list when list.OfType<ListItemBlock>().Any(i => TextLength(i) >= LongListItemLength):
+                    list.GetAttributes().AddClass("long-list");
+                    break;
+                // 見出し行にリンクがある表は、見出し行を隠す積み方にしない（隠した見出しの中のリンクに、キーボードのフォーカスが入ってしまう）
+                case Table table when table.OfType<TableRow>().FirstOrDefault() is { } head && head.Count == 2 && !head.Descendants<LinkInline>().Any():
+                    table.GetAttributes().AddClass("stack-sm");
+                    break;
+                case HeadingBlock { Level: 3 } heading when heading.Inline is not null && TextOf(heading).StartsWith("Q.", StringComparison.Ordinal):
+                    heading.GetAttributes().AddClass("faq-q");
+                    break;
+            }
+        }
+        return document.ToHtml(Pipeline);
+    }
+
+    private static string TextOf(ContainerBlock container) =>
+        string.Concat(container.Descendants<LeafBlock>().Where(l => l.Inline is not null).SelectMany(l => l.Inline!.Descendants<Inline>()).Select(InlineText));
+
+    private static string TextOf(LeafBlock leaf) => leaf.Inline is null ? "" : string.Concat(leaf.Inline.Descendants<Inline>().Select(InlineText));
+
+    private static int TextLength(ContainerBlock container) => TextOf(container).Length;
+
+    private static string InlineText(Inline inline) => inline switch
+    {
+        LiteralInline l => l.Content.ToString(),
+        CodeInline c => c.Content,
+        _ => "",
+    };
+
+    [GeneratedRegex("<table(?: [^>]*)?>")]
+    private static partial Regex TableOpenPattern();
+
+    [GeneratedRegex("<p class=\"markdown-alert-title\">(?:<svg.*?</svg>)?\\s*(.*?)</p>", RegexOptions.Singleline)]
+    private static partial Regex AlertTitlePattern();
 
     [GeneratedRegex("<h([1-6]) id=\"([^\"]+)\">(.*?)</h\\1>", RegexOptions.Singleline)]
     private static partial Regex HeadingPattern();
