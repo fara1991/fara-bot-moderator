@@ -41,6 +41,18 @@ public class SiteTests
     }
 
     [Fact]
+    public async Task The_static_report_page_uses_the_same_personal_info_notice_as_the_form()
+    {
+        // 問い合わせのフォーム（kit の ReportFormView）と、JavaScript なしで読める静的な本文は、同じ注意書きにする
+        var razor = File.ReadAllText(FindUp("external/fara-blazor-component/src/FaraBlazorComponent.Razor/Components/ReportFormView.razor"));
+        var notice = Regex.Match(razor, @"個人情報（[^）]+）は書かないでください。").Value;
+        Assert.NotEmpty(notice);
+        var json = await StaticPages.BuildPagesJsonAsync(new SiteContent(ContentBuilder.LoadFrom(SiteDir)));
+        var body = json["pages"]!.AsArray().Single(p => p!["path"]!.GetValue<string>() == "/report")!["bodyHtml"]!.GetValue<string>();
+        Assert.Contains(notice, body);
+    }
+
+    [Fact]
     public async Task The_static_doc_body_carries_the_same_html_as_the_page_data()
     {
         var data = ContentBuilder.LoadFrom(SiteDir);

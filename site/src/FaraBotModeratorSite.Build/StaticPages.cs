@@ -55,7 +55,7 @@ public static class StaticPages
         "<div class=\"fbc-page-column\">" +
         "<p class=\"fbc-small fbc-muted\">アプリや説明の修正は、<a href=\"" + SiteInfo.RepositoryUrl + "\" target=\"_blank\" rel=\"noopener noreferrer\">GitHub</a> で提案していただくこともできます。</p>" +
         "<p>項目: 種類（不具合・要望・提案・その他）／内容（5〜2000 文字）／連絡先（任意。返信が必要なときだけ、メールアドレス・Twitter の ID など）</p>" +
-        "<p class=\"fbc-small fbc-muted\">送信すると、<a href=\"/privacy\">プライバシーポリシー</a>に書いたとおり、内容が作者に通知されます。個人情報（パスワード・Twitch のトークンなど）は書かないでください。</p>" +
+        "<p class=\"fbc-small fbc-muted\">送信すると、<a href=\"/privacy\">プライバシーポリシー</a>に書いたとおり、内容が作者に通知されます。個人情報（パスワード・アクセスキーなど）は書かないでください。</p>" +
         "<p>この送信フォームは、JavaScript を有効にすると使えます。</p>" +
         "</div>";
 
