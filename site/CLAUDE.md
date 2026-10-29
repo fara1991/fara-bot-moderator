@@ -16,6 +16,7 @@
 - `src/FaraBotModeratorSite.Web`: Blazor WebAssembly（レイアウト・サイドメニュー・検索欄・`index.html`・`wwwroot/css/site.css`）
 - `src/FaraBotModeratorSite.Build`: `data/site.json`・kit の build-pages 用 `pages.json`・`site.json` を書く。`build/site.json` は build-pages の設定（CSP の外部ホストもここ）
 - `tools/build-site.mjs`: Build → `dotnet publish` → kit の `build-pages`。`tools/compare/`: 移行前後の比較（README あり）
+- ダウンロードのページ（`/download`。`Pages/Download.razor`）は、アプリの入手先（GitHub Releases の最新版へのリンク・動作環境・導入の手順）。動作環境は `Manual.md`・README・`release-app.yml` の事実だけを書く。サイドメニューに他のサイトへのリンクは置かない（入手先はこのページから案内する。フッターの SNS は残す）
 - 説明ページの本文は `Manual.md`（リポジトリ直下。アプリの操作説明書と同じ）。ページの題名・グループ・説明・親子・読みは `Content/pages.json`
 - Beat Saber のコマンドの説明は `/docs/beatsaber`（`Manual.md` の「5.5. Beat Saber コマンド」の節と、`pages.json` の `parent: commands` の子ページ）。ゲームのコマンドを増やすときも、先に `Manual.md` に節を書き、`parent: commands` の子ページを足す
 - 問い合わせの回数制限（kit v0.8.0・1 日 3 回・送信元ごと）: `worker/index.js` の `export { ReportRateLimiter }` と `wrangler.toml` の `durable_objects`・`migrations`（トップレベル・`env.production`・`env.dev` の 3 か所）が要る。どれかを消すと制限が止まる。`TURNSTILE_SECRET` を変えると計数はリセットされる。プライバシーの記載は `Privacy.razor`（テストが見る）。詳細は README.md
@@ -44,7 +45,7 @@ CSP は `build/site.json` の `csp` から kit の `csp/render-headers.mjs` が 
 
 ## 品質チェック（レイアウト・ESLint・C#）
 
-- **レイアウトの自動計測**（`npm run layout-check`）: `publish/wwwroot`（`npm run build:site` の出力）を kit の `serve-static` で配り、kit の計測（`external/fara-blazor-component/docs/layout-check.md`）で 7 ページ × 5 幅（360〜1440px）を見る。設定は `layout-check.config.mjs`、起動は `tools/run-layout-check.mjs`。違反は CSS・Razor で直す。直せないものだけ除外に書く
+- **レイアウトの自動計測**（`npm run layout-check`）: `publish/wwwroot`（`npm run build:site` の出力）を kit の `serve-static` で配り、kit の計測（`external/fara-blazor-component/docs/layout-check.md`）で 8 ページ × 5 幅（360〜1440px）を見る。設定は `layout-check.config.mjs`、起動は `tools/run-layout-check.mjs`。違反は CSS・Razor で直す。直せないものだけ除外に書く
   - 除外は `rule`・`selector`・`reason` を必ず書く（`reason` が空だと設定エラー）。`page` を書くと、そのページだけ。**理由は、その項目が何で、なぜ直せないかを具体的に書く**（「誤検出」だけでは書かない）。除外を増やすときは、まず CSS で直せないかを確かめる
   - kit の計測には制限がある（除外の理由の元）: 2xx 以外のページは開けない（404 は `/404.html` の画面で測る）。`/docs` のように同名のフォルダがあると `docs.html` を指定する（`serve-static` がフォルダの `index.html` を探すため）。本文の下の方の項目は、Tab で「画面の外」と数えられる（`no-offscreen-focus`）
   - 計測の前に kit の依存を入れる: `cd external/fara-blazor-component && npm ci`（kit の `tools/` は、`playwright-core` や `globals` を kit の中の `node_modules` から読むため）

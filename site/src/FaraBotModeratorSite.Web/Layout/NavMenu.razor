@@ -15,6 +15,7 @@
     }
 
     <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">ホーム</MudNavLink>
+    <MudNavLink Href="/download" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Download">ダウンロード</MudNavLink>
     <MudNavLink Href="/docs" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.FormatListBulleted">ドキュメント</MudNavLink>
 
     @foreach (var group in Content.Groups)
@@ -28,12 +29,6 @@
 
     <div class="fbc-nav-section">お知らせ</div>
     <MudNavLink Href="/changelog" Icon="@Icons.Material.Filled.History">更新履歴</MudNavLink>
-
-    <div class="fbc-nav-section">リンク</div>
-    <MudNavLink Href="@SiteInfo.ReleasesUrl" Target="_blank" rel="noopener noreferrer" Icon="@Icons.Material.Filled.Download">ダウンロード（最新版）</MudNavLink>
-    <MudNavLink Href="@SiteInfo.RepositoryUrl" Target="_blank" rel="noopener noreferrer" Icon="@Icons.Material.Filled.Code">GitHub</MudNavLink>
-    <MudNavLink Href="@SiteInfo.PokemonSiteUrl" Target="_blank" rel="noopener noreferrer" Icon="@Icons.Material.Filled.OpenInNew">Pokémon Battle Assistant</MudNavLink>
-    <MudNavLink Href="@SiteInfo.PortfolioUrl" Icon="@Icons.Material.Filled.Person">Fara のポートフォリオ</MudNavLink>
 
     <div class="fbc-nav-section">サポート</div>
     <MudNavLink Href="/report" Icon="@Icons.Material.Filled.MailOutline">問い合わせ</MudNavLink>

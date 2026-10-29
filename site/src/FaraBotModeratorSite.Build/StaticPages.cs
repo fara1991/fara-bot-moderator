@@ -21,6 +21,7 @@ public static class StaticPages
     {
         var pages = new JsonArray();
         pages.Add(Page("/", PageMeta.HomeTitle, PageMeta.HomeDescription, await RenderAsync<Home>(content)));
+        pages.Add(Page("/download", PageMeta.DownloadTitle, PageMeta.DownloadDescription, await RenderAsync<Download>(content)));
         pages.Add(Page("/docs", PageMeta.DocsTitle, PageMeta.DocsDescription, await RenderAsync<Docs>(content)));
         foreach (var doc in content.Pages)
         {
