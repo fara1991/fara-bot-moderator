@@ -40,8 +40,8 @@ public class TwitchAuthServiceTests
         // 実装している機能に必要な権限だけ（増やす・減らすときは、対応する呼び出しを確かめてここも直す）
         var expected = new[]
         {
-            "bits:read", "channel:moderate", "channel:read:redemptions", "chat:edit",
-            "chat:read", "moderator:manage:shoutouts", "moderator:read:followers", "user:read:follows",
+            "bits:read", "channel:read:redemptions", "chat:edit", "chat:read",
+            "moderator:manage:shoutouts", "moderator:read:followers", "user:read:follows",
         };
         Assert.Equal(expected.OrderBy(scope => scope), TwitchAuthService.Scopes.OrderBy(scope => scope));
     }
@@ -59,7 +59,7 @@ public class TwitchAuthServiceTests
         var scopeParam = url.Split("&scope=")[1].Split('&')[0];
 
         Assert.Equal(
-            "bits%3Aread%20channel%3Amoderate%20channel%3Aread%3Aredemptions%20chat%3Aedit%20chat%3Aread" +
+            "bits%3Aread%20channel%3Aread%3Aredemptions%20chat%3Aedit%20chat%3Aread" +
             "%20moderator%3Amanage%3Ashoutouts%20moderator%3Aread%3Afollowers%20user%3Aread%3Afollows",
             scopeParam);
         Assert.DoesNotContain("%3a", url);
