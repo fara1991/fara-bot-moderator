@@ -4,7 +4,8 @@
 
 <section class="page-section narrow policy">
     <h1>プライバシーポリシー</h1>
-    <p class="lead">@SiteInfo.Name のサイト（このサイト）と、ダウンロードして使う Windows アプリ（FaraBotModerator）で、どんな情報を、何のために扱うかをまとめています。<span class="nowrap">制定: 2026 年 10 月 22 日</span> <span class="nowrap">最終改定: 2026 年 10 月 29 日</span></p>
+    <p class="lead">@SiteInfo.Name のサイト（このサイト）と、ダウンロードして使う Windows アプリで、どんな情報を、何のために扱うかをまとめています。</p>
+    <p class="note">制定: 2026 年 10 月 22 日 / 最終改定: 2026 年 10 月 29 日</p>
     <p class="note">前半はこのサイトについて、後半の「アプリ（FaraBotModerator）で扱う情報」はアプリについて書いています。アプリの使い方は、説明ページ（<a href="/docs/overview">概要</a>・<a href="/docs/main-settings">初期設定</a>）に書いています。</p>
 
     <div class="policy-grid">
@@ -13,12 +14,16 @@
         <p>このサイトは、Fara（個人）が運営しています。ご意見・お問い合わせは、<a href="/report">問い合わせ</a>のページからお願いします。</p>
         </div>
         <div class="policy-item">
-        <h2>ブラウザに保存する情報（サーバーには送りません）</h2>
-        <p>このサイトは、あなたのブラウザの保存領域（localStorage）に、ライト／ダークの設定とサイドバーの状態を保存します。サイトの運営者には送られず、ブラウザのデータを消すと消えます。</p>
+        <h2>利用目的</h2>
+        <p>取得した情報は、サイトの運営、問い合わせへの対応、ボットによる送信の防止、閲覧数の把握のために使います。アプリで扱う情報は、アプリの機能（画面表示・翻訳・読み上げ・ログ・ポケモン連携）のためにだけ、配信者のパソコンの中で使われます。パソコンの外へ送る情報は、アプリの節の「アプリの外部との通信」の表のとおりです。</p>
+        </div>
+        <div class="policy-item">
+        <h2>ブラウザに保存する情報</h2>
+        <p>このサイトは、あなたのブラウザの保存領域（localStorage）に、ライト／ダークの設定とサイドバーの状態を保存します。サイトの運営者には送られず、ブラウザのデータを消すと消えます。このサイトからは Cookie を設定しません。Cloudflare（Turnstile など）は、その仕組みで、ブラウザに情報を保存することがあります。</p>
         </div>
         <div class="policy-item">
         <h2>アクセス解析・広告</h2>
-        <p>このサイトは、Cloudflare Web Analytics を使って、閲覧したページ・参照元・ブラウザや OS の種類・国などの情報が Cloudflare に送られ、統計として集計されます。このサイトからは Cookie を設定しません。広告は使っていません。Cloudflare が、サイトを配信するために通常のアクセスの記録（アクセス元の IP アドレス・ブラウザなど）を取ることもあります。広告（Google AdSense など）を表示することにしたときは、この項目に、使う事業者・Cookie の扱い・配信を止める方法を追記します。</p>
+        <p>このサイトは、閲覧数を把握するために、Cloudflare Web Analytics を使っています。閲覧したページ・参照元・ブラウザや OS の種類・国などの情報が Cloudflare に送られ、統計として集計されます。EU 圏内からのアクセスは計測の対象外です。広告は使っていません。Cloudflare が、サイトを配信するために通常のアクセスの記録（アクセス元の IP アドレス・ブラウザなど）を取ることもあります。</p>
         </div>
         <div class="policy-item">
         <h2>問い合わせで送る情報</h2>
@@ -29,7 +34,7 @@
             <li>送信元の IP アドレスから作った識別子（秘密の鍵を使ったハッシュ。IP アドレスそのものは保存しません）</li>
             <li>送信した日付（日本時間）と、その日の送信回数</li>
         </ul>
-        <p>これらは、日付が変わったあとの最初の掃除（日本時間の 0 時ごろ）で削除されます。</p>
+        <p>これらは、日付が変わったあとの最初の自動削除（日本時間の 0 時ごろ）で消えます。</p>
         </div>
         <div class="policy-item policy-item-wide">
         <h2>外部のサービス</h2>
@@ -41,10 +46,16 @@
                 <tr><th>送信先</th><th>送られる情報</th><th>目的</th><th>送られるとき</th></tr>
             </thead>
             <tbody>
+                <tr data-service="Cloudflare（サイトの配信）">
+                    <td>Cloudflare（サイトの配信）</td>
+                    <td>アクセス時の IP アドレスなど</td>
+                    <td>サイトの配信とセキュリティ（国外のサーバーで処理されることがあります）</td>
+                    <td>このサイトを開くたび</td>
+                </tr>
                 <tr data-service="Cloudflare Web Analytics">
                     <td>Cloudflare Web Analytics</td>
                     <td>閲覧したページ・参照元・ブラウザ・OS・国などの統計</td>
-                    <td>アクセス解析</td>
+                    <td>アクセス解析（EU 圏内からのアクセスは計測の対象外）</td>
                     <td>このサイトを開いたとき</td>
                 </tr>
                 <tr data-service="Cloudflare Turnstile">
@@ -52,12 +63,6 @@
                     <td>ブラウザの情報と IP アドレス（送信時は、サイトのサーバーからトークンと IP アドレス）</td>
                     <td>ボットによる送信の防止</td>
                     <td>問い合わせのページ（/report）を開いたときと、送信したとき</td>
-                </tr>
-                <tr data-service="Cloudflare">
-                    <td>Cloudflare（サイトの配信）</td>
-                    <td>アクセス時の IP アドレスなど</td>
-                    <td>サイトの配信とセキュリティ（国外のサーバーで処理されることがあります）</td>
-                    <td>このサイトを開くたび</td>
                 </tr>
                 <tr data-service="Discord">
                     <td>Discord</td>
@@ -68,7 +73,7 @@
                 <tr data-service="GitHub">
                     <td>GitHub</td>
                     <td>リンク先として開いたときのアクセスだけ（このサイトからは情報を送りません）</td>
-                    <td>アプリの配布・修正の提案の受け付け</td>
+                    <td>アプリの入手先・修正提案の受け付け（リンク先）</td>
                     <td>GitHub へのリンクを開いたとき</td>
                 </tr>
             </tbody>
@@ -87,6 +92,49 @@
         <div class="policy-item policy-item-wide">
         <h2>アプリ（FaraBotModerator）で扱う情報</h2>
         <p>アプリは、配信者のパソコンで動く Windows アプリです。設定や認証情報をそのパソコンに保存し、次のサービスと通信します。</p>
+        <h3>Twitch との通信</h3>
+        <ul>
+            <li>アプリは、あなたの Twitch アカウントで Twitch に接続し、チャット・フォロー・レイド・サブスク・ビッツ・チャンネルポイントなどのイベントを受け取ります。視聴者のアイコン画像も、Twitch から取得して画面に表示します。</li>
+            <li>翻訳の結果や自動メッセージは、あなたのアカウントからチャットに投稿されます。翻訳の結果には、元のメッセージを書いた視聴者の表示名が「by 表示名」の形で付きます。</li>
+            <li>アプリの画面の中で、Twitch のチャンネルのページ（twitch.tv）や DeepL のページを表示することがあります。</li>
+            <li>Twitch 側での扱いは、Twitch の規約によります。</li>
+        </ul>
+        <h3>アプリの外部との通信</h3>
+        <div class="prose">
+        <div class="table-wrap">
+        <table class="app-communications">
+            <thead>
+                <tr><th>送信先</th><th>送られる情報</th><th>目的</th><th>送られるとき</th></tr>
+            </thead>
+            <tbody>
+                <tr data-app-service="Twitch">
+                    <td>Twitch</td>
+                    <td>認証のための情報（Client ID・Client Secret・認可コード・トークン）、チャットへの投稿、ユーザーを調べるためのユーザー ID・名前</td>
+                    <td>認証、チャット・イベントの受信、チャットへの投稿、シャウトアウトなど</td>
+                    <td>アプリを Twitch に接続している間</td>
+                </tr>
+                <tr data-app-service="DeepL">
+                    <td>DeepL</td>
+                    <td>翻訳する本文（エモートを除く。送信者の名前は含みません）と、DeepL の API キー</td>
+                    <td>チャットの翻訳</td>
+                    <td>翻訳の対象のチャットを受け取ったとき</td>
+                </tr>
+                <tr data-app-service="ポケモンのサイト">
+                    <td>ポケモンのサイト</td>
+                    <td>アクセスキー（Bearer）と、登録データ（ポケモン・チーム・相手チーム・履歴）。送り先は pokemon.fara-labs.com（開発用は pokemon-dev.fara-labs.com）</td>
+                    <td>ゲームのデータの取得、登録データの保存と読み書き</td>
+                    <td>!poke のコマンドを使うとき</td>
+                </tr>
+                <tr data-app-service="棒読みちゃん（同じパソコンの中）">
+                    <td>棒読みちゃん（同じパソコンの中）</td>
+                    <td>ユーザー名・本文・イベントの文言（localhost へ）</td>
+                    <td>読み上げ</td>
+                    <td>読み上げを使うとき</td>
+                </tr>
+            </tbody>
+        </table>
+        </div>
+        </div>
         <h3>視聴者のチャット</h3>
         <ul>
             <li>翻訳の対象にしたチャットの本文は、配信者が設定した DeepL の API キーを使って、DeepL に送られます。送るのは、エモートを除いた本文だけで、送信者の名前は送りません。ボット名を含むもの・cheer・!bomb・URL だけのもの・!poke 系のコマンドは、翻訳の対象外です。DeepL 側の扱いは、DeepL の規約によります。</li>
@@ -109,7 +157,7 @@
             <tbody>
                 <tr><td><code>chat:read</code></td><td>チャットの読み取り</td></tr>
                 <tr><td><code>chat:edit</code></td><td>チャットの送信（翻訳の結果や自動メッセージなど）</td></tr>
-                <tr><td><code>channel:moderate</code></td><td>チャンネルのモデレーション</td></tr>
+                <tr><td><code>channel:moderate</code></td><td>チャンネルのモデレーションの権限です。現在のアプリは、ユーザーの制限やメッセージの削除など、この権限を使う操作を行っていません</td></tr>
                 <tr><td><code>channel:read:redemptions</code></td><td>チャンネルポイントの引き換えの読み取り</td></tr>
                 <tr><td><code>bits:read</code></td><td>ビッツの読み取り</td></tr>
                 <tr><td><code>moderator:read:followers</code></td><td>フォロワーの読み取り</td></tr>
@@ -122,7 +170,7 @@
         <h3>ポケモン連携（!poke）</h3>
         <p>!poke のコマンドを使うときは、<a href="https://pokemon.fara-labs.com/" target="_blank" rel="noopener noreferrer">ポケモンのサイト</a>（pokemon.fara-labs.com。開発用は pokemon-dev.fara-labs.com）と通信します。ゲームのデータを取得するほか、登録データ（ポケモン・チーム・相手チーム・履歴）の保存と読み書きのために、アクセスキーを Bearer（認証のヘッダー）で送ります。登録データの保存期間や削除の扱いは、<a href="https://pokemon.fara-labs.com/privacy" target="_blank" rel="noopener noreferrer">ポケモンのサイトのプライバシーポリシー</a>に従います。</p>
         <h3>ログ</h3>
-        <p>アプリは、アプリのフォルダの <code>Log</code> フォルダに、日付ごとのログファイルを、暗号化せずに（平文で）保存します。接続の状況、イベント（フォロー・レイド・サブスク・ビッツ・チャンネルポイント・ギフトなど）、エラーの内容に加えて、視聴者のユーザー名とチャットの本文を含みます（Twitch の OAuth トークンは含まれません）。ログは自動では削除されないので、不要になったら削除してください。ログのファイルは、配信画面に映さない・他の人に渡さないでください。</p>
+        <p>アプリは、アプリのフォルダの <code>Log</code> フォルダに、日付ごとのログファイルを、暗号化せずに保存します。接続の状況、イベント（フォロー・レイド・サブスク・ビッツ・チャンネルポイント・ギフトなど）、エラーの内容に加えて、視聴者のユーザー名とチャットの本文を含みます（Twitch の OAuth トークンは含まれません）。ログは自動では削除されないので、不要になったら削除してください。ログのファイルは、他の人に渡さない・配信画面に映さないでください。</p>
         </div>
         <div class="policy-item">
         <h2>変更について</h2>
