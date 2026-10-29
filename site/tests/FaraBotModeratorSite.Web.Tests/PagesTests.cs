@@ -112,6 +112,7 @@ public class PagesTests
         Assert.Contains("Cloudflare（Turnstile など）は、その仕組みで、ブラウザに情報を保存することがあります", text);
         Assert.Contains("送った内容（本文・連絡先など）そのものは、サイトの側では保存しません", text);
         Assert.DoesNotContain("匿名", text);
+        Assert.Contains("広告は、いま使っていません。", text);
         Assert.Contains("このサイトからは Cookie を設定しません", text);
         Assert.DoesNotContain("個人を特定する情報", text);
         // このサイトは外部のフォント・CDN を使わない（CSP が同じオリジンだけ）ので、載せない
