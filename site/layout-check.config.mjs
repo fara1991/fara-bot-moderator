@@ -10,6 +10,7 @@ export default {
     { path: "/docs/commands", name: "コマンド" },
     { path: "/docs/pokemon-battle", name: "ポケモン（バトル）" },
     { path: "/docs/beatsaber", name: "Beat Saber コマンド" },
+    { path: "/download", name: "ダウンロード" },
     { path: "/report", name: "問い合わせ" },
     // 存在しないパスの 404 は、kit の計測が 2xx 以外を失敗にするため、404 の画面のファイルを直接開く（中身は同じ 404 の画面）
     { path: "/404.html", name: "404（存在しないパスの画面）" },

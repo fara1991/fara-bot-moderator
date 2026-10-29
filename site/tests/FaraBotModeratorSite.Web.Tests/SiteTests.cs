@@ -27,7 +27,7 @@ public class SiteTests
         var content = new SiteContent(ContentBuilder.LoadFrom(SiteDir));
         var json = await StaticPages.BuildPagesJsonAsync(content);
         var pages = json["pages"]!.AsArray();
-        Assert.Equal(content.Pages.Count + 5, pages.Count);   // ホーム・一覧・更新履歴・プライバシー・問い合わせ
+        Assert.Equal(content.Pages.Count + 6, pages.Count);   // ホーム・ダウンロード・一覧・更新履歴・プライバシー・問い合わせ
         foreach (var page in pages)
         {
             var path = page!["path"]!.GetValue<string>();

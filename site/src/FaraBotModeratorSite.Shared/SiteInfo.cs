@@ -15,7 +15,7 @@ public static class SiteInfo
     public const string ReleasesUrl = "https://github.com/fara1991/fara-bot-moderator/releases/latest";
     public const string PokemonSiteUrl = "https://pokemon.fara-labs.com/";
 
-    /// <summary>作者のホームページ（フッターの Fara・サイドメニューの「Fara のポートフォリオ」）。</summary>
+    /// <summary>作者のホームページ（フッターの Fara）。</summary>
     public const string PortfolioUrl = "https://fara-labs.com/";
 
     public const string Author = "Fara";

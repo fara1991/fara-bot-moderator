@@ -185,7 +185,32 @@ public class PagesTests
         var html = await RenderAsync<Home>();
         foreach (var entry in Content.Changelog.Take(3)) Assert.Contains((entry.Title), html);
         Assert.DoesNotContain((Content.Changelog[3].Title), html);
-        Assert.Contains(SiteInfo.ReleasesUrl, html);
+        Assert.Contains("href=\"/download\"", html);   // ダウンロードは専用のページ（/download）へ案内する
+    }
+
+    [Fact]
+    public async Task Download_page_links_to_the_latest_release_and_states_only_known_requirements()
+    {
+        var html = await RenderAsync<Download>();
+        var text = Text(html);
+        Assert.Contains($"href=\"{SiteInfo.ReleasesUrl}\"", html);
+        foreach (var fact in new[] { "FaraBotModerator_Setup.exe", "Windows 10 / 11（x64）", ".NET 8 ランタイム", "WebView2 ランタイム", "設定・認証情報・ログ" })
+            Assert.Contains(fact, text);
+        foreach (var href in new[] { "/docs/overview", "/docs/main-settings", "/privacy" })
+            Assert.Contains($"href=\"{href}\"", html);
+        // 動作環境は、アプリの対象とリリースの設定と同じ（変わったらこのページも直す）
+        Assert.Contains("<TargetFramework>net8.0-windows", File.ReadAllText(FindUp("FaraBotModerator.csproj")));
+        Assert.Contains("FaraBotModerator_Setup.exe", File.ReadAllText(FindUp(".github/workflows/release-app.yml")));
+    }
+
+    [Fact]
+    public void Side_menu_has_no_links_to_other_sites()
+    {
+        var nav = File.ReadAllText(Path.Combine(SiteDir, "src", "FaraBotModeratorSite.Web", "Layout", "NavMenu.razor"));
+        Assert.DoesNotContain("http", nav);
+        Assert.DoesNotContain("SiteInfo.", nav.Replace("SiteInfo.Name", ""));
+        Assert.DoesNotContain("target=\"_blank\"", nav);
+        Assert.Contains("href=\"/download\"", nav.Replace("Href=", "href="));
     }
 
     [Fact]

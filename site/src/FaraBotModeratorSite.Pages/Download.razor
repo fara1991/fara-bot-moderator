@@ -1,0 +1,40 @@
+@page "/download"
+
+<PageTitle>@PageMeta.DownloadTitle</PageTitle>
+
+<section class="page-section narrow">
+    <h1>ダウンロード</h1>
+    <p class="lead">@SiteInfo.Name は、Twitch 配信者向けの Windows アプリです。チャットの表示・自動翻訳・読み上げ・イベント通知・タイマー・ゲームのコマンドを、1 つのアプリにまとめています。</p>
+    <p class="button-row">
+        <a class="button" href="@SiteInfo.ReleasesUrl" target="_blank" rel="noopener noreferrer">ダウンロード（最新版）</a>
+    </p>
+    <p class="note">GitHub の Releases（最新版）のページが開きます。インストーラー <code>FaraBotModerator_Setup.exe</code> をダウンロードして、実行してください。</p>
+
+    <h2>動作環境</h2>
+    <ul>
+        <li>Windows 10 / 11（x64）</li>
+        <li>.NET 8 ランタイム（インストーラーには含まれません。別にインストールしてください）</li>
+        <li>WebView2 ランタイム（インストーラーが自動でインストールします）</li>
+    </ul>
+    <p>Twitch のアカウントと、Twitch Developer のアプリケーションが必要です。翻訳を使うときは DeepL の API キー、読み上げを使うときは棒読みちゃんも用意します。くわしくは<a href="/docs/overview">はじめに・動作環境</a>を見てください。</p>
+
+    <h2>導入の手順</h2>
+    <ol class="steps">
+        <li>
+            <strong>インストール</strong>
+            <span><code>FaraBotModerator_Setup.exe</code> を実行して、画面の指示に従います。</span>
+        </li>
+        <li>
+            <strong>起動と初期設定</strong>
+            <span>（インストール時に選んだ場合は）デスクトップのショートカット、またはインストール先の <code>FaraBotModerator.exe</code> を起動し、Twitch との連携を設定します。</span>
+        </li>
+    </ol>
+    <p class="button-row">
+        <a class="button" href="/docs/main-settings">初期設定の手順を見る</a>
+        <a class="button border" href="/docs">ドキュメント</a>
+    </p>
+    <p>使い方の全体は、アプリに同梱している <code>Manual.md</code> と、このサイトのドキュメントにあります（内容は同じです）。</p>
+
+    <h2>保存される情報</h2>
+    <p>ダウンロードしたアプリは、アプリの設定・認証情報・ログをパソコンに保存します。くわしくは<a href="/privacy">プライバシーポリシー</a>を見てください。</p>
+</section>
