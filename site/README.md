@@ -38,7 +38,7 @@ npx wrangler dev --env dev    # Cloudflare と同じ動き（Worker 経由）で
   - 除外は `rule`・`selector`・`reason`（必須・具体的に）・`page`（任意）で書く。直せるものは CSS・Razor で直す（今の除外は、kit の計測の制限による本文の項目と、フッターの SNS アイコン、受け付け停止中の送信ボタン、トップの一覧のリンク。それぞれの理由は設定ファイルに書いてある）
   - 使い方と制限は kit の `docs/layout-check.md`。計測の依存は kit の中の `node_modules` から読むため、`external/fara-blazor-component` でも `npm ci` する
 - **ESLint**: `npm run lint`（`eslint.config.mjs`。共通のルールは kit の `tools/lint/`）。対象は `worker/`・`tools/`・`tests/`・画面の `wwwroot/js/`。`.github/scripts` は対象外（基準パスの外。node --test で確かめる）
-- **C#**: リポジトリ直下の `Directory.Build.props` が kit の `dotnet.editorconfig` を読む。`CS4014`・`VSTHRD100`・`CA1816`・`IDE0059` は error（kit）。ルート `.editorconfig` の `[*.cs]` で、違反が 0 件になった `CA2000`・`VSTHRD001`・`VSTHRD002`・`VSTHRD101`・`VSTHRD110`・`VSTHRD200`・`CS1573`・`xUnit2029` も error にしている。`CA1031` は warning のまま（件数と理由は `CLAUDE.md` の表）。直せないものだけ、理由つきの `SuppressMessage` で 1 メンバーずつ抑止
+- **C#**: リポジトリ直下の `Directory.Build.props` が kit の `dotnet.editorconfig` を読む。`CS4014`・`VSTHRD100`・`CA1816`・`IDE0059` は error（kit）。kit v1.0.1 で error になった `CA1031` は、ルート `.editorconfig` で warning に戻している（配信中にボットを落とさないため）。ルート `.editorconfig` の `[*.cs]` で、違反が 0 件になった `CA2000`・`VSTHRD001`・`VSTHRD002`・`VSTHRD101`・`VSTHRD110`・`VSTHRD200`・`CS1573`・`xUnit2029` も error にしている。`CA1031` は warning のまま（件数と理由は `CLAUDE.md` の表）。直せないものだけ、理由つきの `SuppressMessage` で 1 メンバーずつ抑止
 
 ## CSP
 

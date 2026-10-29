@@ -3,6 +3,7 @@
   <!--
     C# の静的解析（ラチェット）。アプリ（FaraBotModerator.csproj・tests/）と紹介サイト（site/src・site/tests）に効く。
     ルールの中身と理由は external/fara-blazor-component/tools/lint/dotnet.editorconfig と external/fara-blazor-component/docs/lint.md。
+    kit v1.0.1 の dotnet.editorconfig では CA1031 が error だが、bot は配信中に落とさないため、ルート .editorconfig の [*.cs] で warning に戻している（通常の .editorconfig が global config に勝つ）。
     pokemon（external/fara-pokemon-battle-assistant）は、自分の Directory.Build.props を持つので、ここは読まれない（MSBuild は最も近い 1 つだけを読む）。
     FaraBotModerator.csproj の <EnforceCodeStyleInBuild>False</EnforceCodeStyleInBuild> は、アプリ側で残す（IDE の規則は dotnet build で見ない。重大度の設定は editorconfig のまま効く）。
   -->
