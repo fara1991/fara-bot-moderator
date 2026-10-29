@@ -9,6 +9,7 @@ using FaraBotModerator.Properties;
 using TwitchLib.Api;
 using TwitchLib.Api.Core.Enums;
 using TwitchLib.Api.Core.Exceptions;
+using TwitchLib.Api.Core.Interfaces;
 using TwitchLib.Api.Helix.Models.Users.GetUsers;
 using Stream = TwitchLib.Api.Helix.Models.Streams.GetStreams.Stream;
 
@@ -23,22 +24,34 @@ public class TwitchApiController
     private readonly SecretKeyModel _secretKeyModel;
     private User? _myUserInfo;
     private Stream? _myStreamInfo;
+    private readonly IHttpCallHandler? _httpCallHandler;
 
     /// <summary>
     /// Twitch API経由の操作をするControllerのコンストラクタ
     /// </summary>
     /// <param name="secretKeyModel">設定情報モデル</param>
-    public TwitchApiController(SecretKeyModel secretKeyModel)
+    public TwitchApiController(SecretKeyModel secretKeyModel) : this(secretKeyModel, null)
+    {
+    }
+
+    /// <summary>
+    /// 通信の部分を差し替えられるコンストラクタ（テスト用）
+    /// </summary>
+    /// <param name="secretKeyModel">設定情報モデル</param>
+    /// <param name="httpCallHandler">TwitchLib の通信処理（null なら既定）</param>
+    internal TwitchApiController(SecretKeyModel secretKeyModel, IHttpCallHandler? httpCallHandler)
     {
         _secretKeyModel = secretKeyModel;
+        _httpCallHandler = httpCallHandler;
     }
 
     /// <summary>
     /// Twitch API クライアントを初期化し、自身のユーザー情報・配信情報を取得します。
     /// </summary>
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "起動時（Loaded・接続）の最上位。配信中の接続を最優先し、応答の中身の不備（null 参照など）でも、空の User・Stream で続行する従来の挙動を保つ。失敗はログに残す")]
     public async Task InitializeAsync()
     {
-        _twitchApi = new TwitchAPI
+        _twitchApi = new TwitchAPI(http: _httpCallHandler)
         {
             Settings =
             {
@@ -60,7 +73,7 @@ public class TwitchApiController
             _myUserInfo = await GetTwitchChannelByLoginAsync(_secretKeyModel.Twitch.Client.UserName);
             _myStreamInfo = await GetTwitchStreamingAsync(_secretKeyModel.Twitch.Client.UserName);
         }
-        catch (Exception ex) when (IsExpectedApiFailure(ex))
+        catch (Exception ex)
         {
             LogController.OutputLog($@"<Error> TwitchApiController initialization failed: {ex.Message}");
             if (ex.InnerException != null)
@@ -110,7 +123,7 @@ public class TwitchApiController
             var userIds = new List<string> {userId};
             var userLoginNames = new List<string>();
             var findUserList = await _twitchApi.Helix.Users.GetUsersAsync(userIds, userLoginNames);
-            return findUserList.Users.Length > 0 ? findUserList.Users[0] : null;
+            return findUserList?.Users is {Length: > 0} users ? users[0] : null;
         }
         catch (Exception ex) when (IsExpectedApiFailure(ex))
         {
@@ -132,7 +145,7 @@ public class TwitchApiController
             var userIds = new List<string>();
             var userLoginNames = new List<string> {userName};
             var findUserList = await _twitchApi.Helix.Users.GetUsersAsync(userIds, userLoginNames);
-            return findUserList.Users.Length > 0 ? findUserList.Users[0] : null;
+            return findUserList?.Users is {Length: > 0} users ? users[0] : null;
         }
         catch (Exception ex) when (IsExpectedApiFailure(ex))
         {
@@ -154,9 +167,9 @@ public class TwitchApiController
             var raidUserNames = new List<string> {raiderUserName};
             var raidUser = await _twitchApi.Helix.Users.GetUsersAsync(raidUserIds, raidUserNames);
             
-            if (raidUser.Users.Length > 0)
+            if (raidUser?.Users is {Length: > 0} raidUsers)
             {
-                await _twitchApi.Helix.Chat.SendShoutoutAsync(_myUserInfo.Id, raidUser.Users[0].Id, _myUserInfo.Id, Settings.Default.AccessToken);
+                await _twitchApi.Helix.Chat.SendShoutoutAsync(_myUserInfo.Id, raidUsers[0].Id, _myUserInfo.Id, Settings.Default.AccessToken);
             }
         }
         catch (Exception ex) when (IsExpectedApiFailure(ex))
@@ -178,7 +191,7 @@ public class TwitchApiController
             var userIds = new List<string>();
             var userLoginNames = new List<string> {userName};
             var streamingInformations = await _twitchApi.Helix.Streams.GetStreamsAsync(userIds: userIds, userLogins: userLoginNames, type: "live");
-            return streamingInformations.Streams.Length > 0 ? streamingInformations.Streams[0] : new Stream();
+            return streamingInformations?.Streams is {Length: > 0} streams ? streams[0] : new Stream();
         }
         catch (Exception ex) when (IsExpectedApiFailure(ex))
         {
@@ -205,6 +218,8 @@ public class TwitchApiController
             var sameGameUsers = await _twitchApi.Helix.Streams.GetStreamsAsync(userIds: userIds, userLogins: userLoginNames, gameIds: gameIds,
                     type: "live");
             
+            // 応答の中身が空（本文が空・{}）のときは、一覧が無いものとして空を返す
+            if (sameGameUsers?.Streams == null) return new List<StreamingUserModel>();
             var tasks = sameGameUsers.Streams.Select(async user => new StreamingUserModel
             {
                 Icon = await GetTwitchIconUrlByIdAsync(user.UserId),
@@ -236,6 +251,7 @@ public class TwitchApiController
         {
             var followingUsers = await _twitchApi.Helix.Streams.GetFollowedStreamsAsync(_myUserInfo.Id);
             
+            if (followingUsers?.Data == null) return new List<StreamingUserModel>();
             var tasks = followingUsers.Data.Select(async user => new StreamingUserModel
             {
                 Icon = await GetTwitchIconUrlByIdAsync(user.UserId),
@@ -338,6 +354,12 @@ public class TwitchApiController
             }
             // UI スレッドを止めないように、await で待つ（.Result で待つと、UI が固まり、例外も AggregateException で包まれる）
             var validation = await _twitchApi.Auth.ValidateAccessTokenAsync(accessToken);
+            // 失効・無効なトークンのとき、Twitch（TwitchLib）は例外ではなく null を返す。無効として扱う
+            if (validation == null)
+            {
+                LogController.OutputLog("Token validation failed: Twitch returned no validation result (the token is invalid or expired).");
+                return false;
+            }
             // _twitchApi.Settings.Scopes = validation.Scopes;
             LogController.OutputLog(
                 $"Token is valid. Client ID: {validation.ClientId}, User ID: {validation.UserId}, Expires in: {validation.ExpiresIn} seconds");

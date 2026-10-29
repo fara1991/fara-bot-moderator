@@ -72,7 +72,7 @@ public static class PokemonSyncKeyController
     /// <param name="cancellationToken">キャンセルトークン</param>
     /// <param name="http">通信に使う HttpClient（省略時は既定のもの。テスト用）</param>
     /// <exception cref="RosterUnavailableException">写せなかった（古いキーのまま）</exception>
-    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "新しいキーの保存は済んでいる段階で、古いキーの削除（Core の FinishAsync。RosterUnavailableException・HistoryChangedException・通信の失敗など、型が一定でない）が何で失敗しても、切り替え自体は成功のまま「消せなかった」として知らせる。外へ出すと、切り替え済みなのに失敗に見える")]
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Core の FinishAsync は OperationCanceledException だけを外へ出す（HttpClient のタイムアウトの TaskCanceledException も含む）。新しいキーは保存済みの段階なので、外へ出さず、切り替え成功のまま Failed（古いキーが残っている）として知らせる")]
     public static async Task<RotateOutcome> RotateAsync(PokemonDataSource dataSource, string oldKey, Func<string, Task<bool>> saveNewKey,
         CancellationToken cancellationToken = default, HttpClient? http = null)
     {
