@@ -209,7 +209,6 @@ public class TwitchAuthService
     internal static readonly string[] Scopes =
     [
         "bits:read",
-        "channel:moderate",
         "channel:read:redemptions",
         "chat:edit",
         "chat:read",
