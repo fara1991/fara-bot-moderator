@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 using FaraBotModerator.Models;
 
@@ -26,6 +27,7 @@ internal sealed class ChatRowQueue
     /// 先頭の行を取り出す。先頭のアイコンがまだ届いていないときは、何も取り出さずに null を返す（順番を守るため）。
     /// </summary>
     /// <returns>表示する行。無い・まだ届いていないときは null</returns>
+    [SuppressMessage("Usage", "VSTHRD002:Avoid problematic synchronous waits", Justification = "IsCompletedSuccessfully を確かめた後でだけ Result を読むので、待たない（ブロックしない）")]
     public ChatModel? TryPick()
     {
         if (!_rows.TryPeek(out var head) || !head.Icon.IsCompleted) return null;

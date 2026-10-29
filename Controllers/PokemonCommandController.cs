@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
@@ -54,6 +55,7 @@ public class PokemonCommandController
     /// User-Agent が無いと Cloudflare のブラウザ整合性チェックで拒否されることがあるため、明示的に付けます。
     /// リダイレクトは追わないので、Cloudflare Access のログイン画面への転送は（HTML をデータとして読まずに）失敗として扱われます。
     /// </summary>
+    [SuppressMessage("Reliability", "CA2000:Dispose objects before losing scope", Justification = "プロセスの終わりまで使う static の HttpClient が、ハンドラーごと持ち続ける。破棄するタイミングが無い")]
     private static HttpClient CreateHttpClient()
     {
         var client = new HttpClient(new HttpClientHandler { AllowAutoRedirect = false }) { Timeout = TimeSpan.FromSeconds(30) };

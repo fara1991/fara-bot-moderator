@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
@@ -81,6 +82,8 @@ public partial class RaidListWindow : Window
         }
     }
 
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "画面のイベントハンドラー。例外でアプリを落とさないよう、ここで受けてログに残す")]
+    [SuppressMessage("Usage", "VSTHRD100:Avoid async void methods", Justification = "イベントハンドラーの型（void を返すデリゲート）の都合で async void が必要。例外は本文の try/catch で受けて、ログ・画面で知らせている")]
     private async void TwitchStreamingFollowerButton_OnClick(object sender, RoutedEventArgs e)
     {
         try
@@ -95,6 +98,8 @@ public partial class RaidListWindow : Window
         }
     }
 
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "画面のイベントハンドラー。例外でアプリを落とさないよう、ここで受けてログに残す")]
+    [SuppressMessage("Usage", "VSTHRD100:Avoid async void methods", Justification = "イベントハンドラーの型（void を返すデリゲート）の都合で async void が必要。例外は本文の try/catch で受けて、ログ・画面で知らせている")]
     private async void TwitchStreamingSameGameButton_OnClick(object sender, RoutedEventArgs e)
     {
         try

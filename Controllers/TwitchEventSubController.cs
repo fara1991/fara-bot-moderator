@@ -34,13 +34,13 @@ public class TwitchEventSubController
         _eventSubClient = new EventSubWebsocketClient();
 
         // 接続関連のイベントハンドラを設定
-        _eventSubClient.WebsocketConnected += TwitchEventSubOnConnected;
-        _eventSubClient.WebsocketDisconnected += TwitchEventSubOnDisconnected;
+        _eventSubClient.WebsocketConnected += TwitchEventSubOnConnectedAsync;
+        _eventSubClient.WebsocketDisconnected += TwitchEventSubOnDisconnectedAsync;
 
         // チャンネル関連のイベントハンドラを設定
-        _eventSubClient.ChannelFollow += TwitchEventSubOnFollowed;
-        _eventSubClient.ChannelCheer += TwitchEventSubOnCheerReceived;
-        _eventSubClient.ChannelPointsCustomRewardRedemptionAdd += TwitchEventSubOnChannelPointReward;
+        _eventSubClient.ChannelFollow += TwitchEventSubOnFollowedAsync;
+        _eventSubClient.ChannelCheer += TwitchEventSubOnCheerReceivedAsync;
+        _eventSubClient.ChannelPointsCustomRewardRedemptionAdd += TwitchEventSubOnChannelPointRewardAsync;
     }
 
     /// <summary>
@@ -72,7 +72,7 @@ public class TwitchEventSubController
     /// </summary>
     /// <param name="sender"></param>
     /// <param name="e"></param>
-    private Task TwitchEventSubOnConnected(object? sender, WebsocketConnectedArgs e)
+    private Task TwitchEventSubOnConnectedAsync(object? sender, WebsocketConnectedArgs e)
     {
         var sessionId = _eventSubClient?.SessionId;
         if (sessionId == null) return Task.CompletedTask;
@@ -93,7 +93,7 @@ public class TwitchEventSubController
     /// </summary>
     /// <param name="sender"></param>
     /// <param name="e"></param>
-    private Task TwitchEventSubOnDisconnected(object? sender, EventArgs e)
+    private Task TwitchEventSubOnDisconnectedAsync(object? sender, EventArgs e)
     {
         LogController.OutputLog($"EventSub WebSocket disconnected.");
         IsConnected = false;
@@ -105,7 +105,7 @@ public class TwitchEventSubController
     /// </summary>
     /// <param name="sender"></param>
     /// <param name="e"></param>
-    private Task TwitchEventSubOnFollowed(object? sender, ChannelFollowArgs e)
+    private Task TwitchEventSubOnFollowedAsync(object? sender, ChannelFollowArgs e)
     {
         _twitchClientController.TwitchEventSubOnFollow(e);
         return Task.CompletedTask;
@@ -116,7 +116,7 @@ public class TwitchEventSubController
     /// </summary>
     /// <param name="sender"></param>
     /// <param name="e"></param>
-    private Task TwitchEventSubOnCheerReceived(object? sender, ChannelCheerArgs e)
+    private Task TwitchEventSubOnCheerReceivedAsync(object? sender, ChannelCheerArgs e)
     {
         _twitchClientController.SendBitsEventSubMessage(e);
         return Task.CompletedTask;
@@ -127,7 +127,7 @@ public class TwitchEventSubController
     /// </summary>
     /// <param name="sender"></param>
     /// <param name="e"></param>
-    private Task TwitchEventSubOnChannelPointReward(object? sender, ChannelPointsCustomRewardRedemptionArgs e)
+    private Task TwitchEventSubOnChannelPointRewardAsync(object? sender, ChannelPointsCustomRewardRedemptionArgs e)
     {
         _twitchClientController.SendChannelPointEventSubMessage(e);
         return Task.CompletedTask;

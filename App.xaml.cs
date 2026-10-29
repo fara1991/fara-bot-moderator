@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Windows;
 using FaraBotModerator.Controllers;
 
@@ -49,6 +50,7 @@ public partial class App : Application
     ///     - Ensures the creation of required directories for logging and chat settings.
     ///     If any errors occur, they are either communicated to the user via a message box or logged for debugging purposes.
     /// </remarks>
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "起動時の書き込み確認。確認できなかっただけでは起動を止めず、理由はログに残す")]
     private static void CheckWritePermission()
     {
         var baseDir = AppDomain.CurrentDomain.BaseDirectory;

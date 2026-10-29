@@ -25,6 +25,9 @@ internal static class TokenMonitorPolicy
     /// <summary>
     /// 今の周期で refresh を試すか。期限切れで、リフレッシュトークンがあり、次の試行の時刻を過ぎているとき。
     /// </summary>
+    /// <param name="now">今の時刻</param>
+    /// <param name="expiresAt">トークンの期限</param>
+    /// <param name="hasRefreshToken">リフレッシュトークンがあるか</param>
     /// <param name="nextAttemptAt">次に refresh を試してよい時刻（失敗したあとは now + <see cref="RefreshRetryInterval"/>）</param>
     internal static bool ShouldRefresh(DateTime now, DateTime expiresAt, bool hasRefreshToken, DateTime nextAttemptAt) =>
         IsExpired(now, expiresAt) && hasRefreshToken && now >= nextAttemptAt;
@@ -34,6 +37,7 @@ internal static class TokenMonitorPolicy
     /// 進行中の間は、監視から認可画面を開き直さない（state が書き換わり、進行中の認可が合わなくなるため）。
     /// </summary>
     /// <param name="openedAt">抑止の起点の時刻（認可画面を開いた時刻、または認可が失敗した時刻。開いていない・成功して終わったときは null）</param>
+    /// <param name="now">今の時刻</param>
     internal static bool IsAuthorizationInProgress(DateTime? openedAt, DateTime now) =>
         openedAt is { } opened && now - opened < AuthorizationTimeout;
 
