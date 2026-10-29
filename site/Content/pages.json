@@ -18,7 +18,8 @@
     "description": "Twitch との連携設定。Client 設定、Twitch Developer アプリケーションの作成と認証、棒読みちゃん連携、接続・切断。",
     "sections": [
       { "heading": "3. 初期設定（Main Settings）" }
-    ]
+    ],
+    "inlineToc": true
   },
   {
     "slug": "reaction-events",
@@ -27,7 +28,8 @@
     "description": "フォロー・レイド・サブスク・ビッツ・ギフト・チャンネルポイントの自動応答メッセージと、使えるプレースホルダー。",
     "sections": [
       { "heading": "4. リアクションイベント設定（Reaction Event Settings）" }
-    ]
+    ],
+    "inlineToc": true
   },
   {
     "slug": "translate",
@@ -109,7 +111,8 @@
       { "heading": "Mod の設定" },
       { "heading": "このアプリでの扱い" }
     ],
-    "menuTitle": "Beat Saber"
+    "menuTitle": "Beat Saber",
+    "inlineToc": true
   },
   {
     "slug": "faq",
@@ -119,7 +122,8 @@
     "description": "起動できない・チャットが取得できない・翻訳や読み上げが動かない、などの確認項目。",
     "sections": [
       { "heading": "7. よくある質問（FAQ）" }
-    ]
+    ],
+    "inlineToc": true
   },
   {
     "slug": "troubleshooting",

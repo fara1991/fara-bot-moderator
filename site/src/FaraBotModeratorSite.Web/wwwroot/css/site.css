@@ -758,3 +758,143 @@ html body .fbc-sidebar .mud-nav-link.active .mud-nav-link-text { color: #c4b5fd;
    送信ボタンは高さ 48px（タップの大きさ。44px ちょうどだと、判定の端が隣の要素に当たるため）。 */
 html :is(input, textarea).mud-input-slot.mud-input-root:is(:focus, :focus-visible) { outline: 2px solid var(--fbc-focus, #e9d5ff); outline-offset: 2px; }
 .fbc-report-submit { min-height: 48px; }
+
+/* ---- ドキュメントの読みやすさ（文章が続くページを、区切り・囲み・手順・表で見やすくする） ----
+   本文（.prose）は Manual.md から作る。ここは見た目だけで、文章は変えない。
+   - 1 行の長さ: 文章・箇条書き・囲みは 46rem（全角 46 文字ほど）まで。表・コードは本文の幅いっぱい
+   - 節の区切り: h2 は左の太い線と下線、h3 は点線の下線（Manual.md の ##### の小見出しも、ページでは h3 になる。ContentBuilder の Extract が見出しの深さをそろえるため。h4 は使っていない）
+   - 長い項目のある箇条書き（ContentBuilder が long-list を付ける）は、項目ごとの面にして、文章の壁にしない
+   - 番号付きの手順は、番号の丸と間隔で「手順」に見せる
+   - 囲み（Manual.md の > [!NOTE] など。ContentBuilder が見出しを日本語にする）は、色に加えて「補足」「注意」の文字と記号で区別する */
+:root {
+    --callout-note: #6d28d9;
+    --callout-tip: #15803d;
+    --callout-important: #8a2a98;
+    --callout-warning: #b45309;
+    --callout-caution: #b91c1c;
+}
+:root[data-bs-theme="dark"] {
+    --callout-note: #c4a5ff;
+    --callout-tip: #6ee7a0;
+    --callout-important: #f0b6ff;
+    --callout-warning: #fbbf24;
+    --callout-caution: #fca5a5;
+}
+
+.prose { line-height: 1.85; }
+.prose :is(p, ul, ol, .markdown-alert) { max-width: 46rem; }
+
+.prose h2 {
+    margin: 60px 0 18px;
+    padding: 8px 0 8px 14px;
+    border-left: 5px solid var(--primary);
+    border-radius: 2px;
+}
+.prose > h2:first-child { margin-top: 12px; }
+.prose h3 {
+    margin: 44px 0 14px;
+    padding-bottom: 6px;
+    border-bottom: 1px dashed var(--outline-variant);
+}
+.prose p { margin: 0 0 16px; }
+
+.prose li { margin: 4px 0; }
+.prose li > p { margin: 0 0 8px; }
+.prose li > ul, .prose li > ol { margin: 6px 0 4px; }
+
+/* 長い項目のある箇条書き: 項目ごとの面 */
+.prose ul.long-list { list-style: none; padding: 0; }
+.prose ul.long-list > li {
+    margin: 0 0 8px;
+    padding: 9px 14px;
+    background: var(--surface-container-low);
+    border: 1px solid var(--outline-variant);
+    border-left: 4px solid var(--outline);
+    border-radius: var(--shape-s);
+}
+.prose ul.long-list > li > ul { list-style: disc; padding-left: 1.4em; }
+
+/* 番号付きの手順 */
+.prose ol { list-style: none; counter-reset: step; padding: 0; }
+.prose ol > li { counter-increment: step; position: relative; margin: 12px 0; padding-left: 2.75rem; min-height: 2rem; }
+.prose ol > li::before {
+    content: counter(step);
+    position: absolute;
+    left: 0;
+    top: 0.2rem;
+    width: 1.9rem;
+    height: 1.9rem;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--primary-container);
+    color: var(--on-primary-container);
+    font-size: 0.9rem;
+    font-weight: 700;
+    line-height: 1;
+}
+.prose ol > li > ul { list-style: disc; padding-left: 1.4em; }
+
+/* 囲み（補足・注意など）。--callout-c が種類の色（線と記号。文字はふつうの文字色のまま） */
+.prose .markdown-alert {
+    --callout-c: var(--callout-note);
+    margin: 22px 0;
+    padding: 12px 18px 6px;
+    border: 1px solid var(--callout-c);
+    border-left-width: 6px;
+    border-radius: var(--shape-s);
+    background: var(--surface-container-low);
+    line-height: 1.85;
+}
+.prose .markdown-alert-tip { --callout-c: var(--callout-tip); }
+.prose .markdown-alert-important { --callout-c: var(--callout-important); }
+.prose .markdown-alert-warning { --callout-c: var(--callout-warning); }
+.prose .markdown-alert-caution { --callout-c: var(--callout-caution); }
+.prose .markdown-alert-title {
+    margin: 0 0 6px;
+    font-weight: 800;
+    color: var(--on-surface);
+}
+.prose .markdown-alert-title svg { display: none; }
+.prose .markdown-alert-title::before {
+    content: "ⓘ";
+    margin-right: 0.45em;
+    color: var(--callout-c);
+    font-weight: 800;
+}
+.prose .markdown-alert-warning .markdown-alert-title::before,
+.prose .markdown-alert-caution .markdown-alert-title::before { content: "⚠"; }
+.prose .markdown-alert-tip .markdown-alert-title::before { content: "★"; }
+.prose .markdown-alert > :last-child { margin-bottom: 8px; }
+.prose .markdown-alert ul { margin-bottom: 8px; }
+
+/* コード（コマンドの例）。左の線で、本文と区別する */
+.prose pre { border-left: 4px solid var(--primary); }
+
+/* FAQ の質問（ContentBuilder が faq-q を付ける） */
+.prose :is(h2, h3).faq-q {
+    margin: 36px 0 12px;
+    padding: 10px 14px;
+    border: 0;
+    border-left: 5px solid var(--primary);
+    border-radius: 0 var(--shape-s) var(--shape-s) 0;
+    background: var(--surface-container);
+    font-size: 1.1rem;
+}
+
+/* 2 列の表（コマンド → 説明など）は、スマホでは縦に積む（左の列が細くなって、コードが縦に折れるのを避ける） */
+@media (max-width: 599.98px) {
+    .prose table.stack-sm, .prose table.stack-sm tbody, .prose table.stack-sm tr, .prose table.stack-sm td { display: block; }
+    /* 見出し行は消さず、「項目 ／ 項目」の 1 行の帯にする（ラベルと説明でない表でも、列の意味が分かる） */
+    .prose table.stack-sm thead { display: block; }
+    .prose table.stack-sm thead tr { background: var(--surface-container-high); }
+    .prose table.stack-sm thead th { display: inline; padding: 0; border: 0; background: none; font-size: 0.85rem; }
+    .prose table.stack-sm thead th + th::before { content: " ／ "; font-weight: 400; }
+    .prose table.stack-sm tr { padding: 10px 14px; border-bottom: 1px solid var(--outline-variant); }
+    .prose table.stack-sm tr:last-child { border-bottom: 0; }
+    .prose table.stack-sm td { padding: 0; border: 0; }
+    .prose table.stack-sm td:first-child { margin-bottom: 4px; font-weight: 700; }
+    .prose ul.long-list > li { padding: 8px 12px; }
+    .prose h2 { margin-top: 48px; font-size: 1.35rem; }
+    .prose .markdown-alert { padding-inline: 14px; }
+}
