@@ -2,7 +2,7 @@
 import { chromium } from "playwright";
 import { mkdirSync, writeFileSync } from "node:fs";
 const [base, out, kind, filter] = process.argv.slice(2);
-const slugs = ["overview","main-settings","reaction-events","windows","translate","game","timer","commands","pokemon","pokemon-my","pokemon-team","pokemon-sync","pokemon-battle","pokemon-rival","pokemon-notes","beatsaber","faq","troubleshooting","changelog"];
+const slugs = ["overview","main-settings","reaction-events","windows","translate","game","timer","commands","pokemon","beatsaber","faq","troubleshooting","changelog"];
 let pages = ["/", "/docs", ...slugs.map(s => "/docs/" + s), "/changelog", "/privacy", "/report", "/no-such-page", "/docs/no-such"];
 if (filter) pages = pages.filter(p => p.includes(filter));
 const viewports = { pc1280: [1280, 800], pc1920: [1920, 1080], sp390: [390, 844] };

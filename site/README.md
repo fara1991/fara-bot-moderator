@@ -16,7 +16,7 @@ Cloudflare の Worker 名は本番 `fara-twitch-bot`、確認用 `fara-twitch-bo
 - 説明ページの本文は、リポジトリ直下の `Manual.md` を見出しで切り分けたものです。**文章を直すときは `Manual.md` を直します**（アプリに同梱する操作説明書と同じ内容になります）。ビルドが `data/site.json` に変換するので、ブラウザは Markdown を読みません
 - どの見出しをどのページにするか、ページの題名・グループ・説明は `Content/pages.json` に書きます。見出しの名前を変えたときは、`pages.json` の `heading` も合わせてください（見つからないとビルドが失敗します）
 - 題名に漢字があるページには `reading`（題名のひらがなの読み。長音は「ー」）を書きます（例: `"reading": "こまんどじっこう"`）。サイト内検索で、ローマ字（komando・kenri）やかなの読みでも探せるようにするためです。読みは、ひらがなと「ー」だけにします（ビルドとテストで確かめます）
-- 親ページを持つページ（`parent` に親の slug を書く）は、親のグループに入り、サイドメニューでは親の下に入れ子で出ます。ゲームのコマンドは、「コマンド実行」（`commands`）の子として `pokemon` のように書きます（`parent` や `group` に `null` は使えません）
+- 親ページを持つページ（`parent` に親の slug を書く）は、親のグループに入り、サイドメニューでは親の下に入れ子で出ます。ゲームのコマンドは、「コマンド実行」（`commands`）の子として `pokemon` のように書きます（`parent` や `group` に `null` は使えません）。サイドメニューに出す名前は `menuTitle`（書かなければ `title`。ページの h1・title は `title` のまま）。1 ページに多くの節を載せるページ（ポケモン）は、`sections` に Manual.md の見出しを並べ、`inlineToc: true` で本文の先頭に見出しへのリンクの目次を出します（ポケモンのコマンドの説明は `/docs/pokemon` の 1 ページ。以前の子ページ `pokemon-my` などは無く、URL は 404）
 - 更新履歴は `Content/changelog.json`
 - サイト内検索は C#（`src/FaraBotModeratorSite.Shared/Search`）。ひらがな・カタカナ・全角・ローマ字（nn→ん など）で探せます
 - 画面は `src/FaraBotModeratorSite.Pages`（ページ）と `src/FaraBotModeratorSite.Web`（レイアウト）、本文の見た目は `src/FaraBotModeratorSite.Web/wwwroot/css/site.css`（色は `:root` の変数）。構成と注意は `CLAUDE.md`

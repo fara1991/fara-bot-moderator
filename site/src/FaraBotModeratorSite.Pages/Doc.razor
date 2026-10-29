@@ -24,6 +24,18 @@ else
             </p>
             <h1>@doc.Title</h1>
             <p class="doc-description">@doc.Description</p>
+            @if (doc.InlineToc)
+            {
+                <nav class="inline-toc" aria-label="このページの見出し一覧">
+                    <p class="doc-nav-title">このページの内容</p>
+                    <ul>
+                        @foreach (var item in doc.Toc.Where(t => t.Level == 2))
+                        {
+                            <li><a href="@(doc.Url)#@item.Id">@item.Text</a></li>
+                        }
+                    </ul>
+                </nav>
+            }
             <div class="prose">@((MarkupString)doc.Html)</div>
 
             @if (children.Count > 0)

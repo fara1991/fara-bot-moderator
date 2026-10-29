@@ -74,77 +74,27 @@
     "reading": "こまんどじっこう",
     "group": "コマンド実行",
     "description": "チャットからゲームごとのコマンドを実行できます。ゲームを選ぶと、そのゲームのコマンドの説明へ進みます。",
-    "sections": []
+    "sections": [],
+    "menuTitle": "各種コマンド"
   },
   {
     "slug": "pokemon",
     "title": "ポケモンコマンド（!poke）",
+    "reading": "いくせいぽけもんじぶんちーむでーたきょうゆうたいせんあいてちーむとりれきちゅういじこう",
     "parent": "commands",
-    "description": "チャットでポケモンの登録・ダメージ計算・相手の努力値推定・素早さ比較ができるコマンドの概要と、接頭辞（データセット）。",
+    "description": "チャットでポケモンの登録・ダメージ計算・相手の努力値推定・素早さ比較ができるコマンドの説明。接頭辞（データセット）、育成ポケモン、自分チーム、データ共有（アクセスキー）、対戦（dmg・scan・faster）、相手チームと履歴、注意事項。",
     "sections": [
       { "heading": "5.4. ポケモンコマンド（!poke）", "own": true },
-      { "heading": "接頭辞（データセット）" }
-    ]
-  },
-  {
-    "slug": "pokemon-my",
-    "title": "育成ポケモン",
-    "reading": "いくせいぽけもん",
-    "parent": "pokemon",
-    "description": "育成済みポケモンの登録・更新・一覧・詳細・削除（add / set / ls / detail / rm -m）。",
-    "sections": [
-      { "heading": "育成ポケモン（配信者・モデレーターのみ）" }
-    ]
-  },
-  {
-    "slug": "pokemon-team",
-    "title": "自分チーム",
-    "reading": "じぶんちーむ",
-    "parent": "pokemon",
-    "description": "チームの作成・使用チームの切り替え・一覧（add / use / unuse / ls / detail / rm -t）。番号はシングルとダブルで別々（-f）、登録する形式（format）、別の形式へ移す（set -t）。",
-    "sections": [
-      { "heading": "自分チーム（配信者・モデレーターのみ）" }
-    ]
-  },
-  {
-    "slug": "pokemon-sync",
-    "title": "データ共有（アクセスキー）",
-    "reading": "でーたきょうゆう",
-    "parent": "pokemon",
-    "description": "登録データをクラウドに保存し、サイトと共有するためのアクセスキーの発行・入力・作り直し・停止。",
-    "sections": [
-      { "heading": "データ共有（アクセスキー）" }
-    ]
-  },
-  {
-    "slug": "pokemon-battle",
-    "title": "対戦（dmg・scan・faster）",
-    "reading": "たいせん",
-    "parent": "pokemon",
-    "description": "ダメージ計算（dmg）、相手の振り方の推定（scan）、素早さ比較（faster）、試合の終了（end）。",
-    "sections": [
-      { "heading": "対戦（dmg・scan・faster）" }
-    ]
-  },
-  {
-    "slug": "pokemon-rival",
-    "title": "相手チームと履歴",
-    "reading": "あいてちーむとりれき",
-    "parent": "pokemon",
-    "description": "対戦中の相手チーム（-r）と、終わった試合の履歴（-h）の管理。",
-    "sections": [
-      { "heading": "相手チーム（-r）と履歴（-h）" }
-    ]
-  },
-  {
-    "slug": "pokemon-notes",
-    "title": "注意事項",
-    "reading": "ちゅういじこう",
-    "parent": "pokemon",
-    "description": "権限（配信者・モデレーター）、連続実行の制限、対戦形式（登録する形式）、データの取得元など。",
-    "sections": [
+      { "heading": "接頭辞（データセット）" },
+      { "heading": "育成ポケモン（配信者・モデレーターのみ）" },
+      { "heading": "自分チーム（配信者・モデレーターのみ）" },
+      { "heading": "データ共有（アクセスキー）" },
+      { "heading": "対戦（dmg・scan・faster）" },
+      { "heading": "相手チーム（-r）と履歴（-h）" },
       { "heading": "注意" }
-    ]
+    ],
+    "menuTitle": "ポケモン",
+    "inlineToc": true
   },
   {
     "slug": "beatsaber",
@@ -158,7 +108,8 @@
       { "heading": "爆弾（!bomb・!bombline・!bombreset）" },
       { "heading": "Mod の設定" },
       { "heading": "このアプリでの扱い" }
-    ]
+    ],
+    "menuTitle": "Beat Saber"
   },
   {
     "slug": "faq",

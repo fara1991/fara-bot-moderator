@@ -386,6 +386,31 @@ code {
 .doc-toc a:hover { background: var(--surface-container-high); color: var(--on-surface); }
 .doc-toc .sub a { padding-left: 24px; font-size: 0.86rem; }
 
+/* 本文の先頭の見出し一覧（pages.json の inlineToc。1 ページに多くの節を載せるページ用）。スマホでは右の目次が出ないので、これが目次になる */
+.doc-layout .inline-toc {
+    margin: 20px 0 8px;
+    padding: 14px 16px;
+    border: 1px solid var(--outline-variant);
+    border-radius: 12px;
+    background: var(--surface-container);
+}
+.doc-layout .inline-toc ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: 0 12px; }
+.doc-layout .inline-toc li { margin: 0; }
+.doc-layout .inline-toc a {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    text-align: left;
+    min-height: 44px;
+    padding: 4px 12px;
+    border-radius: 999px;
+    color: var(--on-surface-variant);
+    text-decoration: none;
+    font-size: 0.92rem;
+    line-height: 1.5;
+}
+.doc-layout .inline-toc a:hover { background: var(--surface-container-high); color: var(--on-surface); }
+
 .doc-main { min-width: 0; }
 .breadcrumb { margin: 0 0 8px; font-size: 0.85rem; color: var(--on-surface-variant); }
 .breadcrumb > span[aria-hidden="true"] { margin-inline: 0.4em; }
@@ -462,6 +487,10 @@ code {
 @media (max-width: 1250px) {
     .doc-layout { grid-template-columns: minmax(0, 1fr); }
     .doc-toc { display: none; }
+}
+/* 本文の先頭の見出し一覧は、右の目次が出ない幅（1250px 以下）だけ。広い幅では右の目次だけ */
+@media (min-width: 1251px) {
+    .doc-layout .inline-toc { display: none; }
 }
 
 @media (max-width: 899.98px) {

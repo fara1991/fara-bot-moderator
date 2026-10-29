@@ -18,7 +18,7 @@
 - `tools/build-site.mjs`: Build → `dotnet publish` → kit の `build-pages`。`tools/compare/`: 移行前後の比較（README あり）
 - ダウンロードのページ（`/download`。`Pages/Download.razor`）は、アプリの入手先（GitHub Releases の最新版へのリンク・動作環境・導入の手順）。動作環境は `Manual.md`・README・`release-app.yml` の事実だけを書く。サイドメニューに他のサイトへのリンクは置かない（入手先はこのページから案内する。フッターの SNS は残す）
 - 説明ページの本文は `Manual.md`（リポジトリ直下。アプリの操作説明書と同じ）。ページの題名・グループ・説明・親子・読みは `Content/pages.json`
-- Beat Saber のコマンドの説明は `/docs/beatsaber`（`Manual.md` の「5.5. Beat Saber コマンド」の節と、`pages.json` の `parent: commands` の子ページ）。ゲームのコマンドを増やすときも、先に `Manual.md` に節を書き、`parent: commands` の子ページを足す
+- Beat Saber のコマンドの説明は `/docs/beatsaber`（`Manual.md` の「5.5. Beat Saber コマンド」の節と、`pages.json` の `parent: commands` の子ページ）。ポケモンのコマンドの説明は `/docs/pokemon` の 1 ページ（`Manual.md` の「5.4」の節の下の見出しを `sections` に並べ、`inlineToc: true` で先頭に目次を出す。以前の子ページは廃止）。サイドメニューの名前は `menuTitle`（ポケモン・Beat Saber・各種コマンド）。ゲームのコマンドを増やすときも、先に `Manual.md` に節を書き、`parent: commands` の子ページを足す
 - 問い合わせの回数制限（kit v0.8.0・1 日 3 回・送信元ごと）: `worker/index.js` の `export { ReportRateLimiter }` と `wrangler.toml` の `durable_objects`・`migrations`（トップレベル・`env.production`・`env.dev` の 3 か所）が要る。どれかを消すと制限が止まる。`TURNSTILE_SECRET` を変えると計数はリセットされる。プライバシーの記載は `Privacy.razor`（テストが見る）。詳細は README.md
 - `external/fara-blazor-component`（submodule）は、使うタグに固定する（今は v1.0.1）。kit の develop の最新を追わない。上げるときは、kit のタグのコミットに上げる PR（develop 向け）を出し、確認用で確かめる。kit を上げたら、kit の docs/changelog.md の「CI に影響する変更」を読む（v0.7.0 からは、`layout-check.config.mjs` の `menuEsc.closeSelector` が要る）
 - `external/fara-pokemon-battle-assistant`（submodule）は、ポケモン側の変更のたびに `develop` の最新へ更新する（PR を出す）。kit とは別物

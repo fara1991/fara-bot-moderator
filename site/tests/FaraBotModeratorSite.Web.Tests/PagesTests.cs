@@ -75,16 +75,40 @@ public class PagesTests
         var html = await RenderAsync<Doc>(Slug("commands"));
         Assert.Contains("href=\"/docs/pokemon\"", html);
         Assert.Contains("href=\"/docs/beatsaber\"", html);
-        Assert.DoesNotContain("href=\"/docs/pokemon-my\"", html);   // 子の子は、入口ではなく、ポケモンのページに出す
+        Assert.DoesNotContain("href=\"/docs/pokemon-my\"", html);   // ポケモンの説明は 1 ページにまとめたので、旧子ページへのリンクは無い
     }
 
     [Fact]
-    public async Task Game_page_shows_breadcrumb_back_to_the_hub_and_its_sub_pages()
+    public async Task Pokemon_page_shows_breadcrumb_back_to_the_hub_and_one_table_of_contents_at_the_top()
     {
-        var html = await RenderAsync<Doc>(Slug("pokemon-my"));
+        var html = await RenderAsync<Doc>(Slug("pokemon"));
         Assert.Contains("href=\"/docs/commands\"", html);
-        Assert.Contains("href=\"/docs/pokemon\"", html);
-        Assert.Contains("href=\"/docs/pokemon-team\"", html);
+        Assert.Contains("aria-label=\"このページの見出し一覧\"", html);
+        // 先頭の目次は、h2 の見出しごとに 1 つのリンクを持ち、行き先の見出し（id）が本文にある
+        var toc = System.Text.RegularExpressions.Regex.Match(html, "<nav class=\"inline-toc\".*?</nav>", System.Text.RegularExpressions.RegexOptions.Singleline).Value;
+        var links = System.Text.RegularExpressions.Regex.Matches(toc, "href=\"/docs/pokemon#([^\"]+)\"").Select(m => System.Net.WebUtility.HtmlDecode(m.Groups[1].Value)).ToList();
+        Assert.Equal(7, links.Count);
+        Assert.All(links, id => Assert.Contains($"<h2 id=\"{id}\"", html));
+        // 以前の子ページへのリンクは無い
+        Assert.DoesNotContain("href=\"/docs/pokemon-", html);
+        Assert.DoesNotContain("含まれるページ", html);
+    }
+
+    [Fact]
+    public async Task Pages_without_inline_toc_do_not_show_it()
+    {
+        var html = await RenderAsync<Doc>(Slug("main-settings"));
+        Assert.DoesNotContain("inline-toc", html);
+    }
+
+    [Fact]
+    public async Task Home_links_to_pokemon_sections_point_at_headings_that_exist()
+    {
+        var home = await RenderAsync<Home>();
+        var page = await RenderAsync<Doc>(Slug("pokemon"));
+        var ids = System.Text.RegularExpressions.Regex.Matches(home, "href=\"/docs/pokemon#([^\"]+)\"").Select(m => System.Net.WebUtility.HtmlDecode(m.Groups[1].Value)).ToList();
+        Assert.NotEmpty(ids);
+        Assert.All(ids, id => Assert.Contains($"<h2 id=\"{id}\"", page));
     }
 
     [Fact]

@@ -17,6 +17,10 @@ public sealed class PageDefinition
     public string Description { get; set; } = "";
     /// <summary>題名の読み（ひらがな・長音の「ー」）。題名に漢字があるページだけに書く。サイト内検索で、読みからも探せるようにする。</summary>
     public string Reading { get; set; } = "";
+    /// <summary>サイドメニューに出す名前。書かなければ題名。</summary>
+    public string? MenuTitle { get; set; }
+    /// <summary>true なら、本文の先頭に見出しへのリンクの目次を出す。</summary>
+    public bool InlineToc { get; set; }
     public List<SectionDefinition> Sections { get; set; } = new();
 }
 
@@ -102,7 +106,7 @@ public static partial class ContentBuilder
             var markdown = string.Join("\n", d.Sections.Select((s, i) => manual.Extract(s.Heading, s.Own, includeHeading: i > 0)));
             var html = Markdown.ToHtml(markdown, Pipeline);
             var parent = d.Parent.Length > 0 ? d.Parent : null;
-            pages.Add(new DocPage(d.Slug, d.Title, GroupOf(d, byDefinition), d.Description, html, ExtractToc(html), parent, d.Reading ?? ""));
+            pages.Add(new DocPage(d.Slug, d.Title, GroupOf(d, byDefinition), d.Description, html, ExtractToc(html), parent, d.Reading ?? "", string.IsNullOrWhiteSpace(d.MenuTitle) ? null : d.MenuTitle, d.InlineToc));
         }
 
         // 別のページにある見出しへの同じページ内リンク（#見出し）を、そのページへのリンクに直す
@@ -213,7 +217,8 @@ public static partial class ContentBuilder
         html = InternalLinkPattern().Replace(html, m =>
         {
             var id = Uri.UnescapeDataString(m.Groups[1].Value);
-            if (pageOfId.TryGetValue(id, out var target)) return target == slug ? m.Value : $"href=\"/docs/{target}#{m.Groups[1].Value}\"";
+            // 同じページの見出しでも /docs/<slug>#見出し にする（<base href="/"> のため、#見出し だけだとホームへ移ってしまう）
+            if (pageOfId.TryGetValue(id, out var target)) return $"href=\"/docs/{target}#{m.Groups[1].Value}\"";
             if (headingPage.TryGetValue(id, out var titled)) return $"href=\"/docs/{titled}\"";
             return m.Value;
         });

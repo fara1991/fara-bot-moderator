@@ -1,6 +1,6 @@
 import { chromium } from "playwright";
 const [oldBase, newBase] = process.argv.slice(2);
-const slugs = ["overview","main-settings","reaction-events","windows","translate","game","timer","commands","pokemon","pokemon-my","pokemon-team","pokemon-sync","pokemon-battle","pokemon-rival","pokemon-notes","beatsaber","faq","troubleshooting","changelog"];
+const slugs = ["overview","main-settings","reaction-events","windows","translate","game","timer","commands","pokemon","beatsaber","faq","troubleshooting","changelog"];
 const pages = ["/", "/docs", ...slugs.map(s => "/docs/" + s), "/changelog", "/privacy", "/report", "/no-such-page"];
 const b = await chromium.launch(); const ctx = await b.newContext({ javaScriptEnabled: false, viewport: { width: 1280, height: 800 } }); const p = await ctx.newPage();
 const norm = t => t.replace(/\s+/g, "");

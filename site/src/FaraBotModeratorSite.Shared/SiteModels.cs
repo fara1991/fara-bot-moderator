@@ -16,7 +16,9 @@ public sealed class ChangelogEntry
 public sealed record TocItem(string Id, string Text, int Level);
 
 /// <summary>1 つの説明ページ。Parent は親ページの slug（親が無いページは null）。子ページは親のグループに入る。</summary>
-public sealed record DocPage(string Slug, string Title, string Group, string Description, string Html, IReadOnlyList<TocItem> Toc, string? Parent = null, string Reading = "")
+/// <param name="MenuTitle">サイドメニューに出す名前（無ければ題名）。ページの h1・title は題名のまま。</param>
+/// <param name="InlineToc">true なら、本文の先頭に見出しへのリンクの目次を出す（1 ページに多くの節を載せるページ用）。</param>
+public sealed record DocPage(string Slug, string Title, string Group, string Description, string Html, IReadOnlyList<TocItem> Toc, string? Parent = null, string Reading = "", string? MenuTitle = null, bool InlineToc = false)
 {
     [JsonIgnore]
     public string Url => $"/docs/{Slug}";
