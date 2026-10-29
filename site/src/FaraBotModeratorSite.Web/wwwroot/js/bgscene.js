@@ -21,8 +21,8 @@
     var touch = window.matchMedia("(pointer: coarse)").matches;
     var frameGap = touch ? 50 : 33;
 
-    // 吹き出しの色（紫を中心に、少しだけピンク・青を混ぜる）
-    var HUES = ["149,117,205", "179,157,219", "126,87,194", "186,104,200", "121,134,203", "149,117,205"];
+    // 吹き出しの色（インディゴ〜ブルーを中心に、少しだけ水色を混ぜる）
+    var HUES = ["121,134,224", "150,168,245", "88,108,214", "96,165,250", "129,140,248", "121,134,224"];
 
     // 同じ並びになるよう、乱数は固定の種から作る
     var seed = 20261022;
@@ -72,7 +72,7 @@
         var edge = Math.min(1, Math.max(0, Math.min(b.y + b.h, H - b.y) / 160));
         var k = (dark ? 0.6 : 0.35) * edge * (0.45 + 0.55 * (b.depth - 0.5));   // 文字の邪魔にならないよう、控えめに
         if (k <= 0.01) return;
-        var pad = 10 * b.depth, r = 12 * b.depth, ink = dark ? "255,255,255" : "70,40,120";
+        var pad = 10 * b.depth, r = 12 * b.depth, ink = dark ? "255,255,255" : "40,50,110";
         ctx.globalAlpha = k;
         rrect(b.x, b.y, b.w, b.h, r);
         ctx.fillStyle = "rgba(" + b.hue + "," + (dark ? 0.1 : 0.12) + ")"; ctx.fill();
