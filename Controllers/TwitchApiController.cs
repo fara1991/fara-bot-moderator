@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using System.Net.Http;
 using System.Linq;
 using System.Threading.Tasks;
 using FaraBotModerator.Models;
 using FaraBotModerator.Properties;
 using TwitchLib.Api;
 using TwitchLib.Api.Core.Enums;
+using TwitchLib.Api.Core.Exceptions;
 using TwitchLib.Api.Helix.Models.Users.GetUsers;
 using Stream = TwitchLib.Api.Helix.Models.Streams.GetStreams.Stream;
 
@@ -57,7 +60,7 @@ public class TwitchApiController
             _myUserInfo = await GetTwitchChannelByLoginAsync(_secretKeyModel.Twitch.Client.UserName);
             _myStreamInfo = await GetTwitchStreamingAsync(_secretKeyModel.Twitch.Client.UserName);
         }
-        catch (Exception ex)
+        catch (Exception ex) when (IsExpectedApiFailure(ex))
         {
             LogController.OutputLog($@"<Error> TwitchApiController initialization failed: {ex.Message}");
             if (ex.InnerException != null)
@@ -109,7 +112,7 @@ public class TwitchApiController
             var findUserList = await _twitchApi.Helix.Users.GetUsersAsync(userIds, userLoginNames);
             return findUserList.Users.Length > 0 ? findUserList.Users[0] : null;
         }
-        catch (Exception ex)
+        catch (Exception ex) when (IsExpectedApiFailure(ex))
         {
             LogController.OutputLog($@"<Error> GetTwitchChannelByIdAsync failed: {ex.Message}");
             return null;
@@ -131,7 +134,7 @@ public class TwitchApiController
             var findUserList = await _twitchApi.Helix.Users.GetUsersAsync(userIds, userLoginNames);
             return findUserList.Users.Length > 0 ? findUserList.Users[0] : null;
         }
-        catch (Exception ex)
+        catch (Exception ex) when (IsExpectedApiFailure(ex))
         {
             LogController.OutputLog($@"<Error> GetTwitchChannelByLoginAsync failed: {ex.Message}");
             return null;
@@ -156,7 +159,7 @@ public class TwitchApiController
                 await _twitchApi.Helix.Chat.SendShoutoutAsync(_myUserInfo.Id, raidUser.Users[0].Id, _myUserInfo.Id, Settings.Default.AccessToken);
             }
         }
-        catch (Exception ex)
+        catch (Exception ex) when (IsExpectedApiFailure(ex))
         {
             LogController.OutputLog($@"<Error> SendShoutoutAsync failed: {ex.Message}");
         }
@@ -177,7 +180,7 @@ public class TwitchApiController
             var streamingInformations = await _twitchApi.Helix.Streams.GetStreamsAsync(userIds: userIds, userLogins: userLoginNames, type: "live");
             return streamingInformations.Streams.Length > 0 ? streamingInformations.Streams[0] : new Stream();
         }
-        catch (Exception ex)
+        catch (Exception ex) when (IsExpectedApiFailure(ex))
         {
             LogController.OutputLog($@"<Error> GetTwitchStreamingAsync failed: {ex.Message}");
             return new Stream();
@@ -215,7 +218,7 @@ public class TwitchApiController
             
             return (await Task.WhenAll(tasks)).ToList();
         }
-        catch (Exception ex)
+        catch (Exception ex) when (IsExpectedApiFailure(ex))
         {
             LogController.OutputLog($@"<Error> GetStreamingSameGameUsersAsync failed: {ex.Message}");
             return new List<StreamingUserModel>();
@@ -246,7 +249,7 @@ public class TwitchApiController
             
             return (await Task.WhenAll(tasks)).ToList();
         }
-        catch (Exception ex)
+        catch (Exception ex) when (IsExpectedApiFailure(ex))
         {
             LogController.OutputLog($@"<Error> GetStreamingFollowerUsersAsync failed: {ex.Message}");
             return new List<StreamingUserModel>();
@@ -256,6 +259,7 @@ public class TwitchApiController
     /// <summary>
     /// EventSub サブスクリプションを作成します。
     /// </summary>
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "呼び出し元（TwitchEventSubController）は `_ =` で結果を待たない（fire-and-forget）ため、ここで受けないと失敗がどこにも記録されない。TwitchLib の呼び出しの最上位として、種類を問わずログに残して続ける")]
     private async Task CreateEventSubSubscriptionAsync(string subscriptionType, string version,
         Dictionary<string, string> conditions, string sessionId)
     {
@@ -339,7 +343,7 @@ public class TwitchApiController
                 $"Token is valid. Client ID: {validation.ClientId}, User ID: {validation.UserId}, Expires in: {validation.ExpiresIn} seconds");
             return true;
         }
-        catch (Exception ex)
+        catch (Exception ex) when (IsExpectedApiFailure(ex))
         {
             LogController.OutputLog($"Token validation failed: {ex.Message}");
             if (ex.InnerException != null)
@@ -349,4 +353,22 @@ public class TwitchApiController
             return false;
         }
     }
+
+    /// <summary>
+    /// Twitch API の呼び出しで「起こりうる失敗」か判定します。起こりうる失敗はログに残して null・空・false で続け、
+    /// それ以外（NullReferenceException など、コードの誤り）は握りつぶさず上位へ出します。
+    /// 含むもの: 通信の失敗（HttpRequestException）、タイムアウト・取り消し（OperationCanceledException。TaskCanceledException を含む）、
+    /// 応答の解析の失敗（Newtonsoft.Json.JsonException）、TwitchLib が状態コードから投げる API 例外（HttpResponseException 系）、
+    /// 引数・認証情報の不足（BadParameterException・ClientIdAndOAuthTokenRequired・InvalidCredentialException）。
+    /// </summary>
+    /// <param name="ex">捕まえた例外</param>
+    /// <returns>起こりうる失敗ならtrue</returns>
+    internal static bool IsExpectedApiFailure(Exception ex) =>
+        ex is HttpRequestException
+            or OperationCanceledException
+            or Newtonsoft.Json.JsonException
+            or HttpResponseException
+            or BadParameterException
+            or ClientIdAndOAuthTokenRequired
+            or InvalidCredentialException;
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading;
@@ -57,6 +58,7 @@ public class BouyomiChanController
     /// </summary>
     /// <param name="talkText">喋らせたい文章</param>
     /// <returns>成功したかどうか</returns>
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "呼び出し元（AddTalkTask・AddEventTalkTask）は `_ =` で結果を待たない（fire-and-forget）ため、ここで受けないと失敗がどこにも記録されない。棒読みちゃんの失敗でボットを落とさないよう、種類を問わずログに残して続ける")]
     private static async Task<bool> CreateTalkAsync(string talkText)
     {
         try
@@ -86,22 +88,38 @@ public class BouyomiChanController
     /// 棒読みちゃんが起動しているか確認します。
     /// </summary>
     /// <returns>起動していればtrue</returns>
-    public static async Task<bool> IsBouyomiChanRunningAsync()
+    public static Task<bool> IsBouyomiChanRunningAsync() => IsRunningAsync(Client, RunningCheckTimeout);
+
+    /// <summary>
+    /// 棒読みちゃんに接続できるか確認します。通信の失敗・タイムアウトは「起動していない」として false を返し、それ以外の例外（コードの誤り）は呼び出し元へ出します。
+    /// </summary>
+    /// <param name="client">通信に使う HttpClient（テストで差し替える）</param>
+    /// <param name="limit">確認の上限</param>
+    /// <returns>接続できればtrue</returns>
+    internal static async Task<bool> IsRunningAsync(HttpClient client, TimeSpan limit)
     {
         try
         {
-            using var timeout = new CancellationTokenSource(RunningCheckTimeout);
+            using var timeout = new CancellationTokenSource(limit);
             // 棒読みちゃんのHTTP連携が有効であれば、GET /Talk に対して (恐らく405 Method Not Allowed等が返るが) 接続はできるはず
             // 接続自体が拒否される場合は起動していないとみなす。応答の中身（ステータス）は見ない
             // 応答は使わない（接続できたことが分かればよい）。受け取った応答は捨てて、接続を返す
-            (await Client.GetAsync(TalkUrl, timeout.Token)).Dispose();
+            (await client.GetAsync(TalkUrl, timeout.Token)).Dispose();
             return true;
         }
-        catch (Exception ex)
+        catch (Exception ex) when (IsConnectionFailure(ex))
         {
             // 起動していないとみなすが、理由（接続の拒否・タイムアウト）はログに残す
             LogController.OutputLog($"BouyomiChan 接続確認: {ex.GetType().Name}");
             return false;
         }
     }
+
+    /// <summary>
+    /// 棒読みちゃんに「つながらなかった」と言える例外か判定します。接続の拒否・通信の失敗（HttpRequestException）と、
+    /// 時間切れ（OperationCanceledException。TaskCanceledException を含む）だけです。
+    /// </summary>
+    /// <param name="ex">捕まえた例外</param>
+    /// <returns>つながらなかった例外ならtrue</returns>
+    internal static bool IsConnectionFailure(Exception ex) => ex is HttpRequestException or OperationCanceledException;
 }

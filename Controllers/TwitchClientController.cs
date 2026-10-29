@@ -206,6 +206,7 @@ public class TwitchClientController
     /// <summary>
     /// チャットのアイコンURLを取得します。時間内に取れないとき・取れないときは null（アイコン無しで表示する）。
     /// </summary>
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "アイコンが取れなくても、チャットの行は表示する（アイコン無し）。このタスクは行の待ち行列に渡されるため、種類を問わず受けて null にしないと、行が出なくなる")]
     private async Task<string?> GetChatIconAsync(string userName, string userId)
     {
         try
