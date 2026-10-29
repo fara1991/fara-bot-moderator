@@ -399,6 +399,8 @@ code {
 .doc-layout .inline-toc a {
     display: flex;
     align-items: center;
+    justify-content: flex-start;
+    text-align: left;
     min-height: 44px;
     padding: 4px 12px;
     border-radius: 999px;
@@ -485,6 +487,10 @@ code {
 @media (max-width: 1250px) {
     .doc-layout { grid-template-columns: minmax(0, 1fr); }
     .doc-toc { display: none; }
+}
+/* 本文の先頭の見出し一覧は、右の目次が出ない幅（1250px 以下）だけ。広い幅では右の目次だけ */
+@media (min-width: 1251px) {
+    .doc-layout .inline-toc { display: none; }
 }
 
 @media (max-width: 899.98px) {

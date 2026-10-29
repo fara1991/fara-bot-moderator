@@ -75,7 +75,7 @@ public class PagesTests
         var html = await RenderAsync<Doc>(Slug("commands"));
         Assert.Contains("href=\"/docs/pokemon\"", html);
         Assert.Contains("href=\"/docs/beatsaber\"", html);
-        Assert.DoesNotContain("href=\"/docs/pokemon-my\"", html);   // 子の子は、入口ではなく、ポケモンのページに出す
+        Assert.DoesNotContain("href=\"/docs/pokemon-my\"", html);   // ポケモンの説明は 1 ページにまとめたので、旧子ページへのリンクは無い
     }
 
     [Fact]

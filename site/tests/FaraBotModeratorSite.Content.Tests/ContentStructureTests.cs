@@ -115,6 +115,21 @@ public class ContentStructureTests
         Assert.All(pages.Where(p => p.Reading.Length > 0), p => Assert.Matches(@"^[ぁ-ゖー]+$", p.Reading));
     }
 
+    [Theory]
+    [InlineData("いくせい")]
+    [InlineData("じぶんちーむ")]
+    [InlineData("でーたきょうゆう")]
+    [InlineData("たいせん")]
+    [InlineData("あいてちーむ")]
+    [InlineData("ちゅうい")]
+    [InlineData("ikusei")]
+    [InlineData("taisen")]
+    public void Pokemon_page_is_found_by_the_readings_of_its_former_sub_pages(string term)
+    {
+        var index = new FaraBotModeratorSite.Search.SearchIndex(LoadContent().Search);
+        Assert.Contains(index.Search(term), h => h.Entry.Url == "/docs/pokemon");
+    }
+
     [Fact]
     public void Search_index_gives_the_reading_only_to_the_page_entry()
     {
