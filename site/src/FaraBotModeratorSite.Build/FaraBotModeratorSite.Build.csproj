@@ -3,7 +3,7 @@
   <!--
     ビルドツール（node build-pages の前に動かす）。Manual.md・Content/*.json から、次を書き出す:
       - ブラウザが起動時に読む /data/site.json（説明ページの本文・更新履歴・検索の索引）
-      - fara-site-kit の build-pages に渡す pages.json（ページごとの題名・説明・本文入りの静的 HTML）と site.json
+      - fara-blazor-component の build-pages に渡す pages.json（ページごとの題名・説明・本文入りの静的 HTML）と site.json
     静的 HTML の本文は、ブラウザと同じページの部品（Pages）を HtmlRenderer で描いて作る（文章が二重にならない）。
   -->
   <PropertyGroup>

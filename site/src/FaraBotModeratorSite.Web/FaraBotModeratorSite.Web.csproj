@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
 
   <!--
-    紹介サイトの本体（Blazor WebAssembly + MudBlazor。共通部品は external/fara-site-kit）。
+    紹介サイトの本体（Blazor WebAssembly + MudBlazor。共通部品は external/fara-blazor-component）。
     ページの部品は Pages、説明ページの中身（Manual.md から作った data/site.json）は Build が書き出す。
   -->
   <PropertyGroup>
@@ -22,8 +22,8 @@
   <ItemGroup>
     <ProjectReference Include="..\FaraBotModeratorSite.Pages\FaraBotModeratorSite.Pages.csproj" />
     <ProjectReference Include="..\FaraBotModeratorSite.Shared\FaraBotModeratorSite.Shared.csproj" />
-    <ProjectReference Include="..\..\..\external\fara-site-kit\src\FaraSiteKit.Core\FaraSiteKit.Core.csproj" />
-    <ProjectReference Include="..\..\..\external\fara-site-kit\src\FaraSiteKit.Razor\FaraSiteKit.Razor.csproj" />
+    <ProjectReference Include="..\..\..\external\fara-blazor-component\src\FaraBlazorComponent.Core\FaraBlazorComponent.Core.csproj" />
+    <ProjectReference Include="..\..\..\external\fara-blazor-component\src\FaraBlazorComponent.Razor\FaraBlazorComponent.Razor.csproj" />
   </ItemGroup>
 
 </Project>

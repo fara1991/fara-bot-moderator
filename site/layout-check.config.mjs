@@ -17,13 +17,13 @@ export default {
   viewports: [360, 390, 768, 1024, 1440],
   viewportHeight: 800,
   readySelector: ".mud-layout",
-  // closeSelector: kit v0.7.0 のスマホのドロワーは、開くと左上に閉じるボタン（.fsk-drawer-close）を出し、ドロワーがメニューボタンを覆う。閉じる手段はこのボタンで判定する（docs/layout-check.md の 6.）
-  menuEsc: { buttonSelector: ".fsk-menu-toggle", closeSelector: ".fsk-drawer-close" },
+  // closeSelector: kit v0.7.0 のスマホのドロワーは、開くと左上に閉じるボタン（.fbc-drawer-close）を出し、ドロワーがメニューボタンを覆う。閉じる手段はこのボタンで判定する（docs/layout-check.md の 6.）
+  menuEsc: { buttonSelector: ".fbc-menu-toggle", closeSelector: ".fbc-drawer-close" },
   // 除外は、既知の例外だけ（rule・selector・reason が必須。page は省くとすべてのページ）。増やすときは理由を具体的に書く
   exclusions: [
     {
       rule: "no-offscreen-focus",
-      selector: ".fsk-content a, .fsk-content button, .fsk-content input, .fsk-content textarea, .fsk-content [tabindex], .fsk-content .table-wrap",
+      selector: ".fbc-content a, .fbc-content button, .fbc-content input, .fbc-content textarea, .fbc-content [tabindex], .fbc-content .table-wrap",
       reason: "本文の項目（横に広い表の、スクロールできる枠を含む。Chrome は tabindex が無くても、その枠で Tab を止める）は、Tab で移ると画面の外（下の方の段落）にあるだけ。kit の計測は scroll せずに位置を見るため、下にある本文の項目を「画面の外」と数える（kit の計測の課題）。閉じたドロワーの項目は本文の外にあり、inert で Tab に入らないので、この除外の対象外（そのまま計測する）",
     },
     {
@@ -34,19 +34,19 @@ export default {
     },
     {
       rule: "tap-target",
-      selector: "a.fsk-footer-social",
+      selector: "a.fbc-footer-social",
       reason: "フッターの SNS アイコン（22px・間隔約 6px）。44px の当たり判定は隣のアイコンと重なり、横の判定が隣に当たる。大きさと間隔を変えないための除外（大きくするかは見た目の判断）",
     },
     {
       // 受け付けを止めている間（ビルドの既定は止めている）は、送信ボタンが disabled（MudBlazor が pointer-events を止める）。押せない状態は、押せる範囲の判定の対象外
       rule: "tap-target",
-      selector: ".fsk-report-submit",
+      selector: ".fbc-report-submit",
       page: "/report",
       reason: "問い合わせの受け付けを止めている状態の送信ボタン（disabled。MudBlazor が pointer-events を止めるため、判定の点が隣の欄に当たる）。押せない状態なので、押せる範囲の判定の対象外。受け付け中の大きさは、CSS で 48px にしている",
     },
     {
       rule: "tap-target",
-      selector: ".fsk-content a",
+      selector: ".fbc-content a",
       page: "/",
       reason: "トップの一覧のリンク（高さ 44px ちょうど）。縦の判定（中心から 21.5px）が、すぐ下の段落に 0.5px 当たる。行間を変えないため。文中のリンク（Releases）も含む",
     },

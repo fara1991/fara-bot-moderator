@@ -2,6 +2,6 @@
 	path = external/fara-pokemon-battle-assistant
 	url = https://github.com/fara1991/fara-pokemon-battle-assistant.git
 	branch = develop
-[submodule "external/fara-site-kit"]
-	path = external/fara-site-kit
-	url = https://github.com/fara1991/fara-site-kit.git
+[submodule "external/fara-blazor-component"]
+	path = external/fara-blazor-component
+	url = https://github.com/fara1991/fara-blazor-component.git

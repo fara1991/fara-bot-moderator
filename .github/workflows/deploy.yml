@@ -15,7 +15,7 @@ on:
       - ".github/workflows/deploy.yml"
       - ".github/scripts/**"
       - ".gitmodules"
-      - "external/fara-site-kit"
+      - "external/fara-blazor-component"
   workflow_dispatch:
     inputs:
       skip_maintenance_check:

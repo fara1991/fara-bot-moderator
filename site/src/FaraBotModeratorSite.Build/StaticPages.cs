@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 namespace FaraBotModeratorSite.Build;
 
 /// <summary>
-/// 検索エンジン・JavaScript なしの環境のための、本文入りの静的 HTML のもと（fara-site-kit の build-pages の pages.json）。
+/// 検索エンジン・JavaScript なしの環境のための、本文入りの静的 HTML のもと（fara-blazor-component の build-pages の pages.json）。
 /// 本文は、ブラウザで動くのと同じページの部品（Pages）をここで描いて作る。ブラウザは起動すると、この本文を同じ内容の画面に置き換える。
 /// </summary>
 public static class StaticPages
@@ -39,23 +39,23 @@ public static class StaticPages
     {
         ["title"] = PageMeta.NotFoundTitle,
         ["bodyHtml"] = Wrap(
-            "<section class=\"fsk-not-found\">" +
-            "<p class=\"fsk-not-found-code\" aria-hidden=\"true\">404</p>" +
+            "<section class=\"fbc-not-found\">" +
+            "<p class=\"fbc-not-found-code\" aria-hidden=\"true\">404</p>" +
             "<h1>ページが見つかりません</h1>" +
-            "<p class=\"fsk-not-found-lead\">URL が間違っているか、ページが移動した可能性があります。</p>" +
-            "<a class=\"mud-button-root mud-button mud-button-filled mud-button-filled-primary mud-button-filled-size-medium fsk-btn-primary\" href=\"/\">ホームへ戻る</a>" +
+            "<p class=\"fbc-not-found-lead\">URL が間違っているか、ページが移動した可能性があります。</p>" +
+            "<a class=\"mud-button-root mud-button mud-button-filled mud-button-filled-primary mud-button-filled-size-medium fbc-btn-primary\" href=\"/\">ホームへ戻る</a>" +
             "</section>"),
     };
 
     private const string ReportBodyInner =
-        "<section class=\"fsk-page-header fsk-page-column\">" +
+        "<section class=\"fbc-page-header fbc-page-column\">" +
         "<h1>問い合わせ</h1>" +
-        "<p class=\"fsk-muted\">不具合・要望・ご意見を、作者に直接送れます。いただいた内容は、作者に通知されます（公開はされません）。</p>" +
+        "<p class=\"fbc-muted\">不具合・要望・ご意見を、作者に直接送れます。いただいた内容は、作者に通知されます（公開はされません）。</p>" +
         "</section>" +
-        "<div class=\"fsk-page-column\">" +
-        "<p class=\"fsk-small fsk-muted\">アプリや説明の修正は、<a href=\"" + SiteInfo.RepositoryUrl + "\" target=\"_blank\" rel=\"noopener noreferrer\">GitHub</a> で提案していただくこともできます。</p>" +
+        "<div class=\"fbc-page-column\">" +
+        "<p class=\"fbc-small fbc-muted\">アプリや説明の修正は、<a href=\"" + SiteInfo.RepositoryUrl + "\" target=\"_blank\" rel=\"noopener noreferrer\">GitHub</a> で提案していただくこともできます。</p>" +
         "<p>項目: 種類（不具合・要望・提案・その他）／内容（5〜2000 文字）／連絡先（任意。返信が必要なときだけ、メールアドレス・Twitter の ID など）</p>" +
-        "<p class=\"fsk-small fsk-muted\">送信すると、<a href=\"/privacy\">プライバシーポリシー</a>に書いたとおり、内容が作者に通知されます。個人情報（パスワード・Twitch のトークンなど）は書かないでください。</p>" +
+        "<p class=\"fbc-small fbc-muted\">送信すると、<a href=\"/privacy\">プライバシーポリシー</a>に書いたとおり、内容が作者に通知されます。個人情報（パスワード・Twitch のトークンなど）は書かないでください。</p>" +
         "<p>この送信フォームは、JavaScript を有効にすると使えます。</p>" +
         "</div>";
 

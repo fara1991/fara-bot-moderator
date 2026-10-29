@@ -1,7 +1,7 @@
-// ESLint（flat config）。共通のルールと除外は kit（external/fara-site-kit/tools/lint）が持つ。ここはサイトだけの対象と環境を書く。
+// ESLint（flat config）。共通のルールと除外は kit（external/fara-blazor-component/tools/lint）が持つ。ここはサイトだけの対象と環境を書く。
 // 対象: site/ の JS（worker・tools・tests・画面の wwwroot/js）。kit・生成物（publish・artifacts・bin・obj）は共通の除外。
-// 実行: npm run lint（site/ で）。docs: external/fara-site-kit/docs/lint.md
-import shared, { createSharedConfig } from "../external/fara-site-kit/tools/lint/eslint.config.shared.mjs";
+// 実行: npm run lint（site/ で）。docs: external/fara-blazor-component/docs/lint.md
+import shared, { createSharedConfig } from "../external/fara-blazor-component/tools/lint/eslint.config.shared.mjs";
 
 export default [
   // Node の JS（**/*.{js,mjs,cjs}）。tools・tests・ルートの設定ファイルなど

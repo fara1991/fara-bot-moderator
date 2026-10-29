@@ -1,4 +1,4 @@
-/* FaraBotModerator サイトの本文の見た目。ヘッダー・サイドバー・フッター・お知らせ・404 などの共通の部品は、fara-site-kit（_content/FaraSiteKit.Razor/css/fara-site-kit.css）と MudBlazor が持つ。
+/* FaraBotModerator サイトの本文の見た目。ヘッダー・サイドバー・フッター・お知らせ・404 などの共通の部品は、fara-blazor-component（_content/FaraBlazorComponent.Razor/css/fara-blazor-component.css）と MudBlazor が持つ。
    ここは、ホーム・ドキュメント・更新履歴・プライバシー・検索欄・背景の飾りなど、このサイト固有の部分だけ（以前の静的サイトの見た目を、そのまま移したもの）。
    - 色は :root の変数にまとめる（名前は以前と同じ: --primary・--surface・--on-surface など）。ライト（既定）とダーク（html の data-bs-theme="dark"。kit の theme-init.js と SiteThemeState が付ける）
    - 外部のフォント・CSS は読み込まない（システムフォントのみ）。アイコンはインライン SVG（CSP） */
@@ -149,15 +149,15 @@ p { margin: 0 0 0.9rem; }
 h1, h2, h3, h4 { color: var(--on-surface); font-weight: 700; }
 
 /* ---- 画面の枠（kit のレイアウトの上に重ねる） ---- */
-/* 本文は、ページ全体が画面の高さに収まり、.fsk-content の中だけがスクロールする（kit の既定。フッターは画面の下に固定）。
+/* 本文は、ページ全体が画面の高さに収まり、.fbc-content の中だけがスクロールする（kit の既定。フッターは画面の下に固定）。
    見出しへのジャンプ（#見出し）は、このスクロールの枠が基準 */
-.fsk-content { scroll-behavior: smooth; scroll-padding-top: 16px; }
+.fbc-content { scroll-behavior: smooth; scroll-padding-top: 16px; }
 
 /* ホーム・ドキュメント・更新履歴・プライバシーは、自分で余白を持つので、kit の本文の余白は付けない */
-.fsk-content:has(> .page-section, > .hero, > .doc-layout) { padding: 0; }
+.fbc-content:has(> .page-section, > .hero, > .doc-layout) { padding: 0; }
 
 /* フッターは、背景の飾りが透けないよう、面の色にする */
-.fsk-footer { background: var(--surface-container-low); }
+.fbc-footer { background: var(--surface-container-low); }
 
 /* 背景の飾り: Twitch のチャットのような吹き出しが、ゆっくり浮かび上がる（js/bgscene.js が canvas に描く。画面の後ろに固定） */
 #site-scene {
@@ -189,7 +189,7 @@ h1, h2, h3, h4 { color: var(--on-surface); font-weight: 700; }
 #blazor-error-ui .dismiss { position: absolute; right: 0.75rem; top: 0.5rem; cursor: pointer; }
 
 @media (prefers-reduced-motion: reduce) {
-    .fsk-content { scroll-behavior: auto; }
+    .fbc-content { scroll-behavior: auto; }
 }
 
 /* ---- 共通パーツ ---- */
@@ -204,7 +204,7 @@ h1, h2, h3, h4 { color: var(--on-surface); font-weight: 700; }
 .page-section > h2:first-child { margin-top: 0; }
 /* 長文（プライバシーポリシー・更新履歴）は、PC では横幅を使う（スマホは今のまま。問い合わせは、フォームの幅のまま） */
 @media (min-width: 900px) {
-    /* 長文（プライバシーポリシー）は 72rem（kit の fsk-page-column--wide と同じ）。更新履歴は、1 段の行の長さが長くなりすぎないよう 52rem（1 行 約 50 字） */
+    /* 長文（プライバシーポリシー）は 72rem（kit の fbc-page-column--wide と同じ）。更新履歴は、1 段の行の長さが長くなりすぎないよう 52rem（1 行 約 50 字） */
     .page-section.narrow.policy { max-width: 72rem; }
     .page-section.narrow.changelog-page { max-width: 52rem; }
 }
@@ -369,7 +369,7 @@ code {
     gap: 40px;
     align-items: start;
 }
-/* 目次は、本文のスクロール（.fsk-content）の中で上に貼りつく。高さは、画面からヘッダーとフッターを引いた分 */
+/* 目次は、本文のスクロール（.fbc-content）の中で上に貼りつく。高さは、画面からヘッダーとフッターを引いた分 */
 .doc-toc { position: sticky; top: 20px; max-height: calc(100vh - 3.5rem - 40px - var(--footer-h)); overflow: auto; }
 .doc-nav-title { margin: 0 0 6px; font-size: 0.78rem; letter-spacing: 0.08em; color: var(--on-surface-variant); font-weight: 700; }
 .doc-toc ul { list-style: none; margin: 0; padding: 0; }
@@ -480,20 +480,20 @@ code {
 }
 
 /* お知らせの帯が出ているときは、目次の高さを帯の分だけ縮める */
-html:has(.fsk-notice) .doc-toc { max-height: calc(100vh - 3.5rem - var(--notice-h) - 40px - var(--footer-h)); }
+html:has(.fbc-notice) .doc-toc { max-height: calc(100vh - 3.5rem - var(--notice-h) - 40px - var(--footer-h)); }
 
 /* ---- サイドメニュー（NavMenu.razor） ---- */
 /* 子ページ（親の下に入れ子で出す）は、段ごとに字下げして、少し小さく（MudNavLink の class は、項目の外側の div に付く） */
-.fsk-sidebar .site-nav-child .mud-nav-link { font-size: 0.85rem; }
-.fsk-sidebar .site-nav-depth-1 .mud-nav-link { padding-left: calc(1rem + 1.15rem); }
-.fsk-sidebar .site-nav-depth-2 .mud-nav-link { padding-left: calc(1rem + 1.85rem); }
-.fsk-sidebar .site-nav-depth-3 .mud-nav-link { padding-left: calc(1rem + 2.55rem); }
+.fbc-sidebar .site-nav-child .mud-nav-link { font-size: 0.85rem; }
+.fbc-sidebar .site-nav-depth-1 .mud-nav-link { padding-left: calc(1rem + 1.15rem); }
+.fbc-sidebar .site-nav-depth-2 .mud-nav-link { padding-left: calc(1rem + 1.85rem); }
+.fbc-sidebar .site-nav-depth-3 .mud-nav-link { padding-left: calc(1rem + 2.55rem); }
 .side-settings { padding: 0.75rem 0.75rem 0.25rem; }
 
 /* ---- 検索欄（SiteSearch.razor）。PC はヘッダー、スマホは検索ボタンで開く欄の中。ヘッダーの暗い背景に合わせた半透明の欄 ---- */
 .site-search { position: relative; }
-.fsk-header .site-search { flex: 1 1 360px; max-width: 560px; margin-left: auto; }
-.fsk-search-sheet .site-search-sheet { position: static; }
+.fbc-header .site-search { flex: 1 1 360px; max-width: 560px; margin-left: auto; }
+.fbc-search-sheet .site-search-sheet { position: static; }
 .site-search-icon {
     position: absolute;
     left: 14px;
@@ -601,7 +601,7 @@ html:has(.fsk-notice) .doc-toc { max-height: calc(100vh - 3.5rem - var(--notice-
 .site-search-more { padding: 12px; color: var(--on-surface-variant); font-size: 0.88rem; }
 
 @media (max-width: 767.98px) {
-    html.fsk-search-open .fsk-search-sheet {
+    html.fbc-search-open .fbc-search-sheet {
         padding: 8px 56px 8px 12px;
         background: linear-gradient(90deg, #140a26 0%, #241243 100%);
         border-bottom: 1px solid rgba(200, 170, 255, 0.14);
@@ -616,14 +616,14 @@ html:has(.fsk-notice) .doc-toc { max-height: calc(100vh - 3.5rem - var(--notice-
 
 /* ---- キーボードのフォーカス枠（MudBlazor が outline: none にしているので、詳細度を上げて出す） ---- */
 /* 暗い地色（ヘッダー・左のメニュー）の上は #c4a5ff（ライトでも暗い地色なので見える色で固定） */
-html body .fsk-header :is(a, button):focus-visible,
-html body .fsk-sidebar :is(a, button):focus-visible,
-html body .fsk-skip-link:focus-visible {
+html body .fbc-header :is(a, button):focus-visible,
+html body .fbc-sidebar :is(a, button):focus-visible,
+html body .fbc-skip-link:focus-visible {
     outline: 2px solid #c4a5ff;
     outline-offset: 2px;
 }
 /* 左のメニューの項目は、ドロワーの端で枠が切れないように内側に描く */
-html body .fsk-sidebar .mud-nav-link:focus-visible {
+html body .fbc-sidebar .mud-nav-link:focus-visible {
     outline-offset: -2px;
 }
 /* 本文の部品（主要ボタン・カードのリンク・本文のリンク）。本文の色（ライトは紫、ダークは明るい紫）に合わせる */
@@ -641,11 +641,11 @@ html body .site-search-input:focus-visible {
 }
 
 /* ---- 押せる大きさ（44px 以上）。見た目の幅・色は変えず、高さ（と幅）の下限だけを足す。幅によらず効かせる（768px 以上の左のメニューも含む） ---- */
-.fsk-menu-toggle,
-.fsk-search-toggle { min-width: 44px; min-height: 44px; }
-.fsk-sidebar .mud-nav-link { min-height: 44px; display: flex; align-items: center; }
-.fsk-theme-switch { min-height: 44px; display: inline-flex; align-items: center; }
-.fsk-theme-switch .mud-switch { min-height: 44px; }
+.fbc-menu-toggle,
+.fbc-search-toggle { min-width: 44px; min-height: 44px; }
+.fbc-sidebar .mud-nav-link { min-height: 44px; display: flex; align-items: center; }
+.fbc-theme-switch { min-height: 44px; display: inline-flex; align-items: center; }
+.fbc-theme-switch .mud-switch { min-height: 44px; }
 .site-search-input { height: 44px; }
 .button { min-block-size: 2.75rem; }
 .card > a,
@@ -653,11 +653,11 @@ html body .site-search-input:focus-visible {
 .page-section > p > a { min-height: 44px; display: inline-flex; align-items: center; }
 /* フッターの文字リンク（600px 以上）。スマホ（600px 未満）は kit の ::after（44px の当たり判定）に任せ、行の高さを詰める（高さを 44px にすると、2 段のフッターが約 140px になる） */
 @media (min-width: 600px) {
-    .fsk-footer a:not(.fsk-footer-social) { min-height: 44px; display: inline-flex; align-items: center; }
+    .fbc-footer a:not(.fbc-footer-social) { min-height: 44px; display: inline-flex; align-items: center; }
 }
-.fsk-header .mud-icon-button { min-width: 44px; min-height: 44px; }
+.fbc-header .mud-icon-button { min-width: 44px; min-height: 44px; }
 /* 左のメニューの「現在のページ」: MudBlazor の既定（テーマの主色 #6d28d9）は暗い地色の上で 2.6:1 しかないので、明るい紫にする */
-html body .fsk-sidebar .mud-nav-link.active .mud-nav-link-text { color: #c4b5fd; }
+html body .fbc-sidebar .mud-nav-link.active .mud-nav-link-text { color: #c4b5fd; }
 
 /* ---- スマホ（600px 以下）の操作の大きさ（指で押せるように 44px 以上）。見た目の幅・色は変えず、高さの下限だけを足す ---- */
 @media (max-width: 600px) {
@@ -683,7 +683,7 @@ html body .fsk-sidebar .mud-nav-link.active .mud-nav-link-text { color: #c4b5fd;
 }
 
 /* ---- 問い合わせフォーム（kit の部品）。レイアウト計測（layout-check）の指摘を直す ----
-   入力欄は MudBlazor が outline:0 にする（.mud-input > input:focus など）。その規則に負けない詳細度で、フォーカス中の枠を出す（色は kit の --fsk-focus）。
+   入力欄は MudBlazor が outline:0 にする（.mud-input > input:focus など）。その規則に負けない詳細度で、フォーカス中の枠を出す（色は kit の --fbc-focus）。
    送信ボタンは高さ 48px（タップの大きさ。44px ちょうどだと、判定の端が隣の要素に当たるため）。 */
-html :is(input, textarea).mud-input-slot.mud-input-root:is(:focus, :focus-visible) { outline: 2px solid var(--fsk-focus, #e9d5ff); outline-offset: 2px; }
-.fsk-report-submit { min-height: 48px; }
+html :is(input, textarea).mud-input-slot.mud-input-root:is(:focus, :focus-visible) { outline: 2px solid var(--fbc-focus, #e9d5ff); outline-offset: 2px; }
+.fbc-report-submit { min-height: 48px; }

@@ -1,6 +1,6 @@
 # CLAUDE.md（site/ 用）
 
-紹介サイト（.NET 10 の Blazor WebAssembly + MudBlazor。共通部品は fara-site-kit）。`npm run build:site` で、ブラウザのアプリ・本文入りの静的 HTML・`_headers` を `publish/wwwroot` に作り、Cloudflare の Worker（`worker/index.js`）が配信する。Worker は /api/maintenance・メンテナンス画面（503）・`/api/report` を担当する。詳細は README.md、移行の経緯と決定は `docs/wasm-migration-plan.md`。
+紹介サイト（.NET 10 の Blazor WebAssembly + MudBlazor。共通部品は fara-blazor-component）。`npm run build:site` で、ブラウザのアプリ・本文入りの静的 HTML・`_headers` を `publish/wwwroot` に作り、Cloudflare の Worker（`worker/index.js`）が配信する。Worker は /api/maintenance・メンテナンス画面（503）・`/api/report` を担当する。詳細は README.md、移行の経緯と決定は `docs/wasm-migration-plan.md`。
 
 ## ブランチ運用（必ず守る）
 
@@ -19,7 +19,7 @@
 - 説明ページの本文は `Manual.md`（リポジトリ直下。アプリの操作説明書と同じ）。ページの題名・グループ・説明・親子・読みは `Content/pages.json`
 - Beat Saber のコマンドの説明は `/docs/beatsaber`（`Manual.md` の「5.5. Beat Saber コマンド」の節と、`pages.json` の `parent: commands` の子ページ）。ゲームのコマンドを増やすときも、先に `Manual.md` に節を書き、`parent: commands` の子ページを足す
 - 問い合わせの回数制限（kit v0.8.0・1 日 3 回・送信元ごと）: `worker/index.js` の `export { ReportRateLimiter }` と `wrangler.toml` の `durable_objects`・`migrations`（トップレベル・`env.production`・`env.dev` の 3 か所）が要る。どれかを消すと制限が止まる。`TURNSTILE_SECRET` を変えると計数はリセットされる。プライバシーの記載は `Privacy.razor`（テストが見る）。詳細は README.md
-- `external/fara-site-kit`（submodule）は、使うタグに固定する（今は v0.8.0）。kit の develop の最新を追わない。上げるときは、kit のタグのコミットに上げる PR（develop 向け）を出し、確認用で確かめる。kit を上げたら、kit の docs/changelog.md の「CI に影響する変更」を読む（v0.7.0 からは、`layout-check.config.mjs` の `menuEsc.closeSelector` が要る）
+- `external/fara-blazor-component`（submodule）は、使うタグに固定する（今は v1.0.0）。kit の develop の最新を追わない。上げるときは、kit のタグのコミットに上げる PR（develop 向け）を出し、確認用で確かめる。kit を上げたら、kit の docs/changelog.md の「CI に影響する変更」を読む（v0.7.0 からは、`layout-check.config.mjs` の `menuEsc.closeSelector` が要る）
 - `external/fara-pokemon-battle-assistant`（submodule）は、ポケモン側の変更のたびに `develop` の最新へ更新する（PR を出す）。kit とは別物
 
 ## CSP の方針（必ず守る）
@@ -39,15 +39,15 @@ CSP は `build/site.json` の `csp` から kit の `csp/render-headers.mjs` が 
 - localStorage: テーマ `fara-bot-moderator-site.theme`（値は kit の JSON `{"Theme":"dark"}`。以前の `"dark"` の文字だけの値は `wwwroot/js/site-init.js` が書き直す）、サイドバー `fara-bot-moderator-site.sidebar-hidden`（`"1"` で隠す）。`SiteInfo` の値と `index.html` の `theme-init.js` の `data-*-key` は同じにする（テストが見る）
 - ヘッダー・サイドバー・フッター・お知らせ・404・問い合わせのフォームは kit の部品。本文の見た目は `wwwroot/css/site.css`（色は `:root` の変数。ダークは `html[data-bs-theme="dark"]`）
 - `site.css` は、以前の BeerCSS の既定のうち本文の見た目に効いていたもの（前に兄弟がある要素の上の間隔 1rem・リンクの inline-flex・コード）を、本文の中（`.hero` `.page-section` `.doc-layout`）だけに置いている。見た目を変えたら `tools/compare/` で現行と比べる
-- 名前の衝突に注意: kit は `fsk-` の接頭辞、MudBlazor は `mud-`。このサイトのクラス名は `site-`・本文用の短い名前（`card`・`button`・`prose` など）
-- 本文は `.fsk-content` の中だけがスクロールする（kit の既定。フッターは画面の下に固定）。`MobilePageScroll` は false のまま（true にするとスマホでフッターがページの最後に出る）。見出しへのジャンプの余白（`scroll-padding-top`）と目次の高さ（`.doc-toc`）は、この枠が基準
+- 名前の衝突に注意: kit は `fbc-` の接頭辞、MudBlazor は `mud-`。このサイトのクラス名は `site-`・本文用の短い名前（`card`・`button`・`prose` など）
+- 本文は `.fbc-content` の中だけがスクロールする（kit の既定。フッターは画面の下に固定）。`MobilePageScroll` は false のまま（true にするとスマホでフッターがページの最後に出る）。見出しへのジャンプの余白（`scroll-padding-top`）と目次の高さ（`.doc-toc`）は、この枠が基準
 
 ## 品質チェック（レイアウト・ESLint・C#）
 
-- **レイアウトの自動計測**（`npm run layout-check`）: `publish/wwwroot`（`npm run build:site` の出力）を kit の `serve-static` で配り、kit の計測（`external/fara-site-kit/docs/layout-check.md`）で 7 ページ × 5 幅（360〜1440px）を見る。設定は `layout-check.config.mjs`、起動は `tools/run-layout-check.mjs`。違反は CSS・Razor で直す。直せないものだけ除外に書く
+- **レイアウトの自動計測**（`npm run layout-check`）: `publish/wwwroot`（`npm run build:site` の出力）を kit の `serve-static` で配り、kit の計測（`external/fara-blazor-component/docs/layout-check.md`）で 7 ページ × 5 幅（360〜1440px）を見る。設定は `layout-check.config.mjs`、起動は `tools/run-layout-check.mjs`。違反は CSS・Razor で直す。直せないものだけ除外に書く
   - 除外は `rule`・`selector`・`reason` を必ず書く（`reason` が空だと設定エラー）。`page` を書くと、そのページだけ。**理由は、その項目が何で、なぜ直せないかを具体的に書く**（「誤検出」だけでは書かない）。除外を増やすときは、まず CSS で直せないかを確かめる
   - kit の計測には制限がある（除外の理由の元）: 2xx 以外のページは開けない（404 は `/404.html` の画面で測る）。`/docs` のように同名のフォルダがあると `docs.html` を指定する（`serve-static` がフォルダの `index.html` を探すため）。本文の下の方の項目は、Tab で「画面の外」と数えられる（`no-offscreen-focus`）
-  - 計測の前に kit の依存を入れる: `cd external/fara-site-kit && npm ci`（kit の `tools/` は、`playwright-core` や `globals` を kit の中の `node_modules` から読むため）
+  - 計測の前に kit の依存を入れる: `cd external/fara-blazor-component && npm ci`（kit の `tools/` は、`playwright-core` や `globals` を kit の中の `node_modules` から読むため）
 - **ESLint**（`npm run lint`）: 設定は `eslint.config.mjs`。共通のルールは kit の `tools/lint/eslint.config.shared.mjs`。対象は site/ の JS（`worker/`・`tools/`・`tests/`・画面の `wwwroot/js/`）。`tools/compare/` は `page.evaluate` の中がブラウザで動くので、ブラウザの環境も使う。**`.github/scripts` は ESLint の基準パス（site/）の外なので対象外**（node --test で確かめる）
 - **C# のラチェット**（リポジトリ直下の `Directory.Build.props`。アプリ・テスト・site の両方に効く）: kit の `dotnet.editorconfig` を読む。`CS4014`・`CA1816`・`IDE0059` は error（違反 0 件）。違反が残るものは warning のまま（件数は下）。ルート `.editorconfig` の `[*.cs]` で `VSTHRD100`（async void）だけ warning に下げている（WPF のイベントハンドラーで型上必要な箇所が残るため）。新しく違反を作らないこと（error のルールは、ビルドが落ちる）
 
@@ -68,9 +68,9 @@ CSP は `build/site.json` の `csp` から kit の `csp/render-headers.mjs` が 
 cd site
 dotnet test FaraBotModeratorSite.sln          # Content・Shared（検索）・Web（静的な本文・ページ・index.html）
 node --test worker/index.test.mjs tests/js/site-init.test.mjs
-node --test ../external/fara-site-kit/worker/report.test.mjs ../external/fara-site-kit/worker/report-rate-limit.test.mjs ../external/fara-site-kit/worker/maintenance.test.mjs
+node --test ../external/fara-blazor-component/worker/report.test.mjs ../external/fara-blazor-component/worker/report-rate-limit.test.mjs ../external/fara-blazor-component/worker/maintenance.test.mjs
 npm install && npm run build:site             # publish/wwwroot を作る
-(cd ../external/fara-site-kit && npm ci)      # 計測と lint の依存（kit の node_modules）
+(cd ../external/fara-blazor-component && npm ci)      # 計測と lint の依存（kit の node_modules）
 npm run layout-check                          # レイアウトの自動計測（publish/wwwroot に対して）
 npm run lint                                  # ESLint（site/ の JS）
 npx wrangler dev --env dev                    # Cloudflare と同じ動きで確認（Worker 経由。CSP ヘッダーが 1 本で wasm-unsafe-eval を含むこと）

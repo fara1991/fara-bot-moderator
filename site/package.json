@@ -6,7 +6,7 @@
   "scripts": {
     "build:site": "node tools/build-site.mjs --env production",
     "build:site:develop": "node tools/build-site.mjs --env develop",
-    "test:js": "node --test worker/index.test.mjs ../external/fara-site-kit/worker/report.test.mjs ../external/fara-site-kit/worker/report-rate-limit.test.mjs ../external/fara-site-kit/worker/maintenance.test.mjs",
+    "test:js": "node --test worker/index.test.mjs ../external/fara-blazor-component/worker/report.test.mjs ../external/fara-blazor-component/worker/report-rate-limit.test.mjs ../external/fara-blazor-component/worker/maintenance.test.mjs",
     "layout-check": "node tools/run-layout-check.mjs",
     "lint": "eslint ."
   },

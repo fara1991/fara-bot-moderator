@@ -59,7 +59,7 @@ public class SiteTests
         Assert.Equal("fara-bot-moderator-site.sidebar-hidden", SiteInfo.SidebarKey);
         Assert.Contains("viewport-fit=cover", html);
         // 旧い値を直す site-init.js は、kit の theme-init.js より前に読む
-        Assert.True(html.IndexOf("<script src=\"js/site-init.js\"", StringComparison.Ordinal) < html.IndexOf("<script src=\"_content/FaraSiteKit.Razor/js/theme-init.js\"", StringComparison.Ordinal));
+        Assert.True(html.IndexOf("<script src=\"js/site-init.js\"", StringComparison.Ordinal) < html.IndexOf("<script src=\"_content/FaraBlazorComponent.Razor/js/theme-init.js\"", StringComparison.Ordinal));
     }
 
     [Fact]

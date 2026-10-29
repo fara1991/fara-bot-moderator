@@ -6,7 +6,7 @@ await p.goto(base + "/docs/main-settings"); await p.waitForFunction(() => !docum
 // TOC click
 const tocHref = await p.getAttribute(".doc-toc li:nth-child(2) a", "href"); await p.click(".doc-toc li:nth-child(2) a"); await p.waitForTimeout(800);
 const id = decodeURIComponent(tocHref.split("#")[1]);
-const pos = await p.evaluate((id) => { const el = document.getElementById(id); const r = el.getBoundingClientRect(); const c = document.querySelector(".fsk-content").getBoundingClientRect(); return { top: r.top, containerTop: c.top, url: location.href }; }, id);
+const pos = await p.evaluate((id) => { const el = document.getElementById(id); const r = el.getBoundingClientRect(); const c = document.querySelector(".fbc-content").getBoundingClientRect(); return { top: r.top, containerTop: c.top, url: location.href }; }, id);
 console.log("toc jump", pos);
 // search
 await p.keyboard.press("Control+k"); await p.keyboard.type("komando"); await p.waitForTimeout(400);
@@ -15,10 +15,10 @@ await p.keyboard.press("ArrowDown"); await p.keyboard.press("Enter"); await p.wa
 // slash shortcut
 await p.click("h1"); await p.keyboard.press("/"); console.log("focused search by slash:", await p.evaluate(() => document.activeElement?.className));
 // theme toggle persists JSON
-await p.click(".fsk-theme-switch"); await p.waitForTimeout(300); console.log("stored:", await p.evaluate(() => localStorage.getItem("fara-bot-moderator-site.theme")), "attr", await p.evaluate(() => document.documentElement.getAttribute("data-bs-theme")));
+await p.click(".fbc-theme-switch"); await p.waitForTimeout(300); console.log("stored:", await p.evaluate(() => localStorage.getItem("fara-bot-moderator-site.theme")), "attr", await p.evaluate(() => document.documentElement.getAttribute("data-bs-theme")));
 // footer report link carries from
-await p.click(".fsk-footer a[href*='report']"); await p.waitForTimeout(1500); console.log("report url:", p.url(), "| h3:", await p.textContent(".fsk-page-header h3"));
+await p.click(".fbc-footer a[href*='report']"); await p.waitForTimeout(1500); console.log("report url:", p.url(), "| h3:", await p.textContent(".fbc-page-header h3"));
 // sidebar toggle persists key
-await p.click(".fsk-menu-toggle"); await p.waitForTimeout(300); console.log("sidebar key:", await p.evaluate(() => localStorage.getItem("fara-bot-moderator-site.sidebar-hidden")));
+await p.click(".fbc-menu-toggle"); await p.waitForTimeout(300); console.log("sidebar key:", await p.evaluate(() => localStorage.getItem("fara-bot-moderator-site.sidebar-hidden")));
 console.log("problems:", bad);
 await b.close();

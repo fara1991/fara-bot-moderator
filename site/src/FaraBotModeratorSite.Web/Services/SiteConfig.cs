@@ -1,8 +1,8 @@
-using FaraSiteKit.Core;
+using FaraBlazorComponent.Core;
 
 namespace FaraBotModeratorSite.Web.Services;
 
-/// <summary>共通部品（fara-site-kit の Razor）の設定に、このサイトの値（SiteInfo）を入れる。</summary>
+/// <summary>共通部品（fara-blazor-component の Razor）の設定に、このサイトの値（SiteInfo）を入れる。</summary>
 public static class SiteConfig
 {
     public static void Configure(SiteOptions options)

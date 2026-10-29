@@ -1,6 +1,6 @@
 // worker/index.js のテスト。  node --test worker/index.test.mjs（site/ で）
 // /api/maintenance・メンテナンス画面（503）・/api/report の振り分け・CSP を Worker から付けないこと・公開の設定を確かめる。
-// 報告の中身（検証・Turnstile・Discord）とメンテナンスの部品は、kit のテスト（external/fara-site-kit/worker/*.test.mjs）が確かめる。
+// 報告の中身（検証・Turnstile・Discord）とメンテナンスの部品は、kit のテスト（external/fara-blazor-component/worker/*.test.mjs）が確かめる。
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readdirSync, readFileSync } from "node:fs";
@@ -20,8 +20,8 @@ const open = (path, e = env, accept = "text/html") => worker.fetch(new Request(H
 
 test("kit の共有 JS を使う（Worker の中に、報告・メンテナンスの写しを持たない）", () => {
   const source = read("./index.js");
-  assert.match(source, /from "\.\.\/\.\.\/external\/fara-site-kit\/worker\/report\.js"/);
-  assert.match(source, /from "\.\.\/\.\.\/external\/fara-site-kit\/worker\/maintenance\.js"/);
+  assert.match(source, /from "\.\.\/\.\.\/external\/fara-blazor-component\/worker\/report\.js"/);
+  assert.match(source, /from "\.\.\/\.\.\/external\/fara-blazor-component\/worker\/maintenance\.js"/);
   assert.ok(!/withNotice\(/.test(source), "お知らせは、アプリの MaintenanceBanner が出す（HTML に差し込むと二重になる）");
 });
 
@@ -154,7 +154,7 @@ test("ワークフローは Pokémon と同じ形（build.yml / deploy-develop.y
     assert.match(yml, /permissions:\n {2}contents: read/);
     assert.match(yml, /submodules: true/, "kit の submodule を取得する");
   }
-  for (const yml of [readDev(), readProd()]) assert.match(yml, /external\/fara-site-kit/, "kit を上げたときも公開する（paths）");
+  for (const yml of [readDev(), readProd()]) assert.match(yml, /external\/fara-blazor-component/, "kit を上げたときも公開する（paths）");
 });
 
 test("動くとき: build は develop・master の push と PR（アプリも変わるのでパスで絞らない）、確認用は develop、本番は master（公開は site/ などを変えたとき）。公開のジョブはブランチで絞る", () => {
@@ -316,8 +316,8 @@ test("package.json は wrangler のバージョンを固定する（公開のワ
 
 test("報告の回数制限: Worker は kit の ReportRateLimiter（Durable Object）を公開する。例外のログは errorSummary を通し、生の例外を出さない", async () => {
   const source = read("./index.js");
-  assert.match(source, /export \{ ReportRateLimiter \} from "\.\.\/\.\.\/external\/fara-site-kit\/worker\/report-rate-limit\.js";/);
-  assert.match(source, /import \{ errorSummary \} from "\.\.\/\.\.\/external\/fara-site-kit\/worker\/error-summary\.js";/);
+  assert.match(source, /export \{ ReportRateLimiter \} from "\.\.\/\.\.\/external\/fara-blazor-component\/worker\/report-rate-limit\.js";/);
+  assert.match(source, /import \{ errorSummary \} from "\.\.\/\.\.\/external\/fara-blazor-component\/worker\/error-summary\.js";/);
   assert.ok(!/console\.error\(e\)/.test(source), "console.error(e) は使わない（例外の中身が出る）");
   assert.match(source, /console\.error\(`報告の受け口で例外: \$\{errorSummary\(e\)\}`\);/);
   const mod = await import("./index.js");
