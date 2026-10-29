@@ -165,7 +165,7 @@ public class PagesTests
         Assert.Contains("href=\"/docs/main-settings\"", html);
         // アプリが Twitch に求める権限（TwitchAuthService.Scopes）は、すべてポリシーに載せる（増減したらここで気づく）
         var scopes = AppScopes();
-        Assert.Equal(8, scopes.Count);
+        Assert.Equal(7, scopes.Count);
         foreach (var scope in scopes)
             Assert.Contains($">{scope}<", html);
     }
