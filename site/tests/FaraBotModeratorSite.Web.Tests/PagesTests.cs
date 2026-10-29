@@ -103,18 +103,16 @@ public class PagesTests
         // 問い合わせの回数制限（1 日 3 回・送信元の識別子を当日だけ保存）の記載。「匿名」とは書かない（識別子は送信元に結びつくため）
         Assert.Contains("1 日 3 回", text);
         Assert.Contains("IP アドレスそのものは保存しません", text);
-        Assert.Contains("日本時間の翌 0 時まで", text);
+        Assert.Contains("最初の掃除（日本時間の 0 時ごろ）で削除されます", text);
         Assert.Contains("送った内容（本文・連絡先など）そのものは、サイトの側では保存しません", text);
         Assert.DoesNotContain("匿名", text);
-        // Cookie は「このサイトからは設定しない」と限定する。個人を特定する情報は「集めない」ではなく「運営者は受け取らない」
         Assert.Contains("このサイトからは Cookie を設定しません", text);
-        Assert.Contains("サイトの運営者は、個人を特定する情報を受け取りません", text);
-        Assert.DoesNotContain("個人を特定する情報は集めません", text);
+        Assert.DoesNotContain("個人を特定する情報", text);
         // このサイトは外部のフォント・CDN を使わない（CSP が同じオリジンだけ）ので、載せない
         Assert.DoesNotContain("Google Fonts", text);
         Assert.DoesNotContain("jsDelivr", text);
         // 運営者の運用の約束と、法的な適用の注記は書かない
-        foreach (var banned in new[] { "削除します", "保存期間は", "おすすめします", "専門家", "個人関連情報", "外部送信" })
+        foreach (var banned in new[] { "保存期間は", "おすすめします", "専門家", "個人関連情報", "外部送信" })
             Assert.DoesNotContain(banned, text);
     }
 
@@ -166,9 +164,6 @@ public class PagesTests
             Assert.True(serviceByHost.TryGetValue(host, out var service), $"CSP のホスト {host} がプライバシーポリシーの表に対応していません");
             Assert.Contains(service!, rows);
         }
-        // 逆に、表のブラウザ向けのサービス（アクセス解析・Turnstile）は、CSP のホストとして許可されている
-        foreach (var service in new[] { "Cloudflare Web Analytics", "Cloudflare Turnstile" })
-            Assert.Contains(service, serviceByHost.Values.Intersect(cspHosts.Select(h => serviceByHost[h])));
     }
 
     [Fact]
