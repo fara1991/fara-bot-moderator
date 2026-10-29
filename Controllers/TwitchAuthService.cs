@@ -14,6 +14,21 @@ using FaraBotModerator.Properties;
 namespace FaraBotModerator.Controllers;
 
 /// <summary>
+/// リフレッシュトークンによる更新の結果。認可画面を開いてよいのは <see cref="TokenInvalid"/> のときだけ。
+/// </summary>
+public enum RefreshOutcome
+{
+    /// <summary>更新できた（新しいアクセストークンを保存した）</summary>
+    Succeeded,
+
+    /// <summary>リフレッシュトークンが無効（Twitch が 400 / 401 を返した）。再認可が必要</summary>
+    TokenInvalid,
+
+    /// <summary>一時的な失敗（回線断・タイムアウト・5xx・429 など）。トークンは無効とは限らない。再認可はしない</summary>
+    TemporaryFailure,
+}
+
+/// <summary>
 /// 認可の戻りの state が、認可のときに作った state と一致しなかったときの例外（CSRF の検査）。
 /// 通信の失敗（<see cref="HttpRequestException"/>）とは区別して、画面には state の不一致として出す。
 /// </summary>
@@ -40,8 +55,8 @@ public class TwitchAuthService
     /// </summary>
     /// <param name="clientId">クライアントID</param>
     /// <param name="clientSecret">クライアントシークレット</param>
-    /// <returns>成功した場合はtrue</returns>
-    public async Task<bool> RefreshAccessTokenAsync(string clientId, string clientSecret)
+    /// <returns>成功・トークン無効・一時的な失敗のどれか（認可画面を開くのは <see cref="RefreshOutcome.TokenInvalid"/> のときだけ）</returns>
+    public async Task<RefreshOutcome> RefreshAccessTokenAsync(string clientId, string clientSecret)
     {
         var form = new[]
         {
@@ -51,27 +66,58 @@ public class TwitchAuthService
             new KeyValuePair<string, string>("refresh_token", Settings.Default.RefreshToken ?? "")
         };
 
+        var statusCode = 0;
         try
         {
-            var (responseBody, option) = await PostRequestAsync(form, "https://id.twitch.tv/oauth2/token");
-            var tokenResponse = JsonSerializer.Deserialize<TwitchRefreshTokenModel>(responseBody, option);
+            string responseBody;
+            JsonSerializerOptions option;
+            (statusCode, responseBody, option) = await PostRequestAsync(form, "https://id.twitch.tv/oauth2/token");
 
-            if (string.IsNullOrEmpty(tokenResponse?.AccessToken)) return false;
+            // 2xx のときだけ中身を読む（400 / 401 の本文は、判定には使わない）
+            var hasAccessToken = false;
+            TwitchRefreshTokenModel? tokenResponse = null;
+            if (statusCode is >= 200 and < 300)
+            {
+                tokenResponse = JsonSerializer.Deserialize<TwitchRefreshTokenModel>(responseBody, option);
+                hasAccessToken = !string.IsNullOrEmpty(tokenResponse?.AccessToken);
+            }
 
-            Settings.Default.AccessToken = tokenResponse.AccessToken;
+            var outcome = ClassifyRefreshResponse(statusCode, hasAccessToken);
+            if (outcome != RefreshOutcome.Succeeded) return outcome;
+
+            Settings.Default.AccessToken = tokenResponse!.AccessToken;
             // 新しいリフレッシュトークンが返ったときだけ置き換える（空で上書きして、次から refresh できなくならないように）
             if (!string.IsNullOrEmpty(tokenResponse.RefreshToken)) Settings.Default.RefreshToken = tokenResponse.RefreshToken;
             // 期限を更新しないと、監視が毎秒 refresh し続けるので、認証コードの交換と同じ計算で更新する
             Settings.Default.expiresDateTime = ExpiryFrom(DateTime.Now, tokenResponse.ExpiresIn);
             Settings.Default.Save();
-            return true;
+            return RefreshOutcome.Succeeded;
         }
         catch (Exception ex)
         {
-            LogController.OutputLog($"Token refresh failed: {ex.Message}");
-            return false;
+            // 例外の Message には URL などが入りうるので、ログには型名と状態コードだけを出す（トークン・本文は出さない）
+            LogController.OutputLog($"<Error> トークンの更新に失敗しました（{ex.GetType().Name}、状態コード {statusCode}）。次の周期で再試行します");
+            return ClassifyRefreshException(ex);
         }
     }
+
+    /// <summary>
+    /// refresh の応答（状態コード・アクセストークンの有無）から結果を決めます。本文の文言では判定しません（Twitch の無効応答は 400 で、文言が変わりうるため）。
+    /// </summary>
+    /// <param name="statusCode">HTTP の状態コード</param>
+    /// <param name="hasAccessToken">2xx の応答に、アクセストークンが入っていたか</param>
+    internal static RefreshOutcome ClassifyRefreshResponse(int statusCode, bool hasAccessToken)
+    {
+        if (statusCode is 400 or 401) return RefreshOutcome.TokenInvalid;
+        if (statusCode is >= 200 and < 300) return hasAccessToken ? RefreshOutcome.Succeeded : RefreshOutcome.TemporaryFailure;
+        // 5xx・429・408・403 などの 4xx、状態コードが無い（通信の失敗）は、トークンが無効とは言えないので一時的な失敗
+        return RefreshOutcome.TemporaryFailure;
+    }
+
+    /// <summary>
+    /// refresh の途中で例外が起きたときの結果。回線断・タイムアウト・応答の解析の失敗は、いずれも一時的な失敗として扱う（認可画面は開かない）。
+    /// </summary>
+    internal static RefreshOutcome ClassifyRefreshException(Exception ex) => RefreshOutcome.TemporaryFailure;
 
     /// <summary>
     /// 認証コードを使用してアクセストークンを取得します。
@@ -102,7 +148,7 @@ public class TwitchAuthService
             new KeyValuePair<string, string>("redirect_uri", $"http://localhost:{Settings.Default.Port}")
         };
 
-        var (responseBody, option) = await PostRequestAsync(form, "https://id.twitch.tv/oauth2/token");
+        var (_, responseBody, option) = await PostRequestAsync(form, "https://id.twitch.tv/oauth2/token");
 
         if (responseBody.Contains("Invalid authorization code")) return false;
 
@@ -250,7 +296,7 @@ public class TwitchAuthService
     /// <summary>
     /// POSTリクエストを送信します。
     /// </summary>
-    private static async Task<(string responseBody, JsonSerializerOptions option)> PostRequestAsync(
+    private static async Task<(int statusCode, string responseBody, JsonSerializerOptions option)> PostRequestAsync(
         IEnumerable<KeyValuePair<string, string>> form, string url)
     {
         // 値（secret・code）は URL エンコードされる（連結した文字列だと、記号を含むときに壊れる）
@@ -263,6 +309,6 @@ public class TwitchAuthService
             Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
         };
 
-        return (responseBody, option);
+        return ((int)response.StatusCode, responseBody, option);
     }
 }

@@ -38,6 +38,32 @@ internal static class TokenMonitorPolicy
         openedAt is { } opened && now - opened < AuthorizationTimeout;
 
     /// <summary>
+    /// 一時的な失敗が、この回数だけ続いたら「Twitch に接続できません」の文を出す（30 秒周期なので約 5 分）。
+    /// </summary>
+    internal const int ConnectionWarningThreshold = 10;
+
+    /// <summary>
+    /// refresh の結果で、連続の一時的な失敗の回数を更新する。成功とトークン無効では 0 に戻す（ネットワークの問題が解けたとみなす）。
+    /// </summary>
+    internal static int NextTemporaryFailureCount(RefreshOutcome outcome, int currentCount) =>
+        outcome == RefreshOutcome.TemporaryFailure ? currentCount + 1 : 0;
+
+    /// <summary>
+    /// 連続の一時的な失敗が、接続できないの文を出す回数に達したか。
+    /// </summary>
+    internal static bool ShouldShowConnectionWarning(int temporaryFailureCount) =>
+        temporaryFailureCount >= ConnectionWarningThreshold;
+
+    /// <summary>
+    /// 監視が認可画面を開いてよいか。トークン無効のときだけ開く（一時的な失敗では開かない）。認可の試行が進行中なら開かない（<see cref="IsAuthorizationInProgress"/>）。
+    /// </summary>
+    /// <param name="outcome">refresh の結果</param>
+    /// <param name="authorizationStartedAt">認可の抑止の起点（<see cref="IsAuthorizationInProgress"/> と同じもの）</param>
+    /// <param name="now">今の時刻</param>
+    internal static bool ShouldOpenAuthorization(RefreshOutcome outcome, DateTime? authorizationStartedAt, DateTime now) =>
+        outcome == RefreshOutcome.TokenInvalid && !IsAuthorizationInProgress(authorizationStartedAt, now);
+
+    /// <summary>
     /// 認可の試行が終わったあとの、抑止の起点。成功したら null（抑止しない）。失敗したら、失敗した時刻を起点にする。
     /// 開いた時刻のままだと、終わり近くで失敗したとき、10 分の抑止が数十秒で切れてしまうため。
     /// </summary>

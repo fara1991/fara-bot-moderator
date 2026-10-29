@@ -550,23 +550,48 @@ public partial class MainWindow : INotifyPropertyChanged
     /// </summary>
     private async Task UpdateRefreshTokenAsync()
     {
-        var success = await _twitchAuthService.RefreshAccessTokenAsync(
+        var outcome = await _twitchAuthService.RefreshAccessTokenAsync(
             TwitchApiClientIdPasswordBox.Password,
             TwitchApiClientSecretPasswordBox.Password);
 
-        if (success)
-        {
-            // 更新できたので、前の認可の失敗の文は消す
+        var now = DateTime.Now;
+        _consecutiveTemporaryRefreshFailures = TokenMonitorPolicy.NextTemporaryFailureCount(outcome, _consecutiveTemporaryRefreshFailures);
+
+        // 成功・トークン無効のときは、前の「接続できません」の文を消す（ほかの文は消さない）
+        if (outcome != RefreshOutcome.TemporaryFailure && TwitchAuthStatusTextBlock.Text == ConnectionFailureStatusText)
             TwitchAuthStatusTextBlock.Text = "";
+
+        if (outcome == RefreshOutcome.Succeeded) return;
+
+        // 失敗したら、次の refresh は一定時間（30 秒）空けて試す（毎秒の再試行にしない）
+        _nextRefreshAttemptAt = now + TokenMonitorPolicy.RefreshRetryInterval;
+
+        if (outcome == RefreshOutcome.TemporaryFailure)
+        {
+            // 回線断などの一時的な失敗では、認可画面を開かない（有効なリフレッシュトークンを、無効と誤認して開くとロックしてしまう）。30 秒後に再試行する
+            if (TokenMonitorPolicy.ShouldShowConnectionWarning(_consecutiveTemporaryRefreshFailures))
+            {
+                if (_consecutiveTemporaryRefreshFailures == TokenMonitorPolicy.ConnectionWarningThreshold)
+                    LogController.OutputLog("<Error> Twitch に接続できない状態が続いています（ネットワークを確認してください）");
+                TwitchAuthStatusTextBlock.Text = ConnectionFailureStatusText;
+            }
             return;
         }
 
-        // 失敗したら、次の refresh は一定時間（30 秒）空けて試す（毎秒の再試行にしない）
-        _nextRefreshAttemptAt = DateTime.Now + TokenMonitorPolicy.RefreshRetryInterval;
-        // 認可の試行が進行中（認可画面を開いてから、または失敗してから期限内）なら、開き直さない。開き直すと state が変わり、進行中の認可が合わなくなる。失敗のあとに開き直すと、30 秒ごとに認可画面が出てしまう
-        if (!TokenMonitorPolicy.IsAuthorizationInProgress(_authorizationStartedAt, DateTime.Now))
+        // トークン無効: 認可の試行が進行中（認可画面を開いてから、または失敗してから期限内）なら、開き直さない。開き直すと state が変わり、進行中の認可が合わなくなる。失敗のあとに開き直すと、30 秒ごとに認可画面が出てしまう
+        if (TokenMonitorPolicy.ShouldOpenAuthorization(outcome, _authorizationStartedAt, now))
             RequestApiAccessToken();
     }
+
+    /// <summary>
+    /// 一時的な失敗が続いたときに、認可の状態の文として出す「接続できません」の文（赤字。成功したら消す）。
+    /// </summary>
+    private const string ConnectionFailureStatusText = "Twitch に接続できません。ネットワークを確認してください。";
+
+    /// <summary>
+    /// 連続して起きた一時的な失敗の回数（成功・トークン無効で 0 に戻す）。
+    /// </summary>
+    private int _consecutiveTemporaryRefreshFailures;
 
     /// <summary>
     /// 次に refresh を試してよい時刻（監視が毎秒 refresh し続けないように）。
@@ -609,6 +634,7 @@ public partial class MainWindow : INotifyPropertyChanged
         if (success)
         {
             _authorizationStartedAt = null;
+            _consecutiveTemporaryRefreshFailures = 0;
             TwitchAuthStatusTextBlock.Text = "";
             UnlockWindowControl();
             return;
