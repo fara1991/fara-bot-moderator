@@ -2,7 +2,7 @@
 
     <PropertyGroup>
         <OutputType>WinExe</OutputType>
-        <TargetFramework>net8.0-windows10.0.22621.0</TargetFramework>
+        <TargetFramework>net10.0-windows10.0.22621.0</TargetFramework>
         <Nullable>enable</Nullable>
         <UseWPF>true</UseWPF>
         <GenerateDocumentationFile>True</GenerateDocumentationFile>
@@ -38,11 +38,31 @@
         <EmbeddedResource Remove="external\**"/>
         <None Remove="external\**"/>
         <Page Remove="external\**"/>
+        <Compile Remove="site\**"/>
+        <EmbeddedResource Remove="site\**"/>
+        <None Remove="site\**"/>
+        <Page Remove="site\**"/>
+        <Compile Remove="tests\**"/>
+        <EmbeddedResource Remove="tests\**"/>
+        <None Remove="tests\**"/>
+        <Page Remove="tests\**"/>
         <Content Remove="external\**"/>
         <Resource Include="Resources\app.ico" />
+        <!-- secrets.json（認証情報）は、出力先に無いときだけ入れる（ビルドのたびに上書きしない）。下の Target を参照 -->
         <None Update="Resources\secrets.json">
-          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+          <CopyToOutputDirectory>Never</CopyToOutputDirectory>
         </None>
+    </ItemGroup>
+
+    <!-- 出力先の Resources\secrets.json が無いときだけ、リポジトリの空のテンプレートをコピーする。既にあれば何もしない（保存済みの認証情報を守る） -->
+    <Target Name="CopySecretsTemplateIfMissing" AfterTargets="Build">
+        <Copy SourceFiles="Resources\secrets.json" DestinationFolder="$(OutDir)Resources"
+              Condition="!Exists('$(OutDir)Resources\secrets.json')" />
+    </Target>
+
+    <ItemGroup>
+        <!-- 単体テスト（tests\FaraBotModerator.Tests）から internal のメソッドを呼ぶ -->
+        <InternalsVisibleTo Include="FaraBotModerator.Tests" />
     </ItemGroup>
 
     <ItemGroup>
@@ -62,8 +82,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <!-- ポケモンの !poke 系コマンド。git submodule: external/fara-pokemon-assistance -->
-        <ProjectReference Include="external\fara-pokemon-assistance\src\FaraPokemonAssistance.Core\FaraPokemonAssistance.Core.csproj"/>
+        <!-- ポケモンの !poke 系コマンド。git submodule: external/fara-pokemon-battle-assistant -->
+        <ProjectReference Include="external\fara-pokemon-battle-assistant\src\FaraPokemonBattleAssistant.Core\FaraPokemonBattleAssistant.Core.csproj"/>
     </ItemGroup>
 
     <ItemGroup>

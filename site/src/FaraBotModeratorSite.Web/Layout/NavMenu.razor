@@ -1,0 +1,107 @@
+@* サイドバーの中身（MudBlazor の MudNavMenu / MudNavLink）。PC は MainLayout（fara-blazor-component の SiteLayout）の Mini ドロワーに入り、隠すとアイコンだけの細い列になる。
+   スマホは、ハンバーガーで開く一時的なメニューで、上のほうに、ライト／ダークの切り替えを置く（PC はヘッダーのスイッチ）。
+   項目は <a href> のまま（OnClick を付けると、MudBlazor が href の無い要素にするため）。スマホでメニューを閉じるのは、SiteLayout が画面の移動で行う。
+   説明ページは Manual.md の構成どおり（グループ → ページ → 子ページ）。子ページは親の下に、段ごとに字下げして出す *@
+@implements IDisposable
+@inject SiteContent Content
+@inject IJSRuntime JS
+
+<MudNavMenu Class="fbc-nav">
+    @if (Mobile)
+    {
+        <div class="side-settings">
+            <ThemeSwitch AsButton="true" />
+        </div>
+    }
+
+    <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">ホーム</MudNavLink>
+    <MudNavLink Href="/download" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Download">ダウンロード</MudNavLink>
+    <MudNavLink Href="/docs" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.FormatListBulleted">ドキュメント</MudNavLink>
+
+    @foreach (var group in Content.Groups)
+    {
+        <div class="fbc-nav-section">@group.Name</div>
+        @foreach (var p in group.Pages)
+        {
+            @PageItem(p, 0)
+        }
+    }
+
+    <div class="fbc-nav-section">お知らせ</div>
+    <MudNavLink Href="/changelog" Icon="@Icons.Material.Filled.History">更新履歴</MudNavLink>
+
+    <div class="fbc-nav-section">サポート</div>
+    <MudNavLink Href="/report" Icon="@Icons.Material.Filled.MailOutline">問い合わせ</MudNavLink>
+    <MudNavLink Href="/privacy" Icon="@Icons.Material.Filled.PrivacyTip">プライバシーポリシー</MudNavLink>
+</MudNavMenu>
+
+@code {
+    /// <summary>字下げの class を用意する最大の段（これより深い段も、同じ字下げにする）。site.css の site-nav-depth-N と合わせる。</summary>
+    private const int MaxDepthClass = 3;
+
+    /// <summary>スマホのメニュー（上のほうにライト／ダークの切り替えを出す）かどうか（768px 未満。kit の faraBlazorComponent.watchMobile が知らせる。SiteLayout の判定と同じ）。</summary>
+    private bool Mobile { get; set; }
+
+    private DotNetObjectReference<NavMenu>? self;
+
+    private RenderFragment PageItem(DocPage page, int depth) => builder =>
+    {
+        var cls = depth > 0 ? $"site-nav-child site-nav-depth-{Math.Min(depth, MaxDepthClass)}" : null;
+        builder.OpenComponent<MudNavLink>(0);
+        builder.AddAttribute(1, "Href", page.Url);
+        builder.AddAttribute(2, "Match", NavLinkMatch.Prefix);
+        builder.AddAttribute(3, "Icon", IconOf(page.Slug));
+        builder.AddAttribute(4, "Class", cls);
+        builder.AddAttribute(5, "ChildContent", (RenderFragment)(b => b.AddContent(0, page.MenuTitle ?? page.Title)));
+        builder.CloseComponent();
+        var children = Content.Children(page);
+        if (children.Count > 0)
+        {
+            builder.OpenElement(10, "div");
+            builder.AddAttribute(11, "role", "group");
+            builder.AddAttribute(12, "aria-label", $"{page.Title} の下のページ");
+            foreach (var child in children)
+                builder.AddContent(13, PageItem(child, depth + 1));
+            builder.CloseElement();
+        }
+    };
+
+    /// <summary>ページごとのアイコン（MudBlazor の Material アイコン）。新しいページを足したら、ここにも書く（無ければ一覧のアイコンで出る）。</summary>
+    private static string IconOf(string slug) => slug switch
+    {
+        "overview" => Icons.Material.Filled.MenuBook,
+        "main-settings" => Icons.Material.Filled.Tune,
+        "reaction-events" => Icons.Material.Filled.Notifications,
+        "windows" => Icons.Material.Filled.Window,
+        "translate" => Icons.Material.Filled.Translate,
+        "game" => Icons.Material.Filled.SportsEsports,
+        "timer" => Icons.Material.Filled.Schedule,
+        "commands" => Icons.Material.Filled.Terminal,
+        "pokemon" => Icons.Material.Filled.Terminal,
+        "faq" => Icons.Material.Filled.HelpOutline,
+        "troubleshooting" => Icons.Material.Filled.Build,
+        _ => Icons.Material.Filled.FormatListBulleted,
+    };
+
+    protected override void OnInitialized()
+    {
+        // 最初の描画の前に、スマホかどうかを同期で決める（WebAssembly の JS 呼び出しは同期でもできる。非同期だと、PC の表示で一度描かれる）
+        if (JS is not IJSInProcessRuntime sync) return;
+        try
+        {
+            self = DotNetObjectReference.Create(this);
+            Mobile = sync.Invoke<bool>("faraBlazorComponent.watchMobile", self);
+        }
+        catch { /* JS が使えないときは PC として扱う */ }
+    }
+
+    [JSInvokable]
+    public void OnMobileChanged(bool matches)
+    {
+        if (Mobile == matches) return;
+        Mobile = matches;
+        StateHasChanged();
+    }
+
+    public void Dispose() => self?.Dispose();
+}

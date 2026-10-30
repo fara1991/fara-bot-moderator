@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Unicode;
@@ -13,6 +14,28 @@ namespace FaraBotModerator.Controllers;
 /// </summary>
 public class UniqueChannelPointController
 {
+    /// <summary>
+    /// 「Random Tailor」のチャンネルポイントのタイトル（Twitch 側の名前と同じにする）
+    /// </summary>
+    private const string RandomTailorTitle = "Random Tailor";
+
+    /// <summary>
+    /// ランダムな位置の範囲（mm。下限を含み、上限を含まない）
+    /// </summary>
+    private const int RandomPositionMinMm = -100;
+    private const int RandomPositionMaxMm = 100;
+
+    /// <summary>
+    /// ランダムな回転の範囲（度。下限を含み、上限を含まない）
+    /// </summary>
+    private const int RandomRotationMinDeg = -45;
+    private const int RandomRotationMaxDeg = 45;
+
+    /// <summary>
+    /// Twitch のログイン名（英数字・アンダースコア）。ファイル名に使える文字だけ。
+    /// </summary>
+    private static readonly Regex LoginNamePattern = new(@"\A[A-Za-z0-9_]+\z", RegexOptions.CultureInvariant);
+
     private readonly SecretKeyModel _secretKeys;
 
     /// <summary>
@@ -32,7 +55,7 @@ public class UniqueChannelPointController
     /// <returns>処理結果のメッセージ（ボットがチャットに送信するためのもの）</returns>
     public string Exec(string userName, string channelPointTitle)
     {
-        if (channelPointTitle == "Random Tailor") return ExecRandomTailor(userName, _secretKeys.BeatSaber.ResolvedUserDataPath);
+        if (channelPointTitle == RandomTailorTitle) return ExecRandomTailor(userName, _secretKeys.BeatSaber.ResolvedUserDataPath);
 
         return "";
     }
@@ -40,6 +63,7 @@ public class UniqueChannelPointController
     /// <summary>
     /// 「Random Tailor」チャンネルポイント交換時の処理。
     /// BeatSaberのSaber Tailorプラグイン用設定ファイルをランダムな値で生成します。
+    /// 書けなかったとき（フォルダが無い・書き込めない）は、チャットに通知する文だけを返します（例外は外へ出しません）。
     /// </summary>
     /// <param name="userName">ユーザー名</param>
     /// <param name="beatSaberUserPath">BeatSaberのUserDataディレクトリパス</param>
@@ -51,22 +75,26 @@ public class UniqueChannelPointController
             return "BeatSaber UserData path is not configured.";
         }
 
-        // PosX, PosY, PosZ, RotX, RotY, RotZ
-        // pos -100~100mm  rot -45~45deg
-        var r = new Random();
+        // ファイル名に使うので、ログイン名（英数字・アンダースコア）だけを受ける。ほかの文字は、パスを変えたり、ファイル名を壊したりしうる
+        if (!LoginNamePattern.IsMatch(userName))
+        {
+            LogController.OutputLog("<Error> RandomTailor: the user name has characters that cannot be used in a file name");
+            return "RandomTailor: could not create the setting file (the user name has characters that cannot be used in a file name).";
+        }
+
+        // PosX, PosY, PosZ, RotX, RotY, RotZ（Random.Shared は複数のスレッドから使える。イベントは受信のスレッドから来る）
+        var r = Random.Shared;
         var pos = new[]
-            {r.Next(-100, 100), r.Next(-100, 100), r.Next(-100, 100)};
+            {r.Next(RandomPositionMinMm, RandomPositionMaxMm), r.Next(RandomPositionMinMm, RandomPositionMaxMm), r.Next(RandomPositionMinMm, RandomPositionMaxMm)};
         var rot = new[]
-            {r.Next(-45, 45), r.Next(-45, 45), r.Next(-45, 45)};
+            {r.Next(RandomRotationMinDeg, RandomRotationMaxDeg), r.Next(RandomRotationMinDeg, RandomRotationMaxDeg), r.Next(RandomRotationMinDeg, RandomRotationMaxDeg)};
 
         var d = DateTime.Now;
         // userNameは日本語が入るとSaber Tailorが認識しないらしい
         var fileName =
             $"SaberTailor.{userName}-{d.Year:0000}{d.Month:00}{d.Day:00}{d.Hour:00}{d.Minute:00}{d.Second:00}.json";
-        var newRandomTailorFile =
-            $"{beatSaberUserPath}\\{fileName}";
+        var newRandomTailorFile = Path.Combine(beatSaberUserPath, fileName);
 
-        using var writer = new StreamWriter(newRandomTailorFile, false, Encoding.GetEncoding("SHIFT-JIS"));
         var saberTailorModel = new SaberTailorModel
         {
             GripLeftPosition = {x = -pos[0], y = -pos[1], z = -pos[2]},
@@ -81,7 +109,18 @@ public class UniqueChannelPointController
             WriteIndented = true
         };
         var jsonData = JsonSerializer.Serialize(saberTailorModel, options);
-        writer.WriteLine(jsonData);
+
+        try
+        {
+            using var writer = new StreamWriter(newRandomTailorFile, false, Encoding.GetEncoding("SHIFT-JIS"));
+            writer.WriteLine(jsonData);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or NotSupportedException or ArgumentException)
+        {
+            // フォルダが無い・書き込めないのは、利用者の環境の問題。イベントの処理を止めず、チャットに知らせる
+            LogController.OutputLog($"<Error> RandomTailor の設定ファイルを書けませんでした: {ex.GetType().Name}");
+            return "RandomTailor: could not write the setting file to the BeatSaber UserData folder (check the folder path in the settings).";
+        }
 
         return
             $"New Tailor {fileName}. RandomTailor detail: Pos(x: {pos[0]}mm, y: {pos[1]}mm, z: {pos[2]}mm), Rot(x: {rot[0]}deg, y: {rot[1]}deg, z: {rot[2]}deg)";

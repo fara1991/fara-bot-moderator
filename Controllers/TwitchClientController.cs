@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using FaraBotModerator.Enums;
@@ -24,7 +26,15 @@ namespace FaraBotModerator.Controllers;
 public class TwitchClientController
 {
     private readonly BouyomiChanController _bouyomiChanController = new();
-    private readonly Queue<ChatModel> _chatDataQueue = new();
+    /// <summary>
+    /// 表示用のチャットの待ち行列（送った順に並ぶ）。受信（TwitchLib のスレッド）と表示（UI の監視ループ）が別のスレッドから触るので、並行アクセスに対応したものを使う
+    /// </summary>
+    private readonly ChatRowQueue _chatDataQueue = new();
+
+    /// <summary>
+    /// チャットのアイコンを待つ時間（ミリ秒）。これを過ぎたら、アイコン無しで表示する（後ろのチャットを止め続けないため）
+    /// </summary>
+    private const int ChatIconWaitMilliseconds = 1500;
     private readonly SecretKeyModel _secretKeys;
     private readonly TwitchApiController _twitchApiController;
     private TwitchClient? _twitchClient;
@@ -55,7 +65,9 @@ public class TwitchClientController
         _twitchApiController = twitchApiController;
         _twitchTranslationController = new TwitchTranslationController(_secretKeys.DeepL.ApiKey);
         _uniqueChannelPointController = new UniqueChannelPointController(_secretKeys);
-        _pokemonCommandController = new PokemonCommandController();
+        _pokemonCommandController =
+            new PokemonCommandController(PokemonCommandController.ParseRegisteredFormat(_secretKeys.Pokemon.BattleFormat),
+                PokemonCommandController.ParseDataSource(_secretKeys.Pokemon.DataSource), _secretKeys.Pokemon.SyncKey);
     }
 
     /// <summary>
@@ -113,18 +125,27 @@ public class TwitchClientController
         
         // DisconnectをTask.Runで実行してUIスレッドのブロックを回避（TwitchLib内部で待機が発生する場合があるため）
         var client = _twitchClient;
-        Task.Run(() => client.Disconnect());
+        _ = Task.Run(() => client.Disconnect());
     }
 
     /// <summary>
     /// アプリケーションからTwitchへチャットメッセージを送信し、翻訳処理も行います。
     /// </summary>
     /// <param name="message">送信するメッセージ</param>
-    public async void SendApplicationMessage(string message)
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "TwitchLib のイベント・チャット処理の最上位。例外が他のイベント・チャットの処理を止めないよう、ここで受けてログに残す")]
+    public async Task SendApplicationMessageAsync(string message)
     {
         if (message.Equals("")) return;
-        SendMessage(_twitchUserName, message);
-        await SendMessageTranslationAsync(_twitchUserName, _twitchUserDisplayName, message);
+        try
+        {
+            SendMessage(_twitchUserName, message);
+            await SendMessageTranslationAsync(_twitchUserName, _twitchUserDisplayName, message);
+        }
+        catch (Exception ex)
+        {
+            // 呼び出し元は結果を待たない（_ = で捨てる）ので、例外はここで受けてログに残す（振る舞いは async void のときと同じ）
+            LogController.OutputLog($"<Error> アプリからのメッセージの送信に失敗しました: {ex.Message}");
+        }
     }
 
     /// <summary>
@@ -166,22 +187,45 @@ public class TwitchClientController
     /// <returns>チャットデータ。キューが空の場合はnull</returns>
     public ChatModel? PickChatData()
     {
-        return _chatDataQueue.Count > 0 ? _chatDataQueue.Dequeue() : null;
+        return _chatDataQueue.TryPick();
     }
 
     /// <summary>
-    /// チャットデータをUI表示用キューに追加します。アイコンURLの取得も行います。
+    /// チャットデータをUI表示用キューに、送った順のまま追加します。アイコンURLは後から取得し、間に合わなければ空にします。
     /// </summary>
     /// <param name="userName">ユーザー名</param>
     /// <param name="message">メッセージ内容</param>
     /// <param name="userId">ユーザーID</param>
-    private async void AddChatListData(string userName, string message, string userId = "")
+    private void AddChatListData(string userName, string message, string userId = "")
     {
-        var chatUserIconUrl = userId != ""
-            ? await _twitchApiController.GetTwitchIconUrlByIdAsync(userId)
-            : await _twitchApiController.GetTwitchIconUrlByLoginAsync(userName);
-        var chatModel = new ChatModel {Name = userName, Chat = message, Icon = chatUserIconUrl};
-        _chatDataQueue.Enqueue(chatModel);
+        // 行は今の順番で確保する（アイコンの取得の速さで、表示の順が入れ替わらないように）
+        var chatModel = new ChatModel {Name = userName, Chat = message};
+        _chatDataQueue.Enqueue(chatModel, GetChatIconAsync(userName, userId));
+    }
+
+    /// <summary>
+    /// チャットのアイコンURLを取得します。時間内に取れないとき・取れないときは null（アイコン無しで表示する）。
+    /// </summary>
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "アイコンが取れなくても、チャットの行は表示する（アイコン無し）。このタスクは行の待ち行列に渡されるため、種類を問わず受けて null にしないと、行が出なくなる")]
+    private async Task<string?> GetChatIconAsync(string userName, string userId)
+    {
+        try
+        {
+            var lookup = userId != ""
+                ? _twitchApiController.GetTwitchIconUrlByIdAsync(userId)
+                : _twitchApiController.GetTwitchIconUrlByLoginAsync(userName);
+            return await lookup.WaitAsync(TimeSpan.FromMilliseconds(ChatIconWaitMilliseconds));
+        }
+        catch (TimeoutException)
+        {
+            return null;
+        }
+        catch (Exception ex)
+        {
+            // アイコンが取れなくても、チャットの行は表示する（アイコン無し）
+            LogController.OutputLog($"<Error> チャットのアイコンを取得できませんでした: {ex.Message}");
+            return null;
+        }
     }
 
     /// <summary>
@@ -213,6 +257,8 @@ public class TwitchClientController
     /// <summary>
     /// /announcement を実行したときの処理
     /// </summary>
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "TwitchLib のイベント・チャット処理の最上位。例外が他のイベント・チャットの処理を止めないよう、ここで受けてログに残す")]
+    [SuppressMessage("Usage", "VSTHRD100:Avoid async void methods", Justification = "イベントハンドラーの型（void を返すデリゲート）の都合で async void が必要。例外は本文の try/catch で受けて、ログ・画面で知らせている")]
     private async void TwitchClientOnAnnouncement(object? sender, OnAnnouncementArgs e)
     {
         try
@@ -315,51 +361,79 @@ public class TwitchClientController
     /// <summary>
     /// 別チャンネルからRaidが来たときの処理を行います。
     /// </summary>
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "TwitchLib のイベント・チャット処理の最上位。例外が他のイベント・チャットの処理を止めないよう、ここで受けてログに残す")]
+    [SuppressMessage("Usage", "VSTHRD100:Avoid async void methods", Justification = "イベントハンドラーの型（void を返すデリゲート）の都合で async void が必要。例外は本文の try/catch で受けて、ログ・画面で知らせている")]
     public async void TwitchClientOnRaidNotification(object? sender, OnRaidNotificationArgs e)
     {
-        var raiderName = e.RaidNotification.MsgParamLogin;
-        var raiderChannelUrl = $"https://twitch.tv/{raiderName}";
-        var message = _secretKeys.Event.Raid.Message.Replace("{raiderName}", raiderName)
-            .Replace("{raiderChannelUrl}", raiderChannelUrl);
-        SendMessage(raiderName, $"[{Settings.Default.BotName}] {message}");
-        BouyomiChanController.AddEventTalkTask($"{raiderName}さんにRaidされました", _secretKeys.BouyomiChan.Checked);
-        LogController.OutputLog($"<Raid> Name: {raiderName}, URL: {raiderChannelUrl}", TwitchEventEnum.Raid);
+        try
+        {
+            var raiderName = e.RaidNotification.MsgParamLogin;
+            var raiderChannelUrl = $"https://twitch.tv/{raiderName}";
+            var message = _secretKeys.Event.Raid.Message.Replace("{raiderName}", raiderName)
+                .Replace("{raiderChannelUrl}", raiderChannelUrl);
+            SendMessage(raiderName, $"[{Settings.Default.BotName}] {message}");
+            BouyomiChanController.AddEventTalkTask($"{raiderName}さんにRaidされました", _secretKeys.BouyomiChan.Checked);
+            LogController.OutputLog($"<Raid> Name: {raiderName}, URL: {raiderChannelUrl}", TwitchEventEnum.Raid);
 
-        await _twitchApiController.SendShoutoutAsync(raiderName);
+            await _twitchApiController.SendShoutoutAsync(raiderName);
+        }
+        catch (Exception ex)
+        {
+            // async void の中の例外は呼び出し元に戻らず、アプリが落ちるので、ここで受けてログに残す
+            LogController.OutputLog($"<Error> Raid の処理に失敗しました: {ex.Message}");
+        }
     }
 
     /// <summary>
     /// 新規サブスクライブ時の処理を行います。
     /// </summary>
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "TwitchLib のイベント・チャット処理の最上位。例外が他のイベント・チャットの処理を止めないよう、ここで受けてログに残す")]
     public void TwitchClientOnNewSubscriber(object? sender, OnNewSubscriberArgs e)
     {
-        var subscriberName = e.Subscriber.DisplayName;
-        var message = _secretKeys.Event.Subscription.Message.Replace("{subscriberName}", subscriberName)
-            .Replace("{totalSubscriptionMonth}", "1");
-        SendMessage(subscriberName, $"[{Settings.Default.BotName}] {message}", e.Subscriber.UserId);
-        BouyomiChanController.AddEventTalkTask($"{subscriberName}さんサブスクありがとうございます",
-                _secretKeys.BouyomiChan.Checked);
-        LogController.OutputLog($"<New Subscriber> Name: {subscriberName}", TwitchEventEnum.Subscriber);
+        try
+        {
+            var subscriberName = e.Subscriber.DisplayName;
+            var message = _secretKeys.Event.Subscription.Message.Replace("{subscriberName}", subscriberName)
+                .Replace("{totalSubscriptionMonth}", "1");
+            SendMessage(subscriberName, $"[{Settings.Default.BotName}] {message}", e.Subscriber.UserId);
+            BouyomiChanController.AddEventTalkTask($"{subscriberName}さんサブスクありがとうございます",
+                    _secretKeys.BouyomiChan.Checked);
+            LogController.OutputLog($"<New Subscriber> Name: {subscriberName}", TwitchEventEnum.Subscriber);
+        }
+        catch (Exception ex)
+        {
+            // TwitchLib のイベントの中で例外を出さない（ほかのイベント・チャットの処理を止めないため）
+            LogController.OutputLog($"<Error> 新規サブスクの処理に失敗しました: {ex.Message}", TwitchEventEnum.Subscriber);
+        }
     }
 
     /// <summary>
     /// Primeサブスクライブ時の処理を行います。
     /// </summary>
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "TwitchLib のイベント・チャット処理の最上位。例外が他のイベント・チャットの処理を止めないよう、ここで受けてログに残す")]
     private void TwitchClientOnPrimePaidSubscriber(object? sender, OnPrimePaidSubscriberArgs e)
     {
-        var subscriberName = e.PrimePaidSubscriber.DisplayName;
-        var months = e.PrimePaidSubscriber.MsgParamCumulativeMonths ?? "1";
-        var message = _secretKeys.Event.Subscription.Message.Replace("{subscriberName}", subscriberName)
-            .Replace("{totalSubscriptionMonth}", months);
-        SendMessage(subscriberName, $"[{Settings.Default.BotName}] {message}", e.PrimePaidSubscriber.UserId);
-        BouyomiChanController.AddEventTalkTask($"{subscriberName}さんサブスクありがとうございます",
-                _secretKeys.BouyomiChan.Checked);
-        LogController.OutputLog($"<Prime Subscriber> Name: {subscriberName}", TwitchEventEnum.Subscriber);
+        try
+        {
+            var subscriberName = e.PrimePaidSubscriber.DisplayName;
+            var months = e.PrimePaidSubscriber.MsgParamCumulativeMonths ?? "1";
+            var message = _secretKeys.Event.Subscription.Message.Replace("{subscriberName}", subscriberName)
+                .Replace("{totalSubscriptionMonth}", months);
+            SendMessage(subscriberName, $"[{Settings.Default.BotName}] {message}", e.PrimePaidSubscriber.UserId);
+            BouyomiChanController.AddEventTalkTask($"{subscriberName}さんサブスクありがとうございます",
+                    _secretKeys.BouyomiChan.Checked);
+            LogController.OutputLog($"<Prime Subscriber> Name: {subscriberName}", TwitchEventEnum.Subscriber);
+        }
+        catch (Exception ex)
+        {
+            LogController.OutputLog($"<Error> Primeサブスクの処理に失敗しました: {ex.Message}", TwitchEventEnum.Subscriber);
+        }
     }
 
     /// <summary>
     /// 継続サブスクライブ（再サブスク）時の処理を行います。
     /// </summary>
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "TwitchLib のイベント・チャット処理の最上位。例外が他のイベント・チャットの処理を止めないよう、ここで受けてログに残す")]
     private void TwitchClientOnReSubscriber(object? sender, OnReSubscriberArgs e)
     {
         try
@@ -383,7 +457,7 @@ public class TwitchClientController
         }
         catch (Exception ex)
         {
-            BouyomiChanController.AddEventTalkTask("翻訳に失敗しました", _secretKeys.BouyomiChan.Checked);
+            BouyomiChanController.AddEventTalkTask("イベントの処理に失敗しました", _secretKeys.BouyomiChan.Checked);
             LogController.OutputLog($"<Subscriber> Error: {ex.Message}", TwitchEventEnum.Subscriber);
         }
     }
@@ -391,38 +465,41 @@ public class TwitchClientController
     /// <summary>
     /// サブスクギフト受信時の処理を行います。
     /// </summary>
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "TwitchLib のイベント・チャット処理の最上位。例外が他のイベント・チャットの処理を止めないよう、ここで受けてログに残す")]
     public void TwitchClientOnGiftedSubscription(object? sender, OnGiftedSubscriptionArgs e)
     {
-        var giftedUserName = e.GiftedSubscription.DisplayName;
-        var url = $"https://twitch.tv/{giftedUserName}";
-        var message = _secretKeys.Event.Gift.Message.Replace("{giftedUserName}", giftedUserName);
-        SendMessage(giftedUserName, $"[{Settings.Default.BotName}] {message}");
-        BouyomiChanController.AddEventTalkTask($"{giftedUserName}さんGiftありがとうございます",
-                _secretKeys.BouyomiChan.Checked);
-        LogController.OutputLog($"<Gift> Name: {giftedUserName} URL: {url}", TwitchEventEnum.Gift);
+        try
+        {
+            var giftedUserName = e.GiftedSubscription.DisplayName;
+            var url = $"https://twitch.tv/{giftedUserName}";
+            var message = _secretKeys.Event.Gift.Message.Replace("{giftedUserName}", giftedUserName);
+            SendMessage(giftedUserName, $"[{Settings.Default.BotName}] {message}");
+            BouyomiChanController.AddEventTalkTask($"{giftedUserName}さんGiftありがとうございます",
+                    _secretKeys.BouyomiChan.Checked);
+            LogController.OutputLog($"<Gift> Name: {giftedUserName} URL: {url}", TwitchEventEnum.Gift);
+        }
+        catch (Exception ex)
+        {
+            LogController.OutputLog($"<Error> ギフトの処理に失敗しました: {ex.Message}", TwitchEventEnum.Gift);
+        }
     }
 
     /// <summary>
-    /// メッセージ受信時の処理を行います。バッドワードのタイムアウトや翻訳処理を含みます。
+    /// メッセージ受信時の処理を行います（ポケモンコマンド・翻訳・読み上げ）。
     /// </summary>
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "TwitchLib のイベント・チャット処理の最上位。例外が他のイベント・チャットの処理を止めないよう、ここで受けてログに残す")]
+    [SuppressMessage("Usage", "VSTHRD100:Avoid async void methods", Justification = "イベントハンドラーの型（void を返すデリゲート）の都合で async void が必要。例外は本文の try/catch で受けて、ログ・画面で知らせている")]
     private async void TwitchClientOnMessageReceived(object? sender, OnMessageReceivedArgs e)
     {
         if (_twitchClient == null) return;
-        // Twitchチャット上のコメントのみ受け取れる
-        if (e.ChatMessage.Message.Contains(@"badword"))
-            _twitchClient.TimeoutUser(e.ChatMessage.Channel, e.ChatMessage.Username, TimeSpan.FromMinutes(30),
-                "Bad word! 30 minute timeout!");
         try
         {
             var userName = e.ChatMessage.Username;
             var displayName = e.ChatMessage.DisplayName;
             var sourceMessage = e.ChatMessage.Message;
-            if (await _pokemonCommandController.IsCommandAsync(sourceMessage))
-            {
-                await SendPokemonCommandAsync(userName, sourceMessage, e.ChatMessage.UserId,
-                    e.ChatMessage.IsBroadcaster, e.ChatMessage.IsModerator);
+            if (await TrySendPokemonCommandAsync(userName, sourceMessage, e.ChatMessage.UserId,
+                    e.ChatMessage.IsBroadcaster, e.ChatMessage.IsModerator))
                 return;
-            }
 
             await SendMessageTranslationAsync(userName, displayName, sourceMessage, false, e.ChatMessage.UserId);
         }
@@ -434,17 +511,51 @@ public class TwitchClientController
     }
 
     /// <summary>
-    /// ポケモンコマンド（!poke 系）の実行結果をチャットに送信します。
+    /// ポケモンコマンド（!poke 系）であれば実行し、結果をチャットに送信します。
     /// </summary>
-    private async Task SendPokemonCommandAsync(string userName, string sourceMessage, string userId,
+    /// <returns>ポケモンコマンドとして処理した場合は true</returns>
+    private async Task<bool> TrySendPokemonCommandAsync(string userName, string sourceMessage, string userId,
         bool isBroadcaster, bool isModerator)
     {
         var prefix = $"[{Settings.Default.BotName}] ";
         // Twitch の 1 メッセージ 500 文字制限に収める
-        var reply = await _pokemonCommandController.HandleAsync(sourceMessage, userName, isBroadcaster, isModerator,
-            480 - prefix.Length);
-        if (string.IsNullOrEmpty(reply)) return;
-        SendMessage(userName, prefix + reply, userId);
+        var (handled, reply) = await _pokemonCommandController.HandleAsync(sourceMessage, userName, isBroadcaster,
+            isModerator, 480 - prefix.Length);
+        if (!handled) return false;
+        if (!string.IsNullOrEmpty(reply)) SendMessage(userName, prefix + reply, userId);
+        return true;
+    }
+
+    /// <summary>
+    /// ポケモンの登録している対戦形式（"Singles" / "Doubles"。null は未登録でシングル扱い）を切り替えます。
+    /// </summary>
+    /// <param name="format">対戦形式の文字列（未登録は null）</param>
+    public void SetPokemonBattleFormat(string? format)
+    {
+        _pokemonCommandController.RegisteredFormat = PokemonCommandController.ParseRegisteredFormat(format);
+    }
+
+    /// <summary>
+    /// ポケモンの登録している対戦形式（"Singles" / "Doubles"。未登録は null）を返します。
+    /// </summary>
+    public string? PokemonBattleFormat => _pokemonCommandController.RegisteredFormat?.ToString();
+
+    /// <summary>
+    /// ポケモンのデータの取得元（"Production" / "Develop"）を切り替えます。
+    /// </summary>
+    /// <param name="dataSource">取得元の文字列</param>
+    public void SetPokemonDataSource(string dataSource)
+    {
+        _pokemonCommandController.DataSource = PokemonCommandController.ParseDataSource(dataSource);
+    }
+
+    /// <summary>
+    /// ポケモンの登録データのアクセスキーを切り替えます（空にすると登録系のコマンドは使えなくなります）。
+    /// </summary>
+    /// <param name="syncKey">アクセスキー</param>
+    public void SetPokemonSyncKey(string syncKey)
+    {
+        _pokemonCommandController.SyncKey = syncKey;
     }
 
     /// <summary>
@@ -472,6 +583,7 @@ public class TwitchClientController
     /// <summary>
     /// 実際の翻訳処理（DeepL）と、翻訳結果の送信および読み上げ処理を行います。
     /// </summary>
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "翻訳（DeepL）の失敗でチャットの処理を止めない。失敗はチャットとログで知らせる")]
     private async Task MessageTranslationProcessAsync(string sourceMessage, string userName, string displayName,
         bool isAnnouncement = false, string userId = "")
     {

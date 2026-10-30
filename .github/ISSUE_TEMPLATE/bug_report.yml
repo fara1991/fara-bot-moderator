@@ -47,7 +47,6 @@ body:
       placeholder: |
         例：
         - OS: Windows 11
-        - .NET: 8.0
         - Twitch API: v5
     validations:
       required: true

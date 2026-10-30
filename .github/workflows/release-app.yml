@@ -1,0 +1,248 @@
+name: Release (app installer)
+
+# アプリ本体のインストーラーを作り、GitHub の Release に公開する。タグ v* の push か、バージョンを入れた手動実行で動く（紹介サイトの公開は deploy.yml・deploy-develop.yml）。
+# job を 2 つに分けている。build（ビルド・署名。書き込み権限なし。証明書を持つのはこの job だけ）→ release（タグと Release の作成。contents: write はこの job だけ）。
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'バージョン (例: v1.0.0)'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    # 書き込み権限は持たない（ビルドのスクリプトや依存関係が、リポジトリに書き込めないように）
+    outputs:
+      version: ${{ steps.version.outputs.VERSION }}
+
+    steps:
+      # 取得した認証情報（GITHUB_TOKEN）はディスクに残さない（以降のステップで使わない）
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+          persist-credentials: false
+
+      # 入力は式展開でスクリプトに埋め込まず、環境変数で受ける（引用符を含む入力で、スクリプトを壊したり、命令を混ぜられないように）。
+      # 形式は vX.Y.Z（任意で -prerelease）だけを受ける
+      - name: Set version
+        id: version
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref_name }}
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          if ($env:EVENT_NAME -eq "push") {
+            $version = $env:REF_NAME
+          } else {
+            $version = $env:INPUT_VERSION
+          }
+          $version = "$version".Trim()
+          if ($version -notmatch '^v?\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$') {
+            Write-Host "::error::バージョンの形式が正しくありません（例: v1.0.0）: $version"
+            exit 1
+          }
+          # vプレフィックスがない場合は追加
+          if (-not $version.StartsWith("v")) {
+            $version = "v$version"
+          }
+          echo "VERSION=$version" >> $env:GITHUB_OUTPUT
+          echo "Version: $version"
+        shell: pwsh
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Install Inno Setup
+        run: |
+          choco install innosetup -y
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Create secrets.json
+        run: |
+          New-Item -ItemType Directory -Path "Resources" -Force | Out-Null
+          @'
+          {
+            "twitch": {
+              "client": { "userName": "", "displayName": "" },
+              "api": { "clientId": "", "secret": "" }
+            },
+            "deepL": { "apiKey": "" },
+            "bouyomiChan": { "isActive": false },
+            "event": {
+              "follow": { "checked": true, "message": "" },
+              "raid": { "checked": true, "message": "" },
+              "subscription": { "checked": true, "message": "" },
+              "bits": { "checked": true, "message": "" },
+              "gift": { "checked": true, "message": "" },
+              "channelPoint": { "checked": true, "message": "" }
+            },
+            "cycleMessage": {
+              "timer1": { "checked": false, "interval": 60, "message": "" },
+              "timer2": { "checked": false, "interval": 60, "message": "" },
+              "timer3": { "checked": false, "interval": 60, "message": "" },
+              "timer4": { "checked": false, "interval": 60, "message": "" }
+            },
+            "fixedMessage": {
+              "timer1": { "checked": false, "datetime": "2023/1/1 00:00:00", "message": "" },
+              "timer2": { "checked": false, "datetime": "2023/1/1 00:00:00", "message": "" },
+              "timer3": { "checked": false, "datetime": "2023/1/1 00:00:00", "message": "" },
+              "timer4": { "checked": false, "datetime": "2023/1/1 00:00:00", "message": "" }
+            },
+            "beatSaber": { "userDataPath": "" },
+            "pokemon": { "battleFormat": "Singles" }
+          }
+          '@ | Out-File -FilePath "Resources\secrets.json" -Encoding UTF8
+
+      # ステップの if では secrets を参照できないため、証明書の有無をこのステップの出力で判定する
+      # (証明書を他のステップの環境に漏らさないよう、ジョブレベルの env には置かない)
+      - name: Check signing certificate
+        id: cert
+        env:
+          CERTIFICATE_PFX: ${{ secrets.CERTIFICATE_PFX }}
+        run: |
+          $hasCert = if ($env:CERTIFICATE_PFX) { "true" } else { "false" }
+          echo "HAS_CERT=$hasCert" >> $env:GITHUB_OUTPUT
+        shell: pwsh
+
+      - name: Locate signtool
+        if: steps.cert.outputs.HAS_CERT == 'true'
+        run: |
+          $signtool = Get-ChildItem -Path "C:\Program Files (x86)\Windows Kits\10\bin" -Recurse -Filter "signtool.exe" |
+            Where-Object { $_.FullName -match "\\x64\\" } | Select-Object -First 1 -ExpandProperty FullName
+          if (-not $signtool) { throw "signtool.exe not found." }
+          echo "SIGNTOOL=$signtool" >> $env:GITHUB_ENV
+        shell: pwsh
+
+      - name: Publish
+        run: |
+          ./build_release.ps1 -PublishOnly
+        shell: pwsh
+
+      - name: Sign executable (self-signed)
+        if: steps.cert.outputs.HAS_CERT == 'true'
+        env:
+          CERTIFICATE_PFX: ${{ secrets.CERTIFICATE_PFX }}
+          CERTIFICATE_PASSWORD: ${{ secrets.CERTIFICATE_PASSWORD }}
+        run: |
+          ./.github/scripts/sign.ps1 -Path "bin\Release\net10.0-windows10.0.22621.0\publish\win-x64\FaraBotModerator.exe"
+        shell: pwsh
+
+      - name: Package
+        run: |
+          ./build_release.ps1 -PackageOnly
+        shell: pwsh
+
+      - name: Sign installer (self-signed)
+        if: steps.cert.outputs.HAS_CERT == 'true'
+        env:
+          CERTIFICATE_PFX: ${{ secrets.CERTIFICATE_PFX }}
+          CERTIFICATE_PASSWORD: ${{ secrets.CERTIFICATE_PASSWORD }}
+        run: |
+          ./.github/scripts/sign.ps1 -Path "Releases\FaraBotModerator_Setup.exe"
+        shell: pwsh
+
+      # 署名済みのインストーラーを、release の job へ渡す（build の成果物は、ここで作ったものだけ）
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: installer
+          path: Releases/FaraBotModerator_Setup.exe
+          if-no-files-found: error
+          retention-days: 7
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    # タグの作成（手動実行）と、Release の作成に contents: write が要る（この job だけ）
+    permissions:
+      contents: write
+
+    steps:
+      # 認証情報はディスクに残さない（タグの作成は、下のステップで GH_TOKEN を明示して行う）
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Download installer
+        uses: actions/download-artifact@v4
+        with:
+          name: installer
+          path: Releases
+
+      - name: Check and create tag (manual)
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ needs.build.outputs.version }}
+        run: |
+          # タグが存在するか確認（公開リポジトリなので、認証なしで読める）
+          if git ls-remote --tags origin "refs/tags/$VERSION" | grep -q .; then
+            echo "Tag $VERSION already exists."
+            exit 0
+          fi
+          # ビルドしたのと同じコミットに付ける
+          gh api --method POST "repos/$GITHUB_REPOSITORY/git/refs" -f ref="refs/tags/$VERSION" -f sha="$GITHUB_SHA"
+          echo "Tag $VERSION created."
+
+      # Release の本文を組み立てる。docs/release-notes/<タグ>.md があればそれを先頭にし、無ければ見出しだけにする。後ろに共通のインストール方法・必要条件を足す。
+      # タグ名は式展開でスクリプトに埋め込まず、環境変数で受ける。ファイル名に使うので、形式（vX.Y.Z、任意で -prerelease）を、ここでも検査する
+      - name: Build release body
+        env:
+          VERSION: ${{ needs.build.outputs.version }}
+        run: |
+          if ! [[ "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]] || [[ "$VERSION" == *..* ]]; then
+            echo "::error::バージョンの形式が正しくありません: $VERSION"
+            exit 1
+          fi
+          notes="docs/release-notes/$VERSION.md"
+          {
+            if [ -f "$notes" ]; then
+              cat "$notes"
+              echo
+            else
+              echo "## FaraBotModerator $VERSION"
+              echo
+            fi
+            cat <<'COMMON'
+          ### インストール方法
+          1. `FaraBotModerator_Setup.exe` をダウンロード
+          2. インストーラーを実行
+          3. 画面の指示に従ってインストール
+
+          インストーラーは自己署名のため、Windows の SmartScreen の警告が出ることがあります。公式のこのページから入手したものであれば、「詳細情報」→「実行」で進めてください。
+
+          ### 必要条件
+          - Windows 10/11（x64）
+          - WebView2 ランタイム（無ければインストーラーが入れます）
+
+          .NET のランタイムは同梱されています。別にインストールする必要はありません。
+          COMMON
+          } > release-body.md
+
+      - name: Create Release
+        uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 # v0.1.15
+        with:
+          tag_name: ${{ needs.build.outputs.version }}
+          name: FaraBotModerator ${{ needs.build.outputs.version }}
+          body_path: release-body.md
+          files: |
+            Releases/FaraBotModerator_Setup.exe
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

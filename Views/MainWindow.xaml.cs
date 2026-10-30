@@ -1,5 +1,9 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -14,6 +18,9 @@ using FaraBotModerator.Controllers;
 using FaraBotModerator.Models;
 using FaraBotModerator.Properties;
 using Microsoft.Web.WebView2.Core;
+using BattleFormat = FaraPokemonBattleAssistant.Core.Models.BattleFormat;
+using RemoteRosterStore = FaraPokemonBattleAssistant.Core.Roster.RemoteRosterStore;
+using RosterUnavailableException = FaraPokemonBattleAssistant.Core.Roster.RosterUnavailableException;
 
 namespace FaraBotModerator.Views;
 
@@ -45,6 +52,21 @@ public partial class MainWindow : INotifyPropertyChanged
     private RaidListWindow? _raidListWindow;
 
     /// <summary>
+    /// 登録データ（ポケモンシリーズ）の一覧のウィンドウ（開いていなければ null）
+    /// </summary>
+    private PokemonRosterWindow? _pokemonRosterWindow;
+
+    /// <summary>
+    /// 最後に読み込んだ登録データ（読み込めていない・アクセスキーが無いときは null）。一覧のウィンドウを開いたときに使います
+    /// </summary>
+    private IReadOnlyList<RosterGameView>? _pokemonRosterGames;
+
+    /// <summary>
+    /// 登録データの読み込みの通し番号（古い読み込みの結果で上書きしないため）
+    /// </summary>
+    private int _pokemonRosterLoadVersion;
+
+    /// <summary>
     /// </summary>
     private TwitchApiController? _twitchApiController;
 
@@ -57,8 +79,19 @@ public partial class MainWindow : INotifyPropertyChanged
     private TwitchEventSubController? _twitchEventSubController;
 
     /// <summary>
+    /// 使用中のポケモンの登録データのアクセスキー（空なら未設定）。入力欄の文字ではなく、発行・入力で確定した値を保存します。
+    /// アクセスキーはパスワードと同じ扱いで、ログや画面のメッセージには出しません。
+    /// </summary>
+    private string _pokemonSyncKey = "";
+
+    /// <summary>
     /// </summary>
     private TwitchTestEventController? _twitchTestEventController;
+
+    /// <summary>
+    /// テスト用のコントローラーを作ったときの、チャット接続（TwitchClientController）。接続をし直したら作り直すため
+    /// </summary>
+    private TwitchClientController? _testEventClient;
 
     /// <summary>
     /// </summary>
@@ -70,6 +103,7 @@ public partial class MainWindow : INotifyPropertyChanged
     {
         InitializeComponent();
         InitializeEncodeRegister();
+        PokemonCommandController.RegisteredFormatChanged += OnPokemonRegisteredFormatChanged;
 
         DataContext = this;
         
@@ -79,17 +113,23 @@ public partial class MainWindow : INotifyPropertyChanged
         _ = RunWithExceptionHandlingAsync(StartMonitoringAsync, "Monitoring");
         _ = RunWithExceptionHandlingAsync(StartTwitchLibEventSubAsync, "TwitchPubSub");
 
-        Loaded += async (_, _) =>
-        {
-            // 初期化処理の実行
-            await InitializeApplicationAsync();
-        };
+        Loaded += MainWindow_Loaded;
+    }
+
+    /// <summary>
+    /// 画面が読み込まれたときの初期化処理（InitializeApplicationAsync）を始めます。
+    /// </summary>
+    [SuppressMessage("Usage", "VSTHRD100:Avoid async void methods", Justification = "イベントハンドラーの型（void を返すデリゲート）の都合で async void が必要。例外は本文の try/catch で受けて、ログ・画面で知らせている")]
+    private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
+    {
+        await InitializeApplicationAsync();
     }
 
     /// <summary>
     /// アプリケーションの初期化処理を非同期で行います。
     /// secrets.jsonの読み込みが完了するまでUIをブロックします。
     /// </summary>
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "画面の最上位（イベントハンドラー・起動・監視の周期処理）。例外で画面・ボット全体を止めないよう、ここで受けてログ・メッセージで知らせる")]
     private async Task InitializeApplicationAsync()
     {
         LoadingTextBlock.Text = "Loading secrets.json...";
@@ -100,6 +140,11 @@ public partial class MainWindow : INotifyPropertyChanged
             LogController.OutputLog("Starting to load secret keys...");
             var secretKeys = await Task.Run(SecretKeyController.LoadKeys);
             LogController.OutputLog("Secret keys loaded successfully.");
+            if (SecretKeyController.QuarantinedPath is { } quarantined)
+                MessageBox.Show("secrets.json が壊れていたため、中身は消さずに別の名前で退避し、初期値で作り直しました。\n\n" +
+                                $"退避したファイル:\n{quarantined}\n\n" +
+                                "退避したファイルを開いて、必要な設定を入れ直してください（設定は初期値になっています）。",
+                    "設定ファイル", MessageBoxButton.OK, MessageBoxImage.Warning);
 
             // UIスレッドで実行する必要がある処理
             InitializeSecretValue(secretKeys);
@@ -164,6 +209,14 @@ public partial class MainWindow : INotifyPropertyChanged
         // BouyomiChan
         BouyomiChanConnectCheckBox.IsChecked = secretKeys.BouyomiChan.Checked;
 
+        // Pokemon
+        PokemonBattleFormatComboBox.SelectedIndex = PokemonBattleFormatIndex(secretKeys.Pokemon.BattleFormat);
+        PokemonDataSourceComboBox.SelectedIndex =
+            PokemonCommandController.ParseDataSource(secretKeys.Pokemon.DataSource) == PokemonDataSource.Develop ? 1 : 0;
+        _pokemonSyncKey = RemoteRosterStore.IsValidKey(secretKeys.Pokemon.SyncKey) ? secretKeys.Pokemon.SyncKey : "";
+        SetPokemonSyncKeyInput(_pokemonSyncKey);
+        UpdatePokemonSyncKeyButtons();
+
         // Events
         SetEventValue(FollowEventCheckBox, FollowEventTextBox, secretKeys.Event.Follow);
         SetEventValue(RaidEventCheckBox, RaidEventTextBox, secretKeys.Event.Raid);
@@ -209,6 +262,7 @@ public partial class MainWindow : INotifyPropertyChanged
         textBox.Text = model.Message;
     }
 
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "画面の最上位（イベントハンドラー・起動・監視の周期処理）。例外で画面・ボット全体を止めないよう、ここで受けてログ・メッセージで知らせる")]
     private async Task RunWithExceptionHandlingAsync(Func<Task> taskFunc, string taskName)
     {
         try
@@ -225,6 +279,7 @@ public partial class MainWindow : INotifyPropertyChanged
     /// <summary>
     /// </summary>
     /// <returns></returns>
+    [SuppressMessage("Usage", "VSTHRD001:Avoid legacy thread switching APIs", Justification = "WPF の Dispatcher で UI スレッドへ戻している。このアプリは JoinableTaskFactory を使っていないので、置き換え先が無い")]
     private async Task StartTimerAsync()
     {
         var cycleTimerCounts = new int[4];
@@ -328,58 +383,95 @@ public partial class MainWindow : INotifyPropertyChanged
     /// <summary>
     /// </summary>
     /// <returns></returns>
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "画面の最上位（イベントハンドラー・起動・監視の周期処理）。例外で画面・ボット全体を止めないよう、ここで受けてログ・メッセージで知らせる")]
     private async Task StartWebServerAsync()
     {
-        var accessTokenQuery = new[] {$"http://localhost:{Settings.Default.Port}", "code=", "scope=", "state="};
         while (true)
         {
             await Task.Delay(100);
-            if (FaraBotModeratorWebView.Source is null)
-                continue;
+            // 1 周期の失敗で監視を止めない。処理済みの URL は _lastHandledAuthUrl で 2 度処理しない（失敗した認可は、Authorize からやり直す）
+            try
+            {
+                if (FaraBotModeratorWebView.Source is null) continue;
 
-            var url = FaraBotModeratorWebView.Source.ToString();
-            // URL毎に処理を追加
-            if (accessTokenQuery.All(key => url.Contains(key))) await UpdateAccessTokenAsync(url);
+                // 認証を始めていない・処理済み・戻りの形でない URL は無視する（処理した戻りの URL は、画面に残っていても 2 度処理しない）
+                var url = FaraBotModeratorWebView.Source.ToString();
+                if (!TwitchAuthService.ShouldHandleAuthUrl(url, _lastHandledAuthUrl, Settings.Default.OAuth2State, Settings.Default.Port))
+                    continue;
+
+                _lastHandledAuthUrl = url;
+                await UpdateAccessTokenAsync(url);
+            }
+            catch (Exception ex)
+            {
+                LogController.OutputLog($"<Error> 認証の戻りの処理に失敗しました（監視は続けます。認可は Authorize からやり直してください）: {ex.Message}");
+            }
         }
     }
 
     /// <summary>
+    /// 最後に処理した認証の戻りの URL（同じ URL を 2 度処理しないため）。
+    /// </summary>
+    private string _lastHandledAuthUrl = "";
+
+    /// <summary>
     /// </summary>
     /// <returns></returns>
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "画面の最上位（イベントハンドラー・起動・監視の周期処理）。例外で画面・ボット全体を止めないよう、ここで受けてログ・メッセージで知らせる")]
     private async Task StartMonitoringAsync()
     {
         while (true)
         {
             await Task.Delay(1000);
-
-            // Token期限
-            if (DateTime.Now > Settings.Default.expiresDateTime)
+            try
             {
-                TwitchApiNotificationCanvas.Visibility = Visibility.Visible;
-                if (!string.IsNullOrEmpty(Settings.Default.RefreshToken)) await UpdateRefreshTokenAsync();
+                await MonitorOnceAsync();
             }
-            else
+            catch (Exception ex)
             {
-                TwitchApiNotificationCanvas.Visibility = Visibility.Hidden;
-            }
-
-            TwitchApiExpireDateTimeTextBlock.Text = $"Token expiration: {Settings.Default.expiresDateTime}";
-
-            if (_twitchClientController is not null) AddGridViewChatData();
-
-            // 棒読みちゃん接続チェック
-            if (BouyomiChanConnectCheckBox.IsChecked != true || TwitchConnectionStateLabel.Content.ToString() != "State: Connect") continue;
-            if (_twitchClientController != null && !await BouyomiChanController.IsBouyomiChanRunningAsync())
-            {
-                await Dispatcher.InvokeAsync(async () =>
-                {
-                    MessageBox.Show("棒読みちゃんが終了しました。Disconnectする前に棒読みちゃんを閉じないでください。\n安全のためTwitchから切断します。", "警告", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    await TwitchDisconnect();
-                });
+                // 1 周期の失敗で監視を止めない（トークン期限・棒読みちゃん・チャット表示は、次の周期でまた動く）
+                LogController.OutputLog($"<Error> 監視の処理に失敗しました（次の周期で続けます）: {ex.Message}");
             }
         }
     }
 
+    /// <summary>
+    /// 監視の 1 周期分（トークン期限・チャット表示・棒読みちゃんの接続確認）。
+    /// </summary>
+    [SuppressMessage("Usage", "VSTHRD001:Avoid legacy thread switching APIs", Justification = "WPF の Dispatcher で UI スレッドへ戻している。このアプリは JoinableTaskFactory を使っていないので、置き換え先が無い")]
+    private async Task MonitorOnceAsync()
+    {
+        // Token期限
+        if (DateTime.Now > Settings.Default.expiresDateTime)
+        {
+            TwitchApiNotificationCanvas.Visibility = Visibility.Visible;
+            if (TokenMonitorPolicy.ShouldRefresh(DateTime.Now, Settings.Default.expiresDateTime,
+                    !string.IsNullOrEmpty(Settings.Default.RefreshToken), _nextRefreshAttemptAt))
+                await UpdateRefreshTokenAsync();
+        }
+        else
+        {
+            TwitchApiNotificationCanvas.Visibility = Visibility.Hidden;
+        }
+
+        TwitchApiExpireDateTimeTextBlock.Text = $"Token expiration: {Settings.Default.expiresDateTime}";
+
+        if (_twitchClientController is not null) AddGridViewChatData();
+
+        // 棒読みちゃん接続チェック
+        if (BouyomiChanConnectCheckBox.IsChecked != true || TwitchConnectionStateLabel.Content.ToString() != "State: Connect") return;
+        if (_twitchClientController != null && !await BouyomiChanController.IsBouyomiChanRunningAsync())
+        {
+            // Dispatcher.InvokeAsync は Task を返すので、中の TwitchDisconnect まで待つために await を 2 回書く
+            await await Dispatcher.InvokeAsync(async () =>
+            {
+                MessageBox.Show("棒読みちゃんが終了しました。Disconnectする前に棒読みちゃんを閉じないでください。\n安全のためTwitchから切断します。", "警告", MessageBoxButton.OK, MessageBoxImage.Warning);
+                await TwitchDisconnectAsync();
+            });
+        }
+    }
+
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "画面の最上位（イベントハンドラー・起動・監視の周期処理）。例外で画面・ボット全体を止めないよう、ここで受けてログ・メッセージで知らせる")]
     private async Task StartTwitchLibEventSubAsync()
     {
         while (true)
@@ -387,36 +479,64 @@ public partial class MainWindow : INotifyPropertyChanged
             while (_twitchClientController is null) await Task.Delay(100);
 
             await Task.Delay(500);
-            var isConnected = _twitchClientController is { IsConnected: true } &&
-                              _twitchEventSubController is { IsConnected: true } &&
-                              DateTime.Now <= Settings.Default.expiresDateTime;
-
-            TwitchConnectionStateLabel.Content = isConnected
-                ? @"State: Connect"
-                : @"State: Disconnect";
-
-            // Test Sendボタンの状態を制御
-            FollowTestButton.IsEnabled = isConnected;
-            RaidTestButton.IsEnabled = isConnected;
-            SubscriptionTestButton.IsEnabled = isConnected;
-            BitsTestButton.IsEnabled = isConnected;
-            GiftTestButton.IsEnabled = isConnected;
-            ChannelPointTestButton.IsEnabled = isConnected;
+            try
+            {
+                UpdateConnectionStateOnce();
+            }
+            catch (Exception ex)
+            {
+                // 1 周期の失敗で状態表示の更新を止めない
+                LogController.OutputLog($"<Error> 接続状態の表示に失敗しました（次の周期で続けます）: {ex.Message}");
+            }
         }
+    }
+
+    /// <summary>
+    /// 接続状態の表示と、テスト送信ボタンの有効・無効を 1 回更新します。
+    /// </summary>
+    private void UpdateConnectionStateOnce()
+    {
+        var isConnected = _twitchClientController is { IsConnected: true } &&
+                          _twitchEventSubController is { IsConnected: true } &&
+                          DateTime.Now <= Settings.Default.expiresDateTime;
+
+        TwitchConnectionStateLabel.Content = isConnected
+            ? @"State: Connect"
+            : @"State: Disconnect";
+
+        // Test Sendボタンの状態を制御
+        FollowTestButton.IsEnabled = isConnected;
+        RaidTestButton.IsEnabled = isConnected;
+        SubscriptionTestButton.IsEnabled = isConnected;
+        BitsTestButton.IsEnabled = isConnected;
+        GiftTestButton.IsEnabled = isConnected;
+        ChannelPointTestButton.IsEnabled = isConnected;
     }
 
     private void AddGridViewChatData()
     {
         if (_chatWindow is null) return;
 
-        var chatModelData = _twitchClientController?.PickChatData();
-        if (chatModelData is null) return;
+        // 溜まっているチャットを、上限までまとめて表示に追加する（1 周期に 1 件だと、1 秒に 2 件以上のとき、表示が遅れ続けるため）
+        for (var i = 0; i < MaxChatRowsPerTick; i++)
+        {
+            var chatModelData = _twitchClientController?.PickChatData();
+            if (chatModelData is null) return;
+            AddChatRow(_chatWindow, chatModelData);
+        }
+    }
 
+    /// <summary>
+    /// 1 回の監視の周期で表示するチャットの上限（溜まったときに UI を止めないため。残りは次の周期で出す）。
+    /// </summary>
+    private const int MaxChatRowsPerTick = 50;
+
+    private static void AddChatRow(ChatWindow chatWindow, ChatModel chatModelData)
+    {
         var beforeScrollBottom = true;
 
-        var beforeScrollViewer =
-            VisualTreeHelper.GetChild(VisualTreeHelper.GetChild(_chatWindow.TwitchChatDataGrid, 0), 0);
-        if (beforeScrollViewer is ScrollViewer viewer)
+        // 表示の部品の並びが無いとき（まだ描画されていない・作りが変わった）は、既定（一番下）として扱う
+        if (GetChildOrNull(GetChildOrNull(chatWindow.TwitchChatDataGrid, 0), 0) is ScrollViewer viewer)
         {
             var offset = viewer.VerticalOffset;
             var extent = viewer.ScrollableHeight;
@@ -425,8 +545,17 @@ public partial class MainWindow : INotifyPropertyChanged
             beforeScrollBottom = offset + viewport >= extent;
         }
 
-        _chatWindow.TwitchChatDataGrid.Items.Add(chatModelData);
-        if (beforeScrollBottom) _chatWindow.TwitchChatDataGrid.ScrollIntoView(chatModelData);
+        chatWindow.TwitchChatDataGrid.Items.Add(chatModelData);
+        if (beforeScrollBottom) chatWindow.TwitchChatDataGrid.ScrollIntoView(chatModelData);
+    }
+
+    /// <summary>
+    /// 子要素を番号で取ります。その番号の子が無いときは null（VisualTreeHelper.GetChild は範囲外で例外になるため）。
+    /// </summary>
+    private static DependencyObject? GetChildOrNull(DependencyObject? parent, int index)
+    {
+        if (parent is null || VisualTreeHelper.GetChildrenCount(parent) <= index) return null;
+        return VisualTreeHelper.GetChild(parent, index);
     }
 
     /// <summary>
@@ -434,52 +563,126 @@ public partial class MainWindow : INotifyPropertyChanged
     /// </summary>
     private async Task UpdateRefreshTokenAsync()
     {
-        var success = await _twitchAuthService.RefreshAccessTokenAsync(
+        var outcome = await _twitchAuthService.RefreshAccessTokenAsync(
             TwitchApiClientIdPasswordBox.Password,
             TwitchApiClientSecretPasswordBox.Password);
 
-        if (!success)
+        var now = DateTime.Now;
+        _consecutiveTemporaryRefreshFailures = TokenMonitorPolicy.NextTemporaryFailureCount(outcome, _consecutiveTemporaryRefreshFailures);
+
+        // 成功・トークン無効のときは、前の「接続できません」の文を消す（ほかの文は消さない）
+        if (outcome != RefreshOutcome.TemporaryFailure && TwitchAuthStatusTextBlock.Text == ConnectionFailureStatusText)
+            TwitchAuthStatusTextBlock.Text = "";
+
+        if (outcome == RefreshOutcome.Succeeded) return;
+
+        // 失敗したら、次の refresh は一定時間（30 秒）空けて試す（毎秒の再試行にしない）
+        _nextRefreshAttemptAt = now + TokenMonitorPolicy.RefreshRetryInterval;
+
+        if (outcome == RefreshOutcome.TemporaryFailure)
         {
-            RequestApiAccessToken();
+            // 回線断などの一時的な失敗では、認可画面を開かない（有効なリフレッシュトークンを、無効と誤認して開くとロックしてしまう）。30 秒後に再試行する
+            if (TokenMonitorPolicy.ShouldShowConnectionWarning(_consecutiveTemporaryRefreshFailures))
+            {
+                if (_consecutiveTemporaryRefreshFailures == TokenMonitorPolicy.ConnectionWarningThreshold)
+                    LogController.OutputLog("<Error> Twitch に接続できない状態が続いています（ネットワークを確認してください）");
+                TwitchAuthStatusTextBlock.Text = ConnectionFailureStatusText;
+            }
+            return;
         }
+
+        // トークン無効: 認可の試行が進行中（認可画面を開いてから、または失敗してから期限内）なら、開き直さない。開き直すと state が変わり、進行中の認可が合わなくなる。失敗のあとに開き直すと、30 秒ごとに認可画面が出てしまう
+        if (TokenMonitorPolicy.ShouldOpenAuthorization(outcome, _authorizationStartedAt, now))
+            RequestApiAccessToken();
     }
+
+    /// <summary>
+    /// 一時的な失敗が続いたときに、認可の状態の文として出す「接続できません」の文（赤字。成功したら消す）。
+    /// </summary>
+    private const string ConnectionFailureStatusText = "Twitch に接続できません。ネットワークを確認してください。";
+
+    /// <summary>
+    /// 連続して起きた一時的な失敗の回数（成功・トークン無効で 0 に戻す）。
+    /// </summary>
+    private int _consecutiveTemporaryRefreshFailures;
+
+    /// <summary>
+    /// 次に refresh を試してよい時刻（監視が毎秒 refresh し続けないように）。
+    /// </summary>
+    private DateTime _nextRefreshAttemptAt = DateTime.MinValue;
+
+    /// <summary>
+    /// 監視が認可画面を開き直さないための起点の時刻（認可画面を開いた時刻、または認可が失敗した時刻）。認可が成功したとき・開けなかったときは null。
+    /// </summary>
+    private DateTime? _authorizationStartedAt;
 
     /// <summary>
     ///     Twitch API Access Tokenを取得、更新します。
     ///     Token取得はPOST通信をするため、WebViewは通さずPostRequestを行う。
     /// </summary>
     /// <param name="url"></param>
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "画面の最上位（イベントハンドラー・起動・監視の周期処理）。例外で画面・ボット全体を止めないよう、ここで受けてログ・メッセージで知らせる")]
     private async Task UpdateAccessTokenAsync(string url)
     {
-        var state = Regex.Match(url, @"state=(.*)").Groups[1].ToString();
-        var code = Regex.Match(url, @"code=(.*)&").Groups[1].ToString();
+        // 戻りの URL は ?code=…&scope=…&state=… の形。値だけを取り出す（貪欲な一致だと、後ろの &scope=… まで code に入ってしまう）
+        var state = TwitchAuthService.ExtractQueryValue(url, "state");
+        var code = TwitchAuthService.ExtractQueryValue(url, "code");
 
-        var success = await _twitchAuthService.ExchangeAuthorizationCodeAsync(
-            code,
-            TwitchApiClientIdPasswordBox.Password,
-            TwitchApiClientSecretPasswordBox.Password,
-            Settings.Default.OAuth2State,
-            state);
+        bool success;
+        Exception? error = null;
+        try
+        {
+            success = await _twitchAuthService.ExchangeAuthorizationCodeAsync(
+                code,
+                TwitchApiClientIdPasswordBox.Password,
+                TwitchApiClientSecretPasswordBox.Password,
+                Settings.Default.OAuth2State,
+                state);
+        }
+        catch (Exception ex)
+        {
+            error = ex;
+            success = false;
+        }
 
         if (success)
         {
+            _authorizationStartedAt = null;
+            _consecutiveTemporaryRefreshFailures = 0;
+            TwitchAuthStatusTextBlock.Text = "";
             UnlockWindowControl();
+            return;
         }
+
+        // 失敗（コードの無効・通信や応答の例外）: 認可の試行は終わったので、ロックを解く。理由を画面に出し、Authorize からやり直せるようにする。
+        // 監視からは、失敗した時刻から 10 分間は認可画面を開き直さない（消すと、リフレッシュ失敗のたびに 30 秒ごとに開き直してしまう）。
+        // Authorize ボタンは抑止を受けないので、手動の再認可はできる
+        LogController.OutputLog(error is null
+            ? "<Error> 認可のトークン取得に失敗しました（認可コードが無効、または期限切れ）"
+            : $"<Error> 認可のトークン取得で例外が起きました: {error.Message}");
+        _authorizationStartedAt = TokenMonitorPolicy.AuthorizationAnchorAfterEnd(false, DateTime.Now);
+        TwitchAuthStatusTextBlock.Text = TwitchAuthService.AuthorizationFailureStatus(error);
+        UnlockWindowControl();
     }
 
     /// <summary>
-    ///     accessTokenに必要な認証コードを取得するURLを開く
+    ///     accessTokenに必要な認証コードを取得するURLを開く（ボタンからは常に開く。監視からは <see cref="TokenMonitorPolicy.IsAuthorizationInProgress"/> を見て呼ぶ）
     /// </summary>
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "画面の最上位（イベントハンドラー・起動・監視の周期処理）。例外で画面・ボット全体を止めないよう、ここで受けてログ・メッセージで知らせる")]
     private void RequestApiAccessToken()
     {
+        // 前の失敗の文は、新しい認可を始めるときに消す
+        TwitchAuthStatusTextBlock.Text = "";
         try
         {
             var requestUrl = _twitchAuthService.GenerateAuthorizationUrl(TwitchApiClientIdPasswordBox.Password);
+            _authorizationStartedAt = DateTime.Now;
             LockWindowControl(true);
             FaraBotModeratorWebView.Source = new Uri(requestUrl);
         }
         catch (Exception ex)
         {
+            _authorizationStartedAt = null;
             UnlockWindowControl();
             LogController.OutputLog(ex.Message);
         }
@@ -501,6 +704,7 @@ public partial class MainWindow : INotifyPropertyChanged
         SetWindowControlEnabled(true);
     }
 
+    [SuppressMessage("Usage", "VSTHRD001:Avoid legacy thread switching APIs", Justification = "WPF の Dispatcher で UI スレッドへ戻している。このアプリは JoinableTaskFactory を使っていないので、置き換え先が無い")]
     private void SetWindowControlEnabled(bool isEnabled, bool isAuthorize = false)
     {
         Dispatcher.Invoke(() =>
@@ -576,7 +780,8 @@ public partial class MainWindow : INotifyPropertyChanged
     /// <summary>
     ///     Secretの値を保存します。
     /// </summary>
-    private void SaveSecretValue()
+    /// <param name="syncKey">保存するアクセスキー（省略時は今のアクセスキー。切り替える前に新しいキーを保存するときに使う）</param>
+    private void SaveSecretValue(string? syncKey = null)
     {
         var timer1 =
             (FixedTimer1DatePicker.SelectedDate is not null
@@ -718,7 +923,13 @@ public partial class MainWindow : INotifyPropertyChanged
                 }
             },
             // Preserve existing BeatSaber settings (no UI, edited via secrets.json)
-            BeatSaber = SecretKeyController.LoadKeys().BeatSaber
+            BeatSaber = SecretKeyController.LoadKeys().BeatSaber,
+            Pokemon = new PokemonModel
+            {
+                BattleFormat = SelectedPokemonBattleFormat(),
+                DataSource = SelectedPokemonDataSource(),
+                SyncKey = syncKey ?? _pokemonSyncKey
+            }
         };
 
         SecretKeyController.SaveKeys(secretKeys);
@@ -726,7 +937,8 @@ public partial class MainWindow : INotifyPropertyChanged
 
     /// <summary>
     /// </summary>
-    private async Task TwitchConnect()
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "画面の最上位（イベントハンドラー・起動・監視の周期処理）。例外で画面・ボット全体を止めないよう、ここで受けてログ・メッセージで知らせる")]
+    private async Task TwitchConnectAsync()
     {
         LoadingTextBlock.Text = "Connecting to Twitch...";
         LoadingOverlay.Visibility = Visibility.Visible;
@@ -744,7 +956,7 @@ public partial class MainWindow : INotifyPropertyChanged
             _twitchApiController = new TwitchApiController(secretKeys);
             await _twitchApiController.InitializeAsync();
 
-            var isTokenValid = _twitchApiController.ValidateToken();
+            var isTokenValid = await _twitchApiController.ValidateTokenAsync();
             LogController.OutputLog($"Token validation result: {isTokenValid}");
 
             if (!isTokenValid)
@@ -786,7 +998,8 @@ public partial class MainWindow : INotifyPropertyChanged
 
     /// <summary>
     /// </summary>
-    private async Task TwitchDisconnect()
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "画面の最上位（イベントハンドラー・起動・監視の周期処理）。例外で画面・ボット全体を止めないよう、ここで受けてログ・メッセージで知らせる")]
+    private async Task TwitchDisconnectAsync()
     {
         LoadingTextBlock.Text = "Disconnecting from Twitch...";
         LoadingOverlay.Visibility = Visibility.Visible;
@@ -832,6 +1045,8 @@ public partial class MainWindow : INotifyPropertyChanged
     /// </summary>
     /// <param name="sender"></param>
     /// <param name="e"></param>
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "画面の最上位（イベントハンドラー・起動・監視の周期処理）。例外で画面・ボット全体を止めないよう、ここで受けてログ・メッセージで知らせる")]
+    [SuppressMessage("Usage", "VSTHRD100:Avoid async void methods", Justification = "イベントハンドラーの型（void を返すデリゲート）の都合で async void が必要。例外は本文の try/catch で受けて、ログ・画面で知らせている")]
     private async void TwitchConnectionButton_Click(object sender, RoutedEventArgs e)
     {
         try
@@ -841,11 +1056,11 @@ public partial class MainWindow : INotifyPropertyChanged
             var state = TwitchConnectionStateLabel.Content.ToString();
             if (state is not null && state.Equals("State: Connect"))
             {
-                await TwitchDisconnect();
+                await TwitchDisconnectAsync();
             }
             else
             {
-                await TwitchConnect();
+                await TwitchConnectAsync();
             }
         }
         catch (Exception ex)
@@ -858,11 +1073,13 @@ public partial class MainWindow : INotifyPropertyChanged
     /// </summary>
     /// <param name="sender"></param>
     /// <param name="e"></param>
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "画面の最上位（イベントハンドラー・起動・監視の周期処理）。例外で画面・ボット全体を止めないよう、ここで受けてログ・メッセージで知らせる")]
+    [SuppressMessage("Usage", "VSTHRD100:Avoid async void methods", Justification = "イベントハンドラーの型（void を返すデリゲート）の都合で async void が必要。例外は本文の try/catch で受けて、ログ・画面で知らせている")]
     private async void TwitchDisconnectButton_Click(object sender, RoutedEventArgs e)
     {
         try
         {
-            await TwitchDisconnect();
+            await TwitchDisconnectAsync();
         }
         catch (Exception ex)
         {
@@ -941,9 +1158,14 @@ public partial class MainWindow : INotifyPropertyChanged
     /// <param name="e"></param>
     private void MainWindow_Closed(object sender, EventArgs e)
     {
+        PokemonCommandController.RegisteredFormatChanged -= OnPokemonRegisteredFormatChanged;
+        // チャットの format set が画面に反映される前に閉じても、古いコンボの値で上書きしないよう、最新の登録形式を画面に戻してから保存する
+        if (_twitchClientController is not null)
+            PokemonBattleFormatComboBox.SelectedIndex = PokemonBattleFormatIndex(_twitchClientController.PokemonBattleFormat);
         SaveSecretValue();
         _chatWindow?.Close();
         _raidListWindow?.Close();
+        _pokemonRosterWindow?.Close();
     }
 
     /// <summary>
@@ -979,10 +1201,493 @@ public partial class MainWindow : INotifyPropertyChanged
         }
     }
 
+    /// <summary>
+    /// ポケモンの対戦形式コンボボックスで選択中の値（Tag の "Singles" / "Doubles"）を返します。「未登録」は null です。
+    /// </summary>
+    private string? SelectedPokemonBattleFormat()
+    {
+        var tag = (PokemonBattleFormatComboBox.SelectedItem as ComboBoxItem)?.Tag?.ToString();
+        return PokemonCommandController.ParseRegisteredFormat(tag)?.ToString();
+    }
+
+    /// <summary>
+    /// 登録している対戦形式（secrets.json の値）に対応するコンボボックスの項目番号を返します（0: 未登録、1: シングル、2: ダブル）。
+    /// </summary>
+    private static int PokemonBattleFormatIndex(string? battleFormat)
+    {
+        return PokemonCommandController.ParseRegisteredFormat(battleFormat) switch
+        {
+            BattleFormat.Singles => 1,
+            BattleFormat.Doubles => 2,
+            _ => 0
+        };
+    }
+
+    /// <summary>
+    /// チャットの format set / format clear で登録形式が変わったとき、画面の「対戦形式」を同じ値にします。
+    /// </summary>
+    [SuppressMessage("Usage", "VSTHRD001:Avoid legacy thread switching APIs", Justification = "WPF の Dispatcher で UI スレッドへ戻している。このアプリは JoinableTaskFactory を使っていないので、置き換え先が無い")]
+    private void OnPokemonRegisteredFormatChanged(string? battleFormat)
+    {
+        _ = Dispatcher.InvokeAsync(() => PokemonBattleFormatComboBox.SelectedIndex = PokemonBattleFormatIndex(battleFormat));
+    }
+
+    /// <summary>
+    /// ポケモンの対戦形式を切り替えたとき、接続中であれば即座に反映します。
+    /// </summary>
+    private void PokemonBattleFormatComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        // XAML 読み込み中（IsSelected の初期化）にも呼ばれるため、未接続なら何もしない
+        if (_twitchClientController is null) return;
+        _twitchClientController.SetPokemonBattleFormat(SelectedPokemonBattleFormat());
+    }
+
+    /// <summary>
+    /// ポケモンのデータの取得元コンボボックスで選択中の値（Tag の "Production" / "Develop"）を返します。
+    /// </summary>
+    private string SelectedPokemonDataSource()
+    {
+        return (PokemonDataSourceComboBox.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "Production";
+    }
+
+    /// <summary>
+    /// ポケモンのデータの取得元を切り替えたとき、接続中であれば即座に反映します（登録データのクラウドも同じサイトに切り替わります）。
+    /// </summary>
+    private void PokemonDataSourceComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        // XAML 読み込み中（IsSelected の初期化）にも呼ばれるため、未接続なら何もしない
+        if (_twitchClientController is null) return;
+        _twitchClientController.SetPokemonDataSource(SelectedPokemonDataSource());
+        if (IsPokemonGameSelected() || _pokemonRosterWindow is not null) _ = LoadPokemonRosterAsync();
+    }
+
+    /// <summary>
+    /// 選択中のデータの取得元を返します。
+    /// </summary>
+    private PokemonDataSource SelectedPokemonDataSourceValue()
+    {
+        return PokemonCommandController.ParseDataSource(SelectedPokemonDataSource());
+    }
+
+    /// <summary>
+    /// アクセスキーの入力欄（表示中なら TextBox、隠しているなら PasswordBox）の文字を返します。
+    /// </summary>
+    private string EnteredPokemonSyncKey()
+    {
+        return (PokemonSyncKeyTextBox.Visibility == Visibility.Visible
+            ? PokemonSyncKeyTextBox.Text
+            : PokemonSyncKeyPasswordBox.Password).Trim();
+    }
+
+    /// <summary>
+    /// アクセスキーの入力欄に値を入れます。
+    /// </summary>
+    private void SetPokemonSyncKeyInput(string key)
+    {
+        PokemonSyncKeyPasswordBox.Password = key;
+        PokemonSyncKeyTextBox.Text = key;
+    }
+
+    /// <summary>
+    /// アクセスキーの有無に合わせてボタンを有効・無効にします。
+    /// </summary>
+    /// <param name="busy">クラウドと通信中か（通信中はすべて無効）</param>
+    private void UpdatePokemonSyncKeyButtons(bool busy = false)
+    {
+        var hasKey = RemoteRosterStore.IsValidKey(_pokemonSyncKey);
+        PokemonSyncKeyIssueButton.IsEnabled = !busy;
+        PokemonSyncKeyJoinButton.IsEnabled = !busy;
+        PokemonSyncKeyRotateButton.IsEnabled = !busy && hasKey;
+        PokemonSyncKeyStopButton.IsEnabled = !busy && hasKey;
+        PokemonSyncKeyCopyButton.IsEnabled = hasKey;
+    }
+
+    /// <summary>
+    /// アクセスキーを確定します。先に設定ファイルへ保存できたときだけ、メモリ・入力欄・接続中のコマンドを切り替えて、登録データを読み直します。
+    /// 保存できなかったときは、今のアクセスキーのまま（新しいキーは画面に出さない。呼び出し側は、新しいキーの置き場を消す）。
+    /// </summary>
+    /// <param name="key">アクセスキー（空ならデータ共有をやめる）</param>
+    /// <returns>切り替えて保存できたか</returns>
+    private async Task<bool> ApplyPokemonSyncKeyAsync(string key)
+    {
+        if (!TrySaveSecretValue(key))
+        {
+            if (string.IsNullOrEmpty(key))
+                MessageBox.Show("データ共有をやめる設定を設定ファイル（secrets.json）へ保存できませんでした（ログを確認してください）。今のアクセスキーのまま使えます。",
+                    "アクセスキー", MessageBoxButton.OK, MessageBoxImage.Warning);
+            else
+                // 新しいキーは画面に出さない（出すと、置き場が残っているキーで試してしまい、作り直しのたびに置き場が増えるため）。呼び出し側が置き場を消す
+                MessageBox.Show("アクセスキーを設定ファイル（secrets.json）へ保存できませんでした。今のアクセスキーのままです（新しいアクセスキーは使えません）。\nもう一度、操作をやり直してください。",
+                    "アクセスキー", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return false;
+        }
+
+        _pokemonSyncKey = key;
+        SetPokemonSyncKeyInput(key);
+        _twitchClientController?.SetPokemonSyncKey(key);
+        UpdatePokemonSyncKeyButtons();
+        await LoadPokemonRosterAsync();
+        return true;
+    }
+
+    /// <summary>
+    /// 設定ファイルへ保存します。失敗したら、理由（例外の種類だけ。キーは含めない）をログに残して false を返します。
+    /// </summary>
+    /// <param name="syncKey">保存するアクセスキー（省略時は今のアクセスキー）</param>
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "画面の最上位（イベントハンドラー・起動・監視の周期処理）。例外で画面・ボット全体を止めないよう、ここで受けてログ・メッセージで知らせる")]
+    private bool TrySaveSecretValue(string? syncKey = null)
+    {
+        try
+        {
+            SaveSecretValue(syncKey);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            LogController.OutputLog($"<Error> secrets.json の保存に失敗しました: {ex.GetType().Name}");
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// アクセスキーの表示・非表示を切り替えます（配信画面に映さないよう、ふだんは隠しておきます）。
+    /// </summary>
+    private void PokemonSyncKeyShowButton_Click(object sender, RoutedEventArgs e)
+    {
+        var show = PokemonSyncKeyTextBox.Visibility != Visibility.Visible;
+        if (show) PokemonSyncKeyTextBox.Text = PokemonSyncKeyPasswordBox.Password;
+        else PokemonSyncKeyPasswordBox.Password = PokemonSyncKeyTextBox.Text;
+        PokemonSyncKeyTextBox.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
+        PokemonSyncKeyPasswordBox.Visibility = show ? Visibility.Collapsed : Visibility.Visible;
+        PokemonSyncKeyShowButton.Content = show ? "隠す" : "表示";
+    }
+
+    /// <summary>
+    /// 使用中のアクセスキーをクリップボードにコピーします（サイトの「アクセスキーを入力して共有」に貼り付ける用）。
+    /// </summary>
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "画面の最上位（イベントハンドラー・起動・監視の周期処理）。例外で画面・ボット全体を止めないよう、ここで受けてログ・メッセージで知らせる")]
+    private void PokemonSyncKeyCopyButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (!RemoteRosterStore.IsValidKey(_pokemonSyncKey)) return;
+        try
+        {
+            Clipboard.SetText(_pokemonSyncKey);
+            PokemonSyncStatusTextBlock.Text = "アクセスキーをコピーしました";
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"コピーできませんでした: {ex.Message}", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    /// <summary>
+    /// 新しいアクセスキーを発行します（クラウドの置き場は空から始まります）。
+    /// </summary>
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "画面の最上位（イベントハンドラー・起動・監視の周期処理）。例外で画面・ボット全体を止めないよう、ここで受けてログ・メッセージで知らせる")]
+    [SuppressMessage("Usage", "VSTHRD100:Avoid async void methods", Justification = "イベントハンドラーの型（void を返すデリゲート）の都合で async void が必要。例外は本文の try/catch で受けて、ログ・画面で知らせている")]
+    private async void PokemonSyncKeyIssueButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (RemoteRosterStore.IsValidKey(_pokemonSyncKey) &&
+            MessageBox.Show("今のアクセスキーの代わりに新しいアクセスキーを発行します。\n今のアクセスキーの登録データは新しいアクセスキーに引き継がれません（引き継ぐときは「アクセスキーを作り直す」を使います）。\n\n続けますか？",
+                "確認", MessageBoxButton.OKCancel, MessageBoxImage.Warning) != MessageBoxResult.OK)
+            return;
+
+        UpdatePokemonSyncKeyButtons(busy: true);
+        PokemonSyncStatusTextBlock.Text = "発行中…";
+        try
+        {
+            var key = await PokemonSyncKeyController.IssueAsync(SelectedPokemonDataSourceValue());
+            if (!await ApplyPokemonSyncKeyAsync(key))
+            {
+                // 保存できなかった新しいキーは使わないので、空の置き場も消す（消せなくても、キーは画面に出していないので使われない）
+                await PokemonSyncKeyController.DiscardKeyAsync(SelectedPokemonDataSourceValue(), key);
+                PokemonSyncStatusTextBlock.Text = "発行しましたが、保存できませんでした（今のアクセスキーのまま）";
+                return;
+            }
+            MessageBox.Show("アクセスキーを発行しました（データ共有を始めました）。\n\nサイトの「データ共有」ページで、このアクセスキーを貼り付けて「アクセスキーを入力して共有」を押すと、サイトと同じ登録データを使えます（「コピー」でコピーできます）。\n\nアクセスキーはパスワードと同じ扱いです。配信画面に映さないでください。",
+                "アクセスキー", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+        catch (RosterUnavailableException ex)
+        {
+            PokemonSyncStatusTextBlock.Text = "発行できませんでした";
+            MessageBox.Show($"アクセスキーを発行できませんでした: {ex.Message}", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        catch (Exception ex)
+        {
+            // async void の中で例外を出すとアプリが落ちるので、必ず受ける
+            LogController.OutputLog($"<Error> アクセスキーの発行に失敗しました: {ex.GetType().Name}");
+            PokemonSyncStatusTextBlock.Text = "発行できませんでした";
+            MessageBox.Show($"アクセスキーを発行できませんでした: {ex.Message}", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        finally
+        {
+            UpdatePokemonSyncKeyButtons();
+        }
+    }
+
+    /// <summary>
+    /// 入力欄に貼り付けたアクセスキー（サイトで作ったもの）を設定します。クラウドから読めることを確かめてから使います。
+    /// </summary>
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "画面の最上位（イベントハンドラー・起動・監視の周期処理）。例外で画面・ボット全体を止めないよう、ここで受けてログ・メッセージで知らせる")]
+    [SuppressMessage("Usage", "VSTHRD100:Avoid async void methods", Justification = "イベントハンドラーの型（void を返すデリゲート）の都合で async void が必要。例外は本文の try/catch で受けて、ログ・画面で知らせている")]
+    private async void PokemonSyncKeyJoinButton_Click(object sender, RoutedEventArgs e)
+    {
+        var key = EnteredPokemonSyncKey();
+        if (!RemoteRosterStore.IsValidKey(key))
+        {
+            MessageBox.Show("アクセスキーの形式が正しくありません（43 文字の英数字・-・_）。\nサイトの「データ共有」ページでコピーしたアクセスキーを「アクセスキー」の欄に貼り付けてから押してください。",
+                "アクセスキー", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        UpdatePokemonSyncKeyButtons(busy: true);
+        PokemonSyncStatusTextBlock.Text = "確認中…";
+        try
+        {
+            var state = await PokemonSyncKeyController.LoadAsync(SelectedPokemonDataSourceValue(), key);
+            if (!await ApplyPokemonSyncKeyAsync(key)) return;
+            var (pokemon, teams) = PokemonSyncKeyController.Count(state);
+            if (pokemon == 0 && teams == 0)
+                MessageBox.Show("アクセスキーを設定しました（データ共有を始めました）。クラウドにはまだ登録がありません（アクセスキーの打ち間違いや、データの取得元が本番・開発用で違っていないか確認してください）。",
+                    "アクセスキー", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+        catch (RosterUnavailableException ex)
+        {
+            PokemonSyncStatusTextBlock.Text = RemoteRosterStore.IsValidKey(_pokemonSyncKey) ? "設定できませんでした（今のアクセスキーのまま）" : "設定できませんでした";
+            MessageBox.Show($"このアクセスキーは使えませんでした: {ex.Message}", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        catch (Exception ex)
+        {
+            LogController.OutputLog($"<Error> アクセスキーの設定に失敗しました: {ex.GetType().Name}");
+            PokemonSyncStatusTextBlock.Text = "設定できませんでした";
+            MessageBox.Show($"アクセスキーを設定できませんでした: {ex.Message}", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        finally
+        {
+            UpdatePokemonSyncKeyButtons();
+        }
+    }
+
+    /// <summary>
+    /// アクセスキーを作り直します。登録データを新しいキーに移し、古いキーは使えなくします。
+    /// </summary>
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "画面の最上位（イベントハンドラー・起動・監視の周期処理）。例外で画面・ボット全体を止めないよう、ここで受けてログ・メッセージで知らせる")]
+    [SuppressMessage("Usage", "VSTHRD100:Avoid async void methods", Justification = "イベントハンドラーの型（void を返すデリゲート）の都合で async void が必要。例外は本文の try/catch で受けて、ログ・画面で知らせている")]
+    private async void PokemonSyncKeyRotateButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (!RemoteRosterStore.IsValidKey(_pokemonSyncKey)) return;
+        if (MessageBox.Show("アクセスキーを作り直します。\n登録データは新しいアクセスキーに移り、今のアクセスキーは使えなくなります。\nサイトや他の PC でも、新しいアクセスキーを入力し直す必要があります。\n\n続けますか？",
+                "確認", MessageBoxButton.OKCancel, MessageBoxImage.Warning) != MessageBoxResult.OK)
+            return;
+
+        UpdatePokemonSyncKeyButtons(busy: true);
+        PokemonSyncStatusTextBlock.Text = "作り直し中…";
+        try
+        {
+            // 写す → 新しいキーを保存（ApplyPokemonSyncKeyAsync。保存できたら画面を切り替える）→ 古いキーを消す、の順（Core の RosterRotation）
+            var outcome = await PokemonSyncKeyController.RotateAsync(SelectedPokemonDataSourceValue(), _pokemonSyncKey, ApplyPokemonSyncKeyAsync);
+            if (!outcome.Saved)
+            {
+                // 保存できなかったので、今のキーのまま。新しいキーは画面に出していないので、消せなくても使われない（その場合は案内する）
+                PokemonSyncStatusTextBlock.Text = "作り直しましたが、保存できませんでした（今のアクセスキーのまま）";
+                if (!outcome.DiscardedNewKey)
+                    MessageBox.Show("新しいアクセスキーの置き場を消せませんでした（そのキーは画面に出していないので、使われません）。今のアクセスキーは変わっていません。",
+                        "アクセスキー", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+            var finished = outcome.Finished!;
+            MessageBox.Show(PokemonSyncKeyController.RotateResultMessage(finished),
+                "アクセスキー", MessageBoxButton.OK, finished.OldKeyDeleted ? MessageBoxImage.Information : MessageBoxImage.Warning);
+        }
+        catch (RosterUnavailableException ex)
+        {
+            PokemonSyncStatusTextBlock.Text = "作り直せませんでした（今のアクセスキーのまま）";
+            MessageBox.Show($"アクセスキーを作り直せませんでした（今のアクセスキーのままです）: {ex.Message}", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        catch (Exception ex)
+        {
+            LogController.OutputLog($"<Error> アクセスキーの作り直しに失敗しました: {ex.GetType().Name}");
+            PokemonSyncStatusTextBlock.Text = "作り直せませんでした（今のアクセスキーのまま）";
+            MessageBox.Show($"アクセスキーを作り直せませんでした（今のアクセスキーのままです）: {ex.Message}", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        finally
+        {
+            UpdatePokemonSyncKeyButtons();
+        }
+    }
+
+    /// <summary>
+    /// このボットでアクセスキーを使うのをやめます（クラウドのデータは残ります）。
+    /// </summary>
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "画面の最上位（イベントハンドラー・起動・監視の周期処理）。例外で画面・ボット全体を止めないよう、ここで受けてログ・メッセージで知らせる")]
+    [SuppressMessage("Usage", "VSTHRD100:Avoid async void methods", Justification = "イベントハンドラーの型（void を返すデリゲート）の都合で async void が必要。例外は本文の try/catch で受けて、ログ・画面で知らせている")]
+    private async void PokemonSyncKeyStopButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (!RemoteRosterStore.IsValidKey(_pokemonSyncKey)) return;
+        if (MessageBox.Show("このボットでのデータ共有をやめます（アクセスキーを使うのをやめます）。\nクラウドの登録データは残り、サイトはそのまま使えます。データ共有をやめると、チャットの登録系のコマンド（!poke add など）は使えなくなります。\n\n続けますか？",
+                "確認", MessageBoxButton.OKCancel, MessageBoxImage.Warning) != MessageBoxResult.OK)
+            return;
+        try
+        {
+            await ApplyPokemonSyncKeyAsync("");
+        }
+        catch (Exception ex)
+        {
+            // async void の中で例外を出すとアプリが落ちるので、必ず受けてログに残す
+            LogController.OutputLog($"<Error> データ共有をやめる処理に失敗しました: {ex.GetType().Name}");
+            MessageBox.Show($"データ共有をやめる処理に失敗しました: {ex.Message}", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    /// <summary>
+    /// Game の選択でポケモンシリーズが選ばれているかを返します。
+    /// </summary>
+    private bool IsPokemonGameSelected()
+    {
+        return (GameSelectComboBox.SelectedItem as ComboBoxItem)?.Tag?.ToString() == "Pokemon";
+    }
+
+    /// <summary>
+    /// Game の選択に合わせて、Beat Saber の変換パターンか Pokemon の設定のどちらかを表示します。
+    /// </summary>
     private void GameSelectComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (BeatSaberBsrDataGrid is null) return;
-        BeatSaberBsrDataGrid.ItemsSource = TextRegexController.LoadBsrChatModel().BeatSaberChat;
+        // XAML 読み込み中（IsSelected の初期化）にも呼ばれるため、まだ作られていない要素があれば何もしない
+        if (BeatSaberBsrDataGrid is null || PokemonSettingsPanel is null) return;
+        var isPokemon = IsPokemonGameSelected();
+        PokemonSettingsPanel.Visibility = isPokemon ? Visibility.Visible : Visibility.Collapsed;
+        BeatSaberBsrDataGrid.Visibility = isPokemon ? Visibility.Collapsed : Visibility.Visible;
+        if (!isPokemon) BeatSaberBsrDataGrid.ItemsSource = TextRegexController.LoadBsrChatModel().BeatSaberChat;
+        else _ = LoadPokemonRosterAsync();
+    }
+
+    /// <summary>
+    /// 登録したポケモン・チームを読み込み、Game タブの要約と「一覧を開く」のウィンドウに表示します（読むだけで、書き換えはしません）。
+    /// 続けて呼ばれたときは、最後に始めた読み込みの結果だけを表示します。
+    /// </summary>
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "画面の最上位（イベントハンドラー・起動・監視の周期処理）。例外で画面・ボット全体を止めないよう、ここで受けてログ・メッセージで知らせる")]
+    private async Task LoadPokemonRosterAsync()
+    {
+        var version = ++_pokemonRosterLoadVersion;
+        if (!RemoteRosterStore.IsValidKey(_pokemonSyncKey))
+        {
+            PokemonSyncStatusTextBlock.Text = "未設定";
+            ShowPokemonRoster(null,
+                "アクセスキーが設定されていません（上の「アクセスキー」で発行するか、サイトで作ったアクセスキーを入力してください）",
+                false);
+            return;
+        }
+
+        ShowPokemonRoster(_pokemonRosterGames, "読み込み中…", true);
+        try
+        {
+            var games = await PokemonRosterViewer.LoadAsync(SelectedPokemonDataSourceValue(), _pokemonSyncKey);
+            if (version != _pokemonRosterLoadVersion) return;
+            PokemonSyncStatusTextBlock.Text = "データ共有中";
+            ShowPokemonRoster(games,
+                games.Count == 0
+                    ? "まだ登録がありません（チャットの !poke add -m かサイトで登録します）"
+                    : games.All(g => g.NamesResolved)
+                        ? $"{DateTime.Now:HH:mm:ss} に読み込み"
+                        : $"{DateTime.Now:HH:mm:ss} に読み込み。データを取得できなかったため、特性・持ち物は ID で表示しています（データの取得元を確認）",
+                false);
+        }
+        catch (Exception ex)
+        {
+            if (version != _pokemonRosterLoadVersion) return;
+            PokemonSyncStatusTextBlock.Text = "サイトから読み込めません";
+            ShowPokemonRoster(null, $"読み込めませんでした: {ex.Message}", false);
+        }
+    }
+
+    /// <summary>
+    /// 登録データを Game タブ（1 行の要約）と、開いていれば一覧のウィンドウに表示します。
+    /// </summary>
+    /// <param name="games">登録のあるゲームの一覧（読み込めていない・アクセスキーが無いときは null）</param>
+    /// <param name="status">状態の表示</param>
+    /// <param name="loading">読み込み中か（読み込み中は前の内容を表示したまま、再読み込みを押せなくする）</param>
+    private void ShowPokemonRoster(IReadOnlyList<RosterGameView>? games, string status, bool loading)
+    {
+        if (!loading)
+        {
+            _pokemonRosterGames = games;
+            PokemonRosterSummaryTextBlock.Text = PokemonRosterSummary(games);
+            PokemonRosterOpenWindowButton.IsEnabled = games is not null;
+        }
+
+        PokemonRosterStatusTextBlock.Text = status;
+        PokemonRosterReloadButton.IsEnabled = !loading;
+        _pokemonRosterWindow?.ShowRoster(games, status, loading);
+    }
+
+    /// <summary>
+    /// 登録データの 1 行の要約を返します（例: ポケモンチャンピオンズ: 登録 15 体・チーム 3（使用中: シングル1・ダブル2））。
+    /// チームの番号はシングル・ダブルで別々で、使用中も形式ごとに 1 つです。
+    /// 登録のあるゲームが 3 つ以上なら、最初のゲームと「ほか N ゲーム」にします。
+    /// </summary>
+    private static string PokemonRosterSummary(IReadOnlyList<RosterGameView>? games)
+    {
+        if (games is null) return "—";
+        if (games.Count == 0) return "登録なし";
+
+        static string Summary(RosterGameView game)
+        {
+            var active = string.Join("・", game.Teams.Where(t => t.Active.Length > 0).Select(t => t.Number));
+            return $"{game.Name}: 登録 {game.Pokemon.Count} 体・チーム {game.Teams.Count}" +
+                   (active.Length == 0 ? "" : $"（使用中: {active}）");
+        }
+
+        return games.Count <= 2
+            ? string.Join(" ／ ", games.Select(Summary))
+            : $"{Summary(games[0])} ほか {games.Count - 1} ゲーム";
+    }
+
+    /// <summary>
+    /// 登録したポケモンとチームの一覧を別のウィンドウで開きます。開いていれば、そのウィンドウを前に出します。
+    /// </summary>
+    private void PokemonRosterOpenWindowButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_pokemonRosterWindow == null || !IsWindowOpen<PokemonRosterWindow>())
+        {
+            _pokemonRosterWindow = new PokemonRosterWindow(LoadPokemonRosterAsync);
+            _pokemonRosterWindow.Closed += (_, _) => _pokemonRosterWindow = null;
+            _pokemonRosterWindow.ShowRoster(_pokemonRosterGames, PokemonRosterStatusTextBlock.Text,
+                !PokemonRosterReloadButton.IsEnabled);
+            _pokemonRosterWindow.Show();
+        }
+        else
+        {
+            _pokemonRosterWindow.Activate();
+            if (_pokemonRosterWindow.WindowState == WindowState.Minimized)
+                _pokemonRosterWindow.WindowState = WindowState.Normal;
+        }
+    }
+
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "画面の最上位（イベントハンドラー・起動・監視の周期処理）。例外で画面・ボット全体を止めないよう、ここで受けてログ・メッセージで知らせる")]
+    [SuppressMessage("Usage", "VSTHRD100:Avoid async void methods", Justification = "イベントハンドラーの型（void を返すデリゲート）の都合で async void が必要。例外は本文の try/catch で受けて、ログ・画面で知らせている")]
+    private async void PokemonRosterReloadButton_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            await LoadPokemonRosterAsync();
+        }
+        catch (Exception ex)
+        {
+            // async void の中で例外を出すとアプリが落ちるので、必ず受けてログに残す
+            LogController.OutputLog($"<Error> 登録データの再読み込みに失敗しました: {ex.GetType().Name}");
+            MessageBox.Show($"登録データを読み込めませんでした: {ex.Message}", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    /// <summary>
+    /// データの取得元のサイトの「ポケモン登録」ページをブラウザで開きます。
+    /// </summary>
+    private void PokemonRosterOpenSiteButton_Click(object sender, RoutedEventArgs e)
+    {
+        Process.Start(new ProcessStartInfo(PokemonSyncKeyController.RosterPageUrl(SelectedPokemonDataSourceValue()))
+        {
+            UseShellExecute = true
+        });
     }
 
     private void GameResetButton_Click(object sender, RoutedEventArgs e)
@@ -990,7 +1695,21 @@ public partial class MainWindow : INotifyPropertyChanged
         var result = MessageBox.Show("設定を初期値に戻しますか？", "確認", MessageBoxButton.OKCancel, MessageBoxImage.Warning);
         if (result != MessageBoxResult.OK) return;
 
-        TextRegexController.ResetBsrChatModel();
+        if (IsPokemonGameSelected())
+        {
+            // 未登録（シングル扱い）/ Production に戻す（接続中なら SelectionChanged で即座に反映される）
+            PokemonBattleFormatComboBox.SelectedIndex = 0;
+            PokemonDataSourceComboBox.SelectedIndex = 0;
+            return;
+        }
+
+        if (!TextRegexController.ResetBsrChatModel())
+        {
+            MessageBox.Show("BeatSaber の設定（bsr.json）を初期化できませんでした（ファイルが使用中などの可能性があります。ログを確認してください）。",
+                "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+            return;
+        }
+
         BeatSaberBsrDataGrid.ItemsSource = TextRegexController.LoadBsrChatModel().BeatSaberChat;
     }
 
@@ -1032,7 +1751,8 @@ public partial class MainWindow : INotifyPropertyChanged
 
     private void InitializeTestEventController()
     {
-        if (_twitchTestEventController != null) return;
+        // 接続を作り直していたら（TwitchClientController が変わっていたら）、古い接続へ送らないように作り直す
+        if (_twitchTestEventController != null && ReferenceEquals(_testEventClient, _twitchClientController)) return;
         
         var secretKeys = SecretKeyController.LoadKeys();
         _twitchApiController ??= new TwitchApiController(secretKeys);
@@ -1046,6 +1766,7 @@ public partial class MainWindow : INotifyPropertyChanged
         // あるいは MainWindowで管理するようにリファクタリングする。
         // ひとまずTwitchClientControllerにGetterを追加する。
         
+        _testEventClient = _twitchClientController;
         _twitchTestEventController = new TwitchTestEventController(
             _twitchClientController, 
             _twitchClientController.BouyomiChanController, 

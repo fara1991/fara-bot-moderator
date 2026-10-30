@@ -1,63 +1,51 @@
-﻿# FaraBotModerator
+# FaraBotModerator
 
-Twitch配信者向けの多機能BOTツールです。WPF (C# / .NET 8) で構築されており、チャット管理、イベント通知、翻訳、棒読みちゃん連携などの機能を備えています。
+Twitch 配信者向けの Windows 用チャットボットです。チャットの翻訳・読み上げ、フォローやレイドなどへの自動応答、定期メッセージ、ポケモンと Beat Saber のチャットコマンドが使えます。
 
-## 主な機能
+## ダウンロード
 
-- **チャット連携**: Twitchチャットの取得、送信、表示。
-- **イベント通知**: Follow, Raid, Subscription, Bits, チャンネルポイント等のイベントを検知し、自動応答チャットを送信。
-- **翻訳機能**: DeepL APIと連携し、受信したチャットをリアルタイムで翻訳。
-- **棒読みちゃん連携**: 受信したチャットを棒読みちゃんで読み上げ。
-- **API連携**: Twitch API (Helix) を使用したユーザー情報の取得や各種アクション。
-- **EventSub対応**: WebSocketを使用した低遅延なイベント受信。
-- **タイマー機能**: 定期的なメッセージ送信や指定日時での自動チャット。
-- **ポケモンコマンド**: チャットの `!pokech` / `!pokesv` / `!pokess` / `!poke` で育成済みポケモン・チームの登録、ダメージ計算（`dmg`）、努力値推定（`calc`）、素早さ比較（`diff`）。登録・削除・使用チーム変更は配信者本人とモデレーターのみ（`!poke cmd ls` で一覧）。
+[GitHub Releases の最新版](https://github.com/fara1991/fara-bot-moderator/releases/latest) から `FaraBotModerator_Setup.exe` をダウンロードして実行してください。
 
-## セットアップと使用方法
+## 動作環境
 
-### 1. 動作環境
-- Windows 10/11 (x64)
-- [.NET 8 Runtime](https://dotnet.microsoft.com/download/dotnet/8.0)
-- [Microsoft Edge WebView2 Runtime](https://developer.microsoft.com/en-us/microsoft-edge/webview2/)
+| 項目 | 必須・任意 | 使う場面 |
+|---|---|---|
+| Windows 10 / 11（x64） | **必須** | アプリを動かす |
+| WebView2 ランタイム | **必須** | Twitch のログイン画面などを、アプリの中に表示する。インストーラーが必要に応じて入れます |
 
-### 2. インストール
-- [Releases](https://github.com/fara1991/FaraBotModerator/releases) から最新の `FaraBotModerator_Setup.exe` をダウンロードして実行してください。
+Twitch のアカウントなど、用意するものの一覧は [導入の手順](docs/getting-started.md) を見てください。
 
-### 3. 初期設定
-詳細な設定手順や使い方は、[操作説明書 (Manual.md)](Manual.md) を参照してください。
+## 使い始める 3 ステップ
 
-1. **Client設定**: `Get Token` ボタンからTwitch連携を行い、AccessTokenを取得して設定します。
-2. **API設定**: [Twitch Developers](https://dev.twitch.tv/console) でアプリを登録し、`ClientID` と `ClientSecret` を設定します。
-3. **DeepL連携 (任意)**: 翻訳機能を使用する場合は、DeepLの認証キーを設定します。
-4. **棒読みちゃん連携 (任意)**: 棒読みちゃんのHTTP連携設定（ポート 5008）を有効にします。
+1. `FaraBotModerator_Setup.exe` をインストールして起動する
+2. Twitch Developer でアプリを登録し、`ClientId` と `ClientSecret` を入れて「Authorize」を押す
+3. 「Connect」を押して Twitch チャットにつなぐ
 
-## 開発者向け情報
+![Main Settings タブの画面。Client と API の入力欄、Connect などのボタンが並んでいる](docs/images/main-settings.png)
 
-### ビルド方法
-リポジトリをサブモジュールごとクローンし、PowerShellスクリプトを使用してビルドおよびパッケージングが可能です。
+手順の詳細は [導入の手順](docs/getting-started.md) を見てください。
 
-```powershell
-git clone --recursive https://github.com/fara1991/fara-bot-moderator.git
-# クローン済みの場合
-git submodule update --init
-./build_release.ps1
-```
+## 資料
 
-このスクリプトは以下の処理を行います：
-1. `dotnet publish` による実行ファイルの生成（シングルファイル形式）
-2. Inno Setupを使用したインストーラー (`.exe`) の作成（Inno Setup 6 がインストールされている場合）
+| 見たいこと | ページ |
+|---|---|
+| 導入（登録・認証・接続） | [getting-started.md](docs/getting-started.md) |
+| コマンドの早見表 | [commands.md](docs/commands.md) |
+| ポケモンのコマンド | [pokemon.md](docs/pokemon.md) |
+| Beat Saber のコマンド | [beatsaber.md](docs/beatsaber.md) |
+| 各設定（イベント・翻訳・タイマーなど） | [settings.md](docs/settings.md) |
+| よくある質問 | [faq.md](docs/faq.md) |
+| 困ったとき | [troubleshooting.md](docs/troubleshooting.md) |
+| 操作説明書（全文） | [Manual.md](Manual.md) |
+| 開発者向け（ビルド方法など） | [development.md](docs/development.md) |
 
-### プロジェクト構成
-- `FaraBotModerator`: アプリ本体 (WPF)
-- `Installer`: Inno Setup用スクリプトおよび関連ファイル
-- `Resources`: アイコンや画像リソース
-- `external/fara-pokemon-assistance`: `!poke` 系コマンドの計算ライブラリ（git submodule。`FaraPokemonAssistance.Core` を参照）
+更新履歴は [GitHub Releases](https://github.com/fara1991/fara-bot-moderator/releases) にあります。
+
+## 問い合わせ
+
+- 不具合・要望: [GitHub の Issues](https://github.com/fara1991/fara-bot-moderator/issues)
+- そのほか: Twitter（X）の [@game_fara](https://twitter.com/game_fara)
 
 ## ライセンス
-本プロジェクトは開発中のプロトタイプです。
 
-## 使用ライブラリ
-- [TwitchLib](https://github.com/TwitchLib/TwitchLib)
-- [DeepL.net](https://github.com/DeepLcom/deepl-dotnet)
-- [MaterialDesignInXamlToolkit](https://github.com/MaterialDesignInXAML/MaterialDesignInXamlToolkit)
-- [obs-websocket-dotnet](https://github.com/BarRaider/obs-websocket-dotnet)
+本プロジェクトは開発中のプロトタイプです。

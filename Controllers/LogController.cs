@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Text;
 using System.Threading;
@@ -16,6 +17,7 @@ public static class LogController
     /// </summary>
     /// <param name="text">出力するテキスト</param>
     /// <param name="eventEnum">Twitchイベントの種類（指定すると種類別のログファイルにも出力されます）</param>
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "ログ出力そのものが失敗したときの最後の逃げ道。ここで例外を出すと、ログを呼ぶあらゆる処理が落ちる")]
     public static void OutputLog(string text, TwitchEventEnum eventEnum = TwitchEventEnum.None)
     {
         try

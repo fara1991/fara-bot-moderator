@@ -1,8 +1,10 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Unicode;
 using FaraBotModerator.Models;
 
@@ -13,29 +15,87 @@ namespace FaraBotModerator.Controllers;
 /// </summary>
 public static class SecretKeyController
 {
-    private static readonly string SecretDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources");
+    /// <summary>
+    /// secrets.json の読み書きを 1 つずつにするロック（画面の保存とチャットの <c>format set</c> が同時に書いて、ファイルが壊れた状態を読まないため）
+    /// </summary>
+    private static readonly object FileLock = new();
     private static readonly string SecretFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "secrets.json");
 
     /// <summary>
+    /// 直近の読み込みで、壊れていた secrets.json を退避した先（壊れていなければ null）。画面で復旧の案内を出すために使う。
+    /// </summary>
+    public static string? QuarantinedPath { get; private set; }
+
+    /// <summary>
     /// 設定ファイルから設定情報を読み込みます。ファイルが存在しない場合は新規作成します。
+    /// 壊れているとき（JSON として読めない・中身が空）は、中身を消さずに改名して退避し、初期値で作り直します（<see cref="QuarantinedPath"/> に退避先）。
     /// </summary>
     /// <returns>読み込まれた設定情報モデル</returns>
     public static SecretKeyModel LoadKeys()
     {
-        if (!File.Exists(SecretFile)) CreateKeys();
+        var secretKeys = LoadKeys(SecretFile, out var quarantined);
+        if (quarantined is not null) QuarantinedPath = quarantined;
+        return secretKeys;
+    }
 
-        SecretKeyModel? secretKeys;
-        using (var file = File.OpenText(SecretFile))
+    /// <summary>
+    /// 指定したファイルから設定情報を読みます（無ければ初期値で作る。壊れていれば退避して初期値で作り直す）。
+    /// </summary>
+    /// <param name="path">設定ファイルのパス</param>
+    /// <param name="quarantinedPath">退避したファイルのパス（壊れていなければ null）</param>
+    internal static SecretKeyModel LoadKeys(string path, out string? quarantinedPath)
+    {
+        quarantinedPath = null;
+        lock (FileLock)
         {
-            var jsonData = file.ReadToEnd();
-            secretKeys = JsonSerializer.Deserialize<SecretKeyModel>(jsonData);
+            if (!File.Exists(path)) return CreateKeys(path);
+
+            SecretKeyModel? secretKeys;
+            try
+            {
+                var root = JsonNode.Parse(File.ReadAllText(path));
+                // 入れ子の項目が null（"twitch": null など）でも、既定の値で補ってから読む（そのままだと、画面の読み込みで NRE になる）
+                FillNullsWithDefaults(root, DefaultNode);
+                secretKeys = root?.Deserialize<SecretKeyModel>();
+            }
+            catch (JsonException)
+            {
+                // 中身（JSON の該当箇所）はログに出さない。例外の種類だけ残す
+                secretKeys = null;
+                LogController.OutputLog("<Error> secrets.json を JSON として読めませんでした");
+            }
+
+            if (secretKeys is not null) return secretKeys;
+
+            // 壊れたファイルは改名して残す（消さない）。退避できなければ、中身を守るため上書きせずに例外にする
+            quarantinedPath = Quarantine(path);
+            LogController.OutputLog($"<Error> secrets.json が壊れていたため退避し、初期値で作り直しました: {quarantinedPath}");
+            return CreateKeys(path);
         }
+    }
 
-        if (secretKeys is not null) return secretKeys;
+    /// <summary>
+    /// 既定の設定（モデルを既定の値で作って JSON にしたもの）。読んだ JSON の null を補うときの元になる。
+    /// </summary>
+    private static readonly JsonNode? DefaultNode = JsonSerializer.SerializeToNode(new SecretKeyModel());
 
-        const string message = "Secret Keys don't initialize.";
-        LogController.OutputLog(message);
-        throw new FileFormatException(message);
+    /// <summary>
+    /// 読んだ JSON で、既定の値がある項目が null のときは、既定の値で置き換えます（再帰）。既定の値も null の項目（パスワードの無い設定など）は、そのまま null。
+    /// </summary>
+    /// <param name="current">読んだ JSON</param>
+    /// <param name="defaults">既定の JSON（同じ位置の項目）</param>
+    private static void FillNullsWithDefaults(JsonNode? current, JsonNode? defaults)
+    {
+        if (current is not JsonObject obj || defaults is not JsonObject defaultObj) return;
+
+        foreach (var key in obj.Select(p => p.Key).ToList())
+        {
+            var defaultValue = defaultObj[key];
+            if (obj[key] is null && defaultValue is not null)
+                obj[key] = defaultValue.DeepClone();
+            else
+                FillNullsWithDefaults(obj[key], defaultValue);
+        }
     }
 
     /// <summary>
@@ -44,7 +104,14 @@ public static class SecretKeyController
     /// <param name="secretKeys">保存する設定情報モデル</param>
     public static void SaveKeys(SecretKeyModel secretKeys)
     {
-        using var writer = new StreamWriter(SecretFile, false, Encoding.UTF8);
+        lock (FileLock)
+        {
+            WriteKeys(secretKeys, SecretFile);
+        }
+    }
+
+    private static void WriteKeys(SecretKeyModel secretKeys, string path)
+    {
         var options = new JsonSerializerOptions
         {
             Encoder = JavaScriptEncoder.Create(UnicodeRanges.All),
@@ -52,15 +119,69 @@ public static class SecretKeyController
         };
         var jsonData = JsonSerializer.Serialize(secretKeys, options);
         // \003Cだけ変換できないので手動で変換
-        writer.WriteLine(jsonData.Replace("\\u003C", "<"));
+        WriteAtomically(path, jsonData.Replace("\\u003C", "<"));
     }
 
     /// <summary>
-    /// 初期設定ファイルを作成します。
+    /// 一時ファイルに書いてから置き換えます。書き込みの途中で強制終了・ディスク満杯になっても、今の secrets.json は壊れません。
     /// </summary>
-    private static void CreateKeys()
+    private static void WriteAtomically(string path, string jsonData)
     {
-        if (!Directory.Exists(SecretDirectory)) Directory.CreateDirectory(SecretDirectory);
+        var directory = Path.GetDirectoryName(path) ?? "";
+        if (!Directory.Exists(directory)) Directory.CreateDirectory(directory);
+
+        var temp = path + ".tmp";
+        File.WriteAllText(temp, jsonData + Environment.NewLine, Encoding.UTF8);
+        File.Move(temp, path, true);
+    }
+
+    /// <summary>
+    /// 壊れた設定ファイルを、時刻の付いた名前に改名して残します（消しません）。改名できなければ例外（上書きで中身を失わないため）。
+    /// </summary>
+    private static string Quarantine(string path)
+    {
+        var broken = Path.Combine(Path.GetDirectoryName(path) ?? "",
+            $"{Path.GetFileNameWithoutExtension(path)}.broken-{DateTime.Now:yyyyMMdd-HHmmssfff}{Path.GetExtension(path)}");
+        File.Move(path, broken);
+        return broken;
+    }
+
+    /// <summary>
+    /// ポケモンの登録形式（<c>pokemon.battleFormat</c>）だけを書き換えて保存します（null は未登録）。
+    /// ファイルの他の項目は、読んだ内容のまま（モデルに無い項目も）残します。
+    /// </summary>
+    /// <param name="battleFormat">"Singles" / "Doubles"。null で未登録に戻す</param>
+    public static void SavePokemonBattleFormat(string? battleFormat)
+    {
+        lock (FileLock)
+        {
+            // 無ければ作ってから読む（LoadKeys が初期値のファイルを作る）
+            LoadKeys();
+            var root = JsonNode.Parse(File.ReadAllText(SecretFile)) as JsonObject
+                       ?? throw new FileFormatException("secrets.json の形式が正しくありません");
+            // ここまでに壊れていた場合は LoadKeys が退避して作り直しているので、読めるはず
+            if (root["pokemon"] is not JsonObject pokemon)
+            {
+                pokemon = new JsonObject();
+                root["pokemon"] = pokemon;
+            }
+            pokemon["battleFormat"] = battleFormat;
+
+            var options = new JsonSerializerOptions
+            {
+                Encoder = JavaScriptEncoder.Create(UnicodeRanges.All),
+                WriteIndented = true
+            };
+            WriteAtomically(SecretFile, root.ToJsonString(options).Replace("\\u003C", "<"));
+        }
+    }
+
+    /// <summary>
+    /// 初期設定ファイルを作成します（既定の値を書いて、その値を返す）。
+    /// </summary>
+    /// <param name="path">作るファイルのパス</param>
+    private static SecretKeyModel CreateKeys(string path)
+    {
         var secretKeys = new SecretKeyModel
         {
             Twitch = new TwitchSecretKeyModel
@@ -134,9 +255,16 @@ public static class SecretKeyController
             BeatSaber = new BeatSaberModel
             {
                 UserDataPath = @"%USERPROFILE%\BSManager\BSInstances\1.29.1\UserData"
+            },
+            Pokemon = new PokemonModel
+            {
+                BattleFormat = null,
+                DataSource = "Production",
+                SyncKey = ""
             }
         };
 
-        SaveKeys(secretKeys);
+        WriteKeys(secretKeys, path);
+        return secretKeys;
     }
 }

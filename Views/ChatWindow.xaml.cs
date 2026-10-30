@@ -28,7 +28,7 @@ public partial class ChatWindow : Window
         var message = TwitchRequestChatTextBox.Text;
         if (e.Key == Key.Enter)
         {
-            _twitchClientController.SendApplicationMessage(message);
+            _ = _twitchClientController.SendApplicationMessageAsync(message);
             TwitchRequestChatTextBox.Text = "";
         }
     }
@@ -40,7 +40,7 @@ public partial class ChatWindow : Window
     private void TwitchRequestChatButton_Click(object sender, RoutedEventArgs e)
     {
         var message = TwitchRequestChatTextBox.Text;
-        _twitchClientController.SendApplicationMessage(message);
+        _ = _twitchClientController.SendApplicationMessageAsync(message);
         TwitchRequestChatTextBox.Text = "";
     }
 }

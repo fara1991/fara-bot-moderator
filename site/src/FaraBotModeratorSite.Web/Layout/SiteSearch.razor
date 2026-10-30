@@ -1,0 +1,163 @@
+@* サイト内検索の欄。入力するとすぐに、一致した場所（グループ › ページ › 見出し）と、その前後の文章を出す。
+   ↑↓ で結果を選び、Enter で開く。Esc で閉じる。Ctrl+K（Mac は ⌘K）か「/」で欄に移る（wwwroot/js/search-keys.js）。
+   PC はヘッダーに置く。スマホは Sheet（ヘッダーの検索ボタンで、下に開く欄。× で閉じる・結果を開いたら閉じる・Esc で閉じる）。欄の枠（#fbc-search-sheet）の出し入れは、kit の SiteLayout（SearchSheet）が行う。
+   探す処理は Shared の Search/SearchIndex（以前の search.js と同じ点数・同じ読み）。日本語入力の変換中の Enter は、search-keys.js が止める（ここには届かない） *@
+@inject SearchIndex Search
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+
+@* Esc は、ここで受ける（候補を閉じる・欄を閉じる）。kit の欄（SiteLayout の #fbc-search-sheet）にも Esc で閉じる処理があるので、ここで止める（検索の契約。候補を閉じるだけのときに、欄まで閉じないように） *@
+<div class="site-search @(Sheet ? "site-search-sheet" : null)" role="search" @onfocusout="Close" @onfocusin="OnFocusIn" @onkeydown="OnKeyDown" @onkeydown:stopPropagation="true">
+    <svg class="site-search-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></svg>
+    <input id="@InputId" type="search" class="site-search-input" placeholder="検索（例: dmg、アクセスキー、翻訳）" autocomplete="off" spellcheck="false"
+           aria-label="サイト内を検索" role="combobox" aria-expanded="@(open ? "true" : "false")" aria-controls="@ListId" aria-autocomplete="list"
+           aria-activedescendant="@ActiveId"
+           value="@query" @oninput="OnInput" />
+    @if (Sheet)
+    {
+        <button type="button" class="site-search-close" aria-label="検索を閉じる" title="検索を閉じる" @onclick="Done">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6L6 18" /></svg>
+        </button>
+    }
+    else
+    {
+        <span class="site-search-hint" aria-hidden="true"><kbd>Ctrl</kbd><kbd>K</kbd></span>
+    }
+    @if (open)
+    {
+        @if (hits.Count == 0)
+        {
+            <div id="@ListId" tabindex="-1" class="site-search-list" role="status"><div class="site-search-empty">「@query」に一致するものはありません</div></div>
+        }
+        else
+        {
+            <div id="@ListId" tabindex="-1" class="site-search-list" role="listbox" aria-label="検索の候補">
+                @for (var i = 0; i < Math.Min(hits.Count, MaxHits); i++)
+                {
+                    var hit = hits[i];
+                    var entry = hit.Entry;
+                    <a class="site-search-item @(i == active ? "is-active" : null)" role="option" tabindex="-1" id="@OptionId(i)" href="@entry.Url" aria-selected="@(i == active ? "true" : "false")" @onclick="@(e => Go(e, entry.Url))" @onclick:preventDefault="true">
+                        <span class="site-search-title">@Marked(entry.Title)@if (entry.Type == "page") {<span class="site-search-badge">ページ</span>}</span>
+                        <span class="site-search-where">@entry.Group › @entry.Page@if (entry.Type == "section" && entry.Title != entry.Page) {<text> › @Marked(entry.Title)</text>}@if (hit.ByReading) {<span class="site-search-reading">読み: @entry.Reading</span>}</span>
+                        <span class="site-search-snippet">@Marked(SearchText.Snippet(entry.Text, terms, SnippetWidth))</span>
+                    </a>
+                }
+                @if (hits.Count > MaxHits)
+                {
+                    <div class="site-search-more">ほか @(hits.Count - MaxHits) 件。語を足すと絞り込めます</div>
+                }
+            </div>
+        }
+    }
+</div>
+
+@code {
+    private const int MaxHits = 10;
+    private const int SnippetWidth = 110;
+
+    /// <summary>スマホの検索欄（ヘッダーの下に開く）かどうか。PC の検索欄（ヘッダーの中）とは、見た目と閉じ方が違う</summary>
+    [Parameter] public bool Sheet { get; set; }
+
+    /// <summary>スマホの検索欄を閉じるときに呼ぶ（× ・Esc・結果を開いたとき）。SiteLayout が閉じる</summary>
+    [Parameter] public EventCallback OnDone { get; set; }
+
+    private string query = "";
+    private string[] terms = Array.Empty<string>();
+    private IReadOnlyList<SearchHit> hits = Array.Empty<SearchHit>();
+    private bool open;
+    /// <summary>選んでいる結果（-1 は、どれも選んでいない）。</summary>
+    private int active = -1;
+
+    // 同じ画面に PC 用とスマホ用の 2 つを置くことがあるので、id は分ける
+    private string InputId => Sheet ? "site-search-input-sheet" : "site-search-input";
+    private string ListId => Sheet ? "site-search-list-sheet" : "site-search-list";
+    private string OptionId(int i) => $"{ListId}-{i}";
+    private string? ActiveId => open && active >= 0 ? OptionId(active) : null;
+
+    /// <summary>一致した部分を強調した表示にする。</summary>
+    private RenderFragment Marked(string text) => builder =>
+    {
+        var seq = 0;
+        foreach (var (part, match) in SearchText.Highlight(text, terms))
+        {
+            if (match) { builder.OpenElement(seq++, "mark"); builder.AddContent(seq++, part); builder.CloseElement(); }
+            else builder.AddContent(seq++, part);
+        }
+    };
+
+    private void OnInput(ChangeEventArgs e)
+    {
+        query = e.Value?.ToString() ?? "";
+        Run();
+    }
+
+    private void Run()
+    {
+        terms = SearchText.Terms(query);
+        if (terms.Length == 0) { Close(); hits = Array.Empty<SearchHit>(); return; }
+        hits = Search.Search(query);
+        active = -1;
+        open = true;
+    }
+
+    // フォーカスが欄から外れたら閉じる（結果の <a> は Tab の対象にしない・クリックではフォーカスを外さない（search-keys.js）ので、結果を操作している間は欄にある）。
+    // 戻ってきたとき、探した結果があれば、また開く
+    private void OnFocusIn()
+    {
+        if (!open && query.Trim().Length > 0 && hits.Count > 0) open = true;
+    }
+
+    private async Task OnKeyDown(KeyboardEventArgs e)
+    {
+        var count = Math.Min(hits.Count, MaxHits);
+        switch (e.Key)
+        {
+            case "ArrowDown" when count > 0:
+                if (!open) { open = true; break; }
+                active = active + 1 >= count ? -1 : active + 1;
+                break;
+            case "ArrowUp" when open && count > 0:
+                active = active - 1 < -1 ? count - 1 : active - 1;
+                break;
+            case "Enter" when open && count > 0:
+                Go(null, hits[active >= 0 ? active : 0].Entry.Url);
+                break;
+            case "Escape" when Sheet && !open:
+                await Done();
+                break;
+            case "Escape":
+                Close();
+                break;
+        }
+        if (active >= 0 && open) await JS.InvokeVoidAsync("faraScrollIntoView", OptionId(active));
+    }
+
+    /// <summary>
+    /// 結果を開く。Ctrl・⌘・Shift を押したクリックは、新しいタブで開く。
+    /// 同じページの見出しへ移るだけのときも、Blazor が見出しの位置までスクロールする。
+    /// </summary>
+    private void Go(MouseEventArgs? e, string url)
+    {
+        Close();
+        if (Sheet) _ = Done();
+        if (e is { CtrlKey: true } or { MetaKey: true } or { ShiftKey: true })
+        {
+            _ = JS.InvokeVoidAsync("open", url, "_blank");
+            return;
+        }
+        Nav.NavigateTo(url);
+    }
+
+    private void Close()
+    {
+        open = false;
+        active = -1;
+    }
+
+    /// <summary>スマホの欄を閉じる（SiteLayout に知らせる）。PC の欄では、何もしない</summary>
+    private Task Done()
+    {
+        Close();
+        return Sheet ? OnDone.InvokeAsync() : Task.CompletedTask;
+    }
+}

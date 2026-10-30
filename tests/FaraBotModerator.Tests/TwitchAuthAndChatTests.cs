@@ -1,0 +1,177 @@
+using System.Linq;
+using System.Threading.Tasks;
+using FaraBotModerator.Controllers;
+using FaraBotModerator.Models;
+using Xunit;
+
+namespace FaraBotModerator.Tests;
+
+/// <summary>
+/// OAuth の戻りの state の照合と、認可のスコープの並び。
+/// </summary>
+public class TwitchAuthServiceTests
+{
+    [Theory]
+    [InlineData("", "")]
+    [InlineData("", "abc")]
+    [InlineData("abc", "")]
+    [InlineData("abc", "abd")]
+    [InlineData("abc", "ABC")]
+    public void Empty_or_different_states_do_not_match(string expected, string actual)
+    {
+        Assert.False(TwitchAuthService.StatesMatch(expected, actual));
+    }
+
+    [Fact]
+    public void The_same_non_empty_state_matches()
+    {
+        Assert.True(TwitchAuthService.StatesMatch("abc", "abc"));
+    }
+
+    [Fact]
+    public void Scopes_have_no_duplicates()
+    {
+        Assert.Equal(TwitchAuthService.Scopes.Length, TwitchAuthService.Scopes.Distinct().Count());
+    }
+
+    [Fact]
+    public void Scopes_are_the_ones_the_bot_uses()
+    {
+        // 実装している機能に必要な権限だけ（増やす・減らすときは、対応する呼び出しを確かめてここも直す）
+        var expected = new[]
+        {
+            "bits:read", "channel:read:redemptions", "chat:edit", "chat:read",
+            "moderator:manage:shoutouts", "moderator:read:followers", "user:read:follows",
+        };
+        Assert.Equal(expected.OrderBy(scope => scope), TwitchAuthService.Scopes.OrderBy(scope => scope));
+    }
+
+    [Fact]
+    public void Stream_key_is_not_requested()
+    {
+        Assert.DoesNotContain("channel:read:stream_key", TwitchAuthService.Scopes);
+    }
+
+    [Fact]
+    public void The_scope_parameter_is_encoded_with_uppercase_escapes_and_joined_with_20()
+    {
+        var url = TwitchAuthService.BuildAuthorizationUrl("client", 3000, "state123");
+        var scopeParam = url.Split("&scope=")[1].Split('&')[0];
+
+        Assert.Equal(
+            "bits%3Aread%20channel%3Aread%3Aredemptions%20chat%3Aedit%20chat%3Aread" +
+            "%20moderator%3Amanage%3Ashoutouts%20moderator%3Aread%3Afollowers%20user%3Aread%3Afollows",
+            scopeParam);
+        Assert.DoesNotContain("%3a", url);
+    }
+
+    private const string ReturnUrl = "http://localhost:8080/?code=abc&scope=bits%3Aread&state=xyz";
+
+    [Fact]
+    public void The_same_return_url_is_not_handled_twice()
+    {
+        Assert.False(TwitchAuthService.ShouldHandleAuthUrl(ReturnUrl, ReturnUrl, "xyz", 8080));
+    }
+
+    [Fact]
+    public void Nothing_is_handled_before_authentication_starts()
+    {
+        // state が空（認証を始めていない・認証の後）は、戻りの URL があっても無視する
+        Assert.False(TwitchAuthService.ShouldHandleAuthUrl(ReturnUrl, "", "", 8080));
+    }
+
+    [Fact]
+    public void A_url_without_a_code_is_not_handled()
+    {
+        const string noCode = "http://localhost:8080/?scope=bits%3Aread&state=xyz";
+        Assert.False(TwitchAuthService.ShouldHandleAuthUrl(noCode, "", "xyz", 8080));
+    }
+
+    [Fact]
+    public void A_new_return_url_is_handled()
+    {
+        Assert.True(TwitchAuthService.ShouldHandleAuthUrl(ReturnUrl, "", "xyz", 8080));
+    }
+
+    [Fact]
+    public void A_failed_authorization_status_tells_the_user_to_authorize_again()
+    {
+        // コードが無効（例外なし）・例外のどちらでも、画面の文は「もう一度認可」を案内する
+        Assert.Contains("もう一度", TwitchAuthService.AuthorizationFailureStatus(null));
+        Assert.Contains("もう一度", TwitchAuthService.AuthorizationFailureStatus(new System.InvalidOperationException("secret")));
+    }
+
+    [Fact]
+    public void A_failed_authorization_status_does_not_show_the_exception_text()
+    {
+        // 例外の文（URL や応答の本文を含みうる）は画面に出さない（ログにだけ出す）
+        var status = TwitchAuthService.AuthorizationFailureStatus(new System.InvalidOperationException("secret-body"));
+
+        Assert.DoesNotContain("secret-body", status);
+    }
+
+    [Fact]
+    public void A_state_mismatch_is_reported_as_a_state_check_failure_not_a_connection_failure()
+    {
+        // state の不一致は CSRF の検査で、通信の失敗ではない。文は state を案内し、通信の文を出さない
+        var status = TwitchAuthService.AuthorizationFailureStatus(new AuthorizationStateMismatchException());
+
+        Assert.Contains("state", status);
+        Assert.Contains("もう一度", status);
+        Assert.DoesNotContain("通信", status);
+    }
+
+    [Fact]
+    public async Task A_state_mismatch_throws_the_state_exception_without_a_request()
+    {
+        // 空の期待 state も一致とみなさない（通信の前に例外になる）
+        var service = new TwitchAuthService();
+
+        await Assert.ThrowsAsync<AuthorizationStateMismatchException>(() =>
+            service.ExchangeAuthorizationCodeAsync("code", "id", "secret", expectedState: "", actualState: ""));
+        await Assert.ThrowsAsync<AuthorizationStateMismatchException>(() =>
+            service.ExchangeAuthorizationCodeAsync("code", "id", "secret", expectedState: "abc", actualState: "xyz"));
+    }
+}
+
+/// <summary>
+/// チャットの表示待ちの行（送った順のまま、アイコンが届いてから表示する）。
+/// </summary>
+public class ChatRowQueueTests
+{
+    [Fact]
+    public void A_later_row_waits_until_the_head_icon_arrives()
+    {
+        var queue = new ChatRowQueue();
+        var slowIcon = new TaskCompletionSource<string?>();
+        queue.Enqueue(new ChatModel { Name = "A", Chat = "1" }, slowIcon.Task);
+        queue.Enqueue(new ChatModel { Name = "B", Chat = "2" }, Task.FromResult<string?>("iconB"));
+
+        // A のアイコンが届くまで、先に取れた B は出さない（表示の順を入れ替えない）
+        Assert.Null(queue.TryPick());
+
+        slowIcon.SetResult("iconA");
+        var first = queue.TryPick();
+        var second = queue.TryPick();
+        Assert.Equal("A", first!.Name);
+        Assert.Equal("iconA", first.Icon);
+        Assert.Equal("B", second!.Name);
+        Assert.Equal("iconB", second.Icon);
+        Assert.Null(queue.TryPick());
+    }
+
+    [Fact]
+    public void A_failed_or_empty_icon_still_shows_the_row_without_an_icon()
+    {
+        var queue = new ChatRowQueue();
+        var failed = new TaskCompletionSource<string?>();
+        failed.SetException(new InvalidOperationException("取得できませんでした"));
+        queue.Enqueue(new ChatModel { Name = "A" }, failed.Task);
+        queue.Enqueue(new ChatModel { Name = "B" }, Task.FromResult<string?>(null));
+
+        var first = queue.TryPick();
+        var second = queue.TryPick();
+        Assert.Equal("", first!.Icon);
+        Assert.Equal("", second!.Icon);
+    }
+}

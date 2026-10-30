@@ -1,0 +1,15 @@
+@page "/report"
+
+@* 問い合わせ（作者への報告）。フォームは kit の ReportFormView（Turnstile・送信の状態・noindex）。送信先は Worker の /api/report（kit の worker/report.js）。
+   現行は見出しが h1 の 1 ページだったが、kit の ReportFormView は h3。GitHub の案内は、kit の部品に入れる場所が無いので、フォームの下に置く *@
+<ReportFormView From="@From"
+                Lead="不具合・要望・ご意見を、作者に直接送れます。いただいた内容は、作者に通知されます（公開はされません）。"
+                UnavailableNote="しばらくしてからお試しください。"
+                MessagePlaceholder="例: 〇〇の機能で、△△すると動きません（使っているアプリのバージョン・操作の手順も書いてもらえると助かります）"
+                ContactHint="返信が必要なときだけ、メールアドレスや Twitter の ID などを書いてください。書かなくても送れます。" />
+<p class="fbc-page-column fbc-small fbc-muted report-github-note">アプリや説明の修正は、<a href="@SiteInfo.RepositoryUrl" target="_blank" rel="noopener noreferrer">GitHub</a> で提案していただくこともできます。</p>
+
+@code {
+    /// <summary>報告のきっかけになったページのパス（フッターの「問い合わせ」が ?from= で付ける）。</summary>
+    [SupplyParameterFromQuery(Name = "from")] public string? From { get; set; }
+}

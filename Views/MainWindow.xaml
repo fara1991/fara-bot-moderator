@@ -226,6 +226,9 @@
                                                TextWrapping="Wrap" Text="Token expiration: 2023/01/01 12:00:00"
                                                Canvas.Top="75" HorizontalAlignment="Left" VerticalAlignment="Top"
                                                Height="20" Width="205" />
+                                    <!-- 認可（Authorize）が失敗したときの理由と、もう一度行う案内。成功したら空にする -->
+                                    <TextBlock x:Name="TwitchAuthStatusTextBlock" Canvas.Left="10" Canvas.Top="140"
+                                               Width="510" Height="20" Foreground="Red" TextWrapping="NoWrap" />
                                     <Button x:Name="TwitchApiAuthorizeButton" Content="Authorize"
                                             HorizontalAlignment="Center" VerticalAlignment="Top" Height="30"
                                             Width="105"
@@ -502,7 +505,7 @@
                             <FlowDocument>
                                 <Paragraph>
                                     <Run
-                                        Text="・Follow&#xA;{followedName} -&gt; When followed by a user, replace the userName.&#xA;{followerChannelUrl} -&gt; When twitch events, replace event userChannel.&#xA;&#xA;----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------&#xA;・Raid&#xA;{raiderName} -&gt; When raid by a user, replace the userName.&#xA;{raiderChannelUrl} -&gt; When raid by a user, replace the channelUrl.&#xA;&#xA;----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------&#xA;・Subscription&#xA;{subscriberName} -&gt; When subscription by a user, replace the userName.&#xA;{totalSubscriptionMonth} -&gt; When subscription by a user, replace total subscription count.&#xA;&#xA;----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------&#xA;・Bits&#xA;{bitsAmount} -&gt; When throw bits by a user, replace the bits amount.&#xA;{bitsSendUserName} -&gt; When throw bits by a user, replace the userName.&#xA;&#xA;----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------&#xA;・Gift&#xA;{giftedUserName} -&gt; When throw gifted by a user, replace the userName.&#xA;&#xA;----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------&#xA;・ChannelPoint&#xA;{channelPointCost} -&gt; When use channelPoint, replace the number of channelPoints used.&#xA;{channelPointTitle} -&gt; When use channelPoint, replace the channelPoint title.&#xA;{channelPointUserName} -&gt; When use channelPoint, replace userName with channelPoint.&#xA;" />
+                                        Text="・Follow&#xA;{followerName} -&gt; When followed by a user, replace the userName.&#xA;{followerChannelUrl} -&gt; When twitch events, replace event userChannel.&#xA;&#xA;----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------&#xA;・Raid&#xA;{raiderName} -&gt; When raid by a user, replace the userName.&#xA;{raiderChannelUrl} -&gt; When raid by a user, replace the channelUrl.&#xA;&#xA;----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------&#xA;・Subscription&#xA;{subscriberName} -&gt; When subscription by a user, replace the userName.&#xA;{totalSubscriptionMonth} -&gt; When subscription by a user, replace total subscription count.&#xA;&#xA;----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------&#xA;・Bits&#xA;{bitsAmount} -&gt; When throw bits by a user, replace the bits amount.&#xA;{bitsSendUserName} -&gt; When throw bits by a user, replace the userName.&#xA;&#xA;----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------&#xA;・Gift&#xA;{giftedUserName} -&gt; When throw gifted by a user, replace the userName.&#xA;&#xA;----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------&#xA;・ChannelPoint&#xA;{channelPointCost} -&gt; When use channelPoint, replace the number of channelPoints used.&#xA;{channelPointTitle} -&gt; When use channelPoint, replace the channelPoint title.&#xA;{channelPointUserName} -&gt; When use channelPoint, replace userName with channelPoint.&#xA;" />
                                 </Paragraph>
                             </FlowDocument>
                         </RichTextBox>
@@ -567,8 +570,12 @@
                                                 Canvas.Top="10" Click="DeepLSiteGoButton_Click" />
                                     </Canvas>
                                 </GroupBox>
-                                <GroupBox x:Name="GameGroupBox" HorizontalAlignment="Center" Height="317"
-                                          Canvas.Left="10" Canvas.Top="140" VerticalAlignment="Top" Width="1065">
+                            </Canvas>
+                        </TabItem>
+                        <TabItem x:Name="AutoBotGameTabItem" Header="Game">
+                            <Canvas x:Name="AutoBotGameCanvas" Background="#FFE5E5E5">
+                                <GroupBox x:Name="GameGroupBox" HorizontalAlignment="Center" Height="447"
+                                          Canvas.Left="10" Canvas.Top="10" VerticalAlignment="Top" Width="1065">
                                     <GroupBox.Header>
                                         <StackPanel Orientation="Horizontal">
                                             <TextBlock Text="Game" />
@@ -579,7 +586,7 @@
                                                     ToolTipService.HorizontalOffset="-10"
                                                     Click="HelpButton_Click">
                                                 <Button.ToolTip>
-                                                    <ToolTip Content="ゲームごとのチャット変換パターン設定" />
+                                                    <ToolTip Content="ゲームごとの設定（Beat Saber: チャット変換パターン、ポケモンシリーズ: !poke 系コマンドの対戦形式・データの取得元・データ共有）" />
                                                 </Button.ToolTip>
                                                 <materialDesign:PackIcon Kind="HelpCircleOutline" Width="16"
                                                                          Height="16" Foreground="White" />
@@ -591,23 +598,157 @@
                                             <ComboBox x:Name="GameSelectComboBox" Width="150" Height="30"
                                                       Foreground="Black"
                                                       SelectionChanged="GameSelectComboBox_SelectionChanged">
-                                                <ComboBoxItem Content="Beat Saber" IsSelected="True" />
+                                                <!-- Tag はコードで判定に使う値（表示名を変えても動きが変わらないようにする） -->
+                                                <ComboBoxItem Content="Beat Saber" Tag="BeatSaber" IsSelected="True" />
+                                                <ComboBoxItem Content="ポケモンシリーズ" Tag="Pokemon" />
                                             </ComboBox>
                                             <Button x:Name="GameResetButton" Content="初期化" Width="80" Height="30"
                                                     Margin="10,0,0,0" Click="GameResetButton_Click" />
                                         </StackPanel>
-                                        <DataGrid x:Name="BeatSaberBsrDataGrid"
-                                                  AutoGenerateColumns="False"
-                                                  CanUserAddRows="False"
-                                                  CanUserDeleteRows="False"
-                                                  IsReadOnly="True"
-                                                  TextBlock.Foreground="Black">
-                                            <DataGrid.Columns>
-                                                <DataGridTextColumn Header="正規表現パターン" Binding="{Binding Key}" Width="*" />
-                                                <DataGridTextColumn Header="変換後テキスト" Binding="{Binding Value}"
-                                                                    Width="*" />
-                                            </DataGrid.Columns>
-                                        </DataGrid>
+                                        <!-- Beat Saber を選んだときは変換パターンの表、ポケモンシリーズを選んだときは設定と登録データを表示する -->
+                                        <Grid>
+                                            <DataGrid x:Name="BeatSaberBsrDataGrid"
+                                                      AutoGenerateColumns="False"
+                                                      CanUserAddRows="False"
+                                                      CanUserDeleteRows="False"
+                                                      IsReadOnly="True"
+                                                      TextBlock.Foreground="Black">
+                                                <DataGrid.Columns>
+                                                    <DataGridTextColumn Header="正規表現パターン" Binding="{Binding Key}" Width="*" />
+                                                    <DataGridTextColumn Header="変換後テキスト" Binding="{Binding Value}"
+                                                                        Width="*" />
+                                                </DataGrid.Columns>
+                                            </DataGrid>
+                                            <Grid x:Name="PokemonSettingsPanel" Visibility="Collapsed" Margin="0,10,0,0" TextBlock.Foreground="Black">
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="*" />
+                                                </Grid.RowDefinitions>
+                                                <StackPanel Grid.Row="0">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <Label x:Name="PokemonBattleFormatLabel" Content="対戦形式"
+                                                               VerticalAlignment="Center" Height="25" Width="115" />
+                                                        <Button Style="{StaticResource MaterialDesignIconButton}"
+                                                                Width="20" Height="20" Margin="-5,0,0,0"
+                                                                ToolTipService.InitialShowDelay="0"
+                                                                ToolTipService.Placement="Bottom"
+                                                                ToolTipService.HorizontalOffset="-10"
+                                                                Click="HelpButton_Click">
+                                                            <Button.ToolTip>
+                                                                <ToolTip Content="!poke 系コマンドで、形式を書かなかったときに使う対戦形式（チャットの format set / format clear と同じ設定）。「未登録」はシングルとして動きます。ダブルでは全体技の威力が 0.75 倍になり、チームの追加・使用・計算もダブルのチームが対象になります（接続中でも切り替え可能）" />
+                                                            </Button.ToolTip>
+                                                            <materialDesign:PackIcon Kind="HelpCircleOutline" Width="16" Height="16"
+                                                                                     Foreground="Gray" />
+                                                        </Button>
+                                                        <ComboBox x:Name="PokemonBattleFormatComboBox" Width="150" Height="30"
+                                                                  Margin="10,0,0,0" VerticalAlignment="Center" Foreground="Black"
+                                                                  SelectionChanged="PokemonBattleFormatComboBox_SelectionChanged">
+                                                            <ComboBoxItem Content="未登録（シングル）" Tag="None" IsSelected="True" />
+                                                            <ComboBoxItem Content="シングル" Tag="Singles" />
+                                                            <ComboBoxItem Content="ダブル" Tag="Doubles" />
+                                                        </ComboBox>
+                                                    </StackPanel>
+                                                    <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                                                        <Label x:Name="PokemonDataSourceLabel" Content="データの取得元"
+                                                               VerticalAlignment="Center" Height="25" Width="115" />
+                                                        <Button Style="{StaticResource MaterialDesignIconButton}"
+                                                                Width="20" Height="20" Margin="-5,0,0,0"
+                                                                ToolTipService.InitialShowDelay="0"
+                                                                ToolTipService.Placement="Bottom"
+                                                                ToolTipService.HorizontalOffset="-10"
+                                                                Click="HelpButton_Click">
+                                                            <Button.ToolTip>
+                                                                <ToolTip Content="ポケモン・技・持ち物などのデータをどのサイトから取得するか。ふだんは本番、公開前の確認には開発用を使います（接続中でも切り替え可能）" />
+                                                            </Button.ToolTip>
+                                                            <materialDesign:PackIcon Kind="HelpCircleOutline" Width="16" Height="16"
+                                                                                     Foreground="Gray" />
+                                                        </Button>
+                                                        <ComboBox x:Name="PokemonDataSourceComboBox" Width="280" Height="30"
+                                                                  Margin="10,0,0,0" VerticalAlignment="Center" Foreground="Black"
+                                                                  SelectionChanged="PokemonDataSourceComboBox_SelectionChanged">
+                                                            <ComboBoxItem Content="本番（pokemon.fara-labs.com）" Tag="Production" IsSelected="True" />
+                                                            <ComboBoxItem Content="開発用（pokemon-dev.fara-labs.com）" Tag="Develop" />
+                                                        </ComboBox>
+                                                    </StackPanel>
+                                                    <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                                                        <Label x:Name="PokemonSyncKeyLabel" Content="アクセスキー"
+                                                               VerticalAlignment="Center" Height="25" Width="115" />
+                                                        <Button Style="{StaticResource MaterialDesignIconButton}"
+                                                                Width="20" Height="20" Margin="-5,0,0,0"
+                                                                ToolTipService.InitialShowDelay="0"
+                                                                ToolTipService.Placement="Bottom"
+                                                                ToolTipService.HorizontalOffset="-10"
+                                                                Click="HelpButton_Click">
+                                                            <Button.ToolTip>
+                                                                <ToolTip Content="データ共有のためのキー。登録したポケモン・チームはサイト（データの取得元と同じサイト）のクラウドに保存され、同じアクセスキーを入れたサイトの「ポケモン登録」「チーム登録」ページと同じデータを読み書きします。登録データはこの PC には保存しません。アクセスキーはパスワードと同じ扱いなので、配信画面に映さないでください" />
+                                                            </Button.ToolTip>
+                                                            <materialDesign:PackIcon Kind="HelpCircleOutline" Width="16" Height="16"
+                                                                                     Foreground="Gray" />
+                                                        </Button>
+                                                        <Grid Width="330" Height="30" Margin="10,0,0,0" VerticalAlignment="Center">
+                                                            <PasswordBox x:Name="PokemonSyncKeyPasswordBox" Foreground="Black"
+                                                                         VerticalAlignment="Center" />
+                                                            <TextBox x:Name="PokemonSyncKeyTextBox" Foreground="Black" Visibility="Collapsed"
+                                                                     VerticalAlignment="Center" />
+                                                        </Grid>
+                                                        <Button x:Name="PokemonSyncKeyShowButton" Content="表示" Width="70" Height="30"
+                                                                Margin="10,0,0,0" Click="PokemonSyncKeyShowButton_Click" />
+                                                        <Button x:Name="PokemonSyncKeyCopyButton" Content="コピー" Width="80" Height="30"
+                                                                Margin="10,0,0,0" Click="PokemonSyncKeyCopyButton_Click" />
+                                                        <TextBlock x:Name="PokemonSyncStatusTextBlock" Margin="10,0,0,0" VerticalAlignment="Center"
+                                                                   Foreground="Gray" TextWrapping="Wrap" MaxWidth="380" />
+                                                    </StackPanel>
+                                                    <StackPanel Orientation="Horizontal" Margin="135,6,0,0">
+                                                        <Button x:Name="PokemonSyncKeyIssueButton" Content="アクセスキーを発行" Width="170" Height="30"
+                                                                Margin="10,0,0,0" Click="PokemonSyncKeyIssueButton_Click"
+                                                                ToolTip="新しいアクセスキーを作ってデータ共有を始めます（クラウドの置き場は空から始まります）。発行したアクセスキーをサイトの「アクセスキーを入力して共有」に貼り付けると、サイトと同じデータを使えます" />
+                                                        <Button x:Name="PokemonSyncKeyJoinButton" Content="アクセスキーを入力" Width="170" Height="30"
+                                                                Margin="10,0,0,0" Click="PokemonSyncKeyJoinButton_Click"
+                                                                ToolTip="サイトで作ったアクセスキーを左上の欄に貼り付けてから押すと、そのアクセスキーのクラウドの登録データを使います" />
+                                                        <Button x:Name="PokemonSyncKeyRotateButton" Content="アクセスキーを作り直す" Width="200" Height="30"
+                                                                Margin="10,0,0,0" Click="PokemonSyncKeyRotateButton_Click"
+                                                                ToolTip="アクセスキーが漏れたときに。登録データを新しいアクセスキーに移し、古いアクセスキーは使えなくします（サイトでも新しいアクセスキーを入力し直してください）" />
+                                                        <Button x:Name="PokemonSyncKeyStopButton" Content="データ共有をやめる" Width="170" Height="30"
+                                                                Margin="10,0,0,0" Click="PokemonSyncKeyStopButton_Click"
+                                                                ToolTip="このボットでアクセスキーを使うのをやめます（クラウドのデータは残ります）" />
+                                                    </StackPanel>
+                                                    <TextBlock Margin="5,10,0,0" Foreground="Gray" TextWrapping="Wrap"
+                                                               Text="!poke 系コマンドの設定です（接続中に変えてもすぐ反映）。アクセスキーが無いと登録系のコマンドは使えません（計算は使えます）。" />
+                                                </StackPanel>
+                                                <StackPanel Grid.Row="1" Margin="0,14,0,0">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <Label Content="登録データ" FontWeight="Bold" VerticalAlignment="Center" Width="115" />
+                                                        <Button Style="{StaticResource MaterialDesignIconButton}"
+                                                                Width="20" Height="20" Margin="-5,0,0,0"
+                                                                ToolTipService.InitialShowDelay="0"
+                                                                ToolTipService.Placement="Bottom"
+                                                                ToolTipService.HorizontalOffset="-10"
+                                                                Click="HelpButton_Click">
+                                                            <Button.ToolTip>
+                                                                <ToolTip Content="チャットの !poke add -m / add -t / use -t やサイトの「ポケモン登録」「チーム登録」ページで登録したポケモンとチーム（アクセスキーでクラウドから読み込みます）。「一覧を開く」で別のウィンドウに一覧を表示します。ここでは見るだけで、登録・削除はチャットのコマンドかサイトで行います" />
+                                                            </Button.ToolTip>
+                                                            <materialDesign:PackIcon Kind="HelpCircleOutline" Width="16" Height="16"
+                                                                                     Foreground="Gray" />
+                                                        </Button>
+                                                        <TextBlock x:Name="PokemonRosterSummaryTextBlock" Margin="10,0,0,0" VerticalAlignment="Center"
+                                                                   TextTrimming="CharacterEllipsis" MaxWidth="880" />
+                                                    </StackPanel>
+                                                    <StackPanel Orientation="Horizontal" Margin="135,6,0,0">
+                                                        <Button x:Name="PokemonRosterOpenWindowButton" Content="一覧を開く" Width="120" Height="30"
+                                                                Margin="10,0,0,0" Click="PokemonRosterOpenWindowButton_Click"
+                                                                ToolTip="登録したポケモンとチームの一覧を別のウィンドウで開きます" />
+                                                        <Button x:Name="PokemonRosterReloadButton" Content="再読み込み" Width="110" Height="30"
+                                                                Margin="10,0,0,0" Click="PokemonRosterReloadButton_Click" />
+                                                        <Button x:Name="PokemonRosterOpenSiteButton" Content="サイトで開く" Width="120" Height="30"
+                                                                Margin="10,0,0,0" Click="PokemonRosterOpenSiteButton_Click"
+                                                                ToolTip="データの取得元のサイトの「ポケモン登録」ページをブラウザで開きます（サイトでも同じアクセスキーを入力すると編集できます）" />
+                                                        <TextBlock x:Name="PokemonRosterStatusTextBlock" Margin="10,0,0,0" VerticalAlignment="Center"
+                                                                   Foreground="Gray" TextWrapping="Wrap" MaxWidth="500" />
+                                                    </StackPanel>
+                                                </StackPanel>
+                                            </Grid>
+                                        </Grid>
                                     </DockPanel>
                                 </GroupBox>
                             </Canvas>

@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows10.0.22621.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <NoWarn>NU1701;1701;1702;NETSDK1086</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.11.0" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\FaraBotModerator.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- 偽のサーバー（下の FakeRosterServer.cs）が使う。Windows 向けの既定の using には無い -->
+    <Using Include="System.Net.Http" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- 偽のデータ共有サーバー（pokemon の submodule のテストと同じ物。サイトの API と同じ動き）を、そのまま使う -->
+    <Compile Include="..\..\external\fara-pokemon-battle-assistant\tests\FaraPokemonBattleAssistant.Core.Tests\FakeRosterServer.cs"
+             Link="Fakes\FakeRosterServer.cs" />
+  </ItemGroup>
+
+</Project>

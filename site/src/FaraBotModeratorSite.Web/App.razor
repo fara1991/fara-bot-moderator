@@ -1,0 +1,12 @@
+@* ルーター。ページは Pages（Razor クラスライブラリ）にある。存在しない URL は、kit の NotFoundView（大きな 404 とホームへ戻るボタン）。
+   ステータスの 404 は、Worker が 404.html を返して付ける *@
+<Router AppAssembly="@typeof(App).Assembly" AdditionalAssemblies="new[] { typeof(FaraBotModeratorSite.Pages.PageMeta).Assembly }">
+    <Found Context="routeData">
+        <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
+    </Found>
+    <NotFound>
+        <LayoutView Layout="@typeof(MainLayout)">
+            <NotFoundView HomeHref="/" />
+        </LayoutView>
+    </NotFound>
+</Router>

@@ -1,0 +1,135 @@
+[
+  {
+    "slug": "overview",
+    "title": "はじめに・動作環境",
+    "reading": "はじめにどうさかんきょう",
+    "group": "はじめに",
+    "description": "FaraBotModerator でできること、起動方法、必要なソフトウェアとアカウント。",
+    "sections": [
+      { "heading": "1. はじめに" },
+      { "heading": "2. 動作環境・必要条件" }
+    ]
+  },
+  {
+    "slug": "main-settings",
+    "title": "初期設定",
+    "reading": "しょきせってい",
+    "group": "設定",
+    "description": "Twitch との連携設定。Client 設定、Twitch Developer アプリケーションの作成と認証、棒読みちゃん連携、接続・切断。",
+    "sections": [
+      { "heading": "3. 初期設定" }
+    ],
+    "inlineToc": true
+  },
+  {
+    "slug": "reaction-events",
+    "title": "リアクションイベント",
+    "group": "設定",
+    "description": "フォロー・レイド・サブスク・ビッツ・ギフト・チャンネルポイントの自動応答メッセージと、使えるプレースホルダー。",
+    "sections": [
+      { "heading": "4. リアクションイベント設定" }
+    ],
+    "inlineToc": true
+  },
+  {
+    "slug": "translate",
+    "title": "翻訳",
+    "reading": "ほんやく",
+    "group": "自動ボット",
+    "description": "DeepL API を使った、チャットの日英自動翻訳の設定。",
+    "sections": [
+      { "heading": "5.1. 翻訳設定" }
+    ]
+  },
+  {
+    "slug": "game",
+    "title": "ゲーム設定",
+    "reading": "げーむせってい",
+    "group": "自動ボット",
+    "description": "Beat Saber・ポケモンシリーズなど、ゲームごとの設定。登録データの表示と一覧。",
+    "sections": [
+      { "heading": "5.2. ゲーム設定" }
+    ]
+  },
+  {
+    "slug": "timer",
+    "title": "タイマー",
+    "group": "自動ボット",
+    "description": "定期メッセージ（Cycle）と日時指定メッセージ（Fixed）の設定。",
+    "sections": [
+      { "heading": "5.3. タイマー設定" }
+    ]
+  },
+  {
+    "slug": "windows",
+    "title": "ウィンドウ設定",
+    "reading": "うぃんどうせってい",
+    "group": "設定",
+    "description": "チャットウィンドウとレイドリストウィンドウ。",
+    "sections": [
+      { "heading": "6. ウィンドウ設定" }
+    ]
+  },
+  {
+    "slug": "commands",
+    "title": "コマンド実行",
+    "reading": "こまんどじっこう",
+    "group": "コマンド実行",
+    "description": "チャットからゲームごとのコマンドを実行できます。ゲームを選ぶと、そのゲームのコマンドの説明へ進みます。",
+    "sections": [],
+    "menuTitle": "各種コマンド"
+  },
+  {
+    "slug": "pokemon",
+    "title": "ポケモンコマンド（!poke）",
+    "reading": "いくせいぽけもんじぶんちーむでーたきょうゆうたいせんあいてちーむとりれきちゅういじこう",
+    "parent": "commands",
+    "description": "チャットでポケモンの登録・ダメージ計算・相手の努力値推定・素早さ比較ができるコマンドの説明。接頭辞（データセット）、育成ポケモン、自分チーム、データ共有（アクセスキー）、対戦（dmg・scan・faster）、相手チームと履歴、注意事項。",
+    "sections": [
+      { "heading": "5.4. ポケモンコマンド（!poke）", "own": true },
+      { "heading": "接頭辞（データセット）" },
+      { "heading": "育成ポケモン（配信者・モデレーターのみ）" },
+      { "heading": "自分チーム（配信者・モデレーターのみ）" },
+      { "heading": "データ共有（アクセスキー）" },
+      { "heading": "対戦（dmg・scan・faster）" },
+      { "heading": "相手チーム（-r）と履歴（-h）" },
+      { "heading": "注意" }
+    ],
+    "menuTitle": "ポケモン",
+    "inlineToc": true
+  },
+  {
+    "slug": "beatsaber",
+    "title": "Beat Saber コマンド（!bsr・!bomb）",
+    "parent": "commands",
+    "description": "曲リクエスト（!bsr）の読み上げ変換と、爆弾のコマンド（!bomb 系）のこのアプリでの扱い。",
+    "sections": [
+      { "heading": "5.5. Beat Saber コマンド（!bsr・!bomb）", "own": true },
+      { "heading": "曲リクエスト（!bsr）" },
+      { "heading": "爆弾（!bomb・!bombline・!bombreset）" },
+      { "heading": "このアプリでの扱い" }
+    ],
+    "menuTitle": "Beat Saber",
+    "inlineToc": true
+  },
+  {
+    "slug": "faq",
+    "title": "よくある質問",
+    "reading": "よくあるしつもん",
+    "group": "困ったときは",
+    "description": "起動できない・チャットが取得できない・翻訳や読み上げが動かない、などの確認項目。",
+    "sections": [
+      { "heading": "7. よくある質問" }
+    ],
+    "inlineToc": true
+  },
+  {
+    "slug": "troubleshooting",
+    "title": "トラブルシューティング",
+    "group": "困ったときは",
+    "description": "Token 期限切れ、接続が不安定なとき、ログの場所。",
+    "sections": [
+      { "heading": "8. トラブルシューティング" }
+    ]
+  }
+]

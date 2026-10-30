@@ -1,0 +1,977 @@
+/* FaraBotModerator サイトの本文の見た目。ヘッダー・サイドバー・フッター・お知らせ・404 などの共通の部品は、fara-blazor-component（_content/FaraBlazorComponent.Razor/css/fara-blazor-component.css）と MudBlazor が持つ。
+   ここは、ホーム・ドキュメント・更新履歴・プライバシー・検索欄・背景の飾りなど、このサイト固有の部分だけ（以前の静的サイトの見た目を、そのまま移したもの）。
+   - 色は :root の変数にまとめる（名前は以前と同じ: --primary・--surface・--on-surface など）。ライト（既定）とダーク（html の data-bs-theme="dark"。kit の theme-init.js と SiteThemeState が付ける）
+   - 外部のフォント・CSS は読み込まない（システムフォントのみ）。アイコンはインライン SVG（CSP） */
+
+/* ======================================================================================================
+   テーマ（このサイトの色と、見た目の性格）。色の調整は、ここ（この節）だけで行う。
+   - 方向: Twitch 配信者向けのツール。インディゴ〜ブルー寄りの、少しクールで引き締まった色味（fara-labs・pokemon の紫、avatar のティールとは別）
+   - 変数の意味・調整のしかたは、PR の本文に書いてある。kit（fara-blazor-component）は変えず、kit の --fbc-* を同じ名前で上書きする
+   - 色は 2 つのブロック: :root（ライト）と :root[data-bs-theme="dark"]（ダーク）。ライトでもヘッダー・左のメニューは暗い地色（共通）
+   - 文字の色の組み合わせは WCAG AA（通常の文字 4.5:1・大きい文字と枠 3:1）を満たす値にしてある。変えたら測り直すこと
+   ====================================================================================================== */
+:root {
+    color-scheme: light;
+    /* アクセント（インディゴ）。主ボタン・リンク・見出しの線・手順の丸 */
+    --primary: #3447c9;
+    --on-primary: #ffffff;
+    --primary-container: #dfe5ff;
+    --on-primary-container: #0f1b5c;
+    --secondary: #4a5578;
+    --on-secondary: #ffffff;
+    --secondary-container: #e1e7f8;
+    --on-secondary-container: #151c33;
+    --tertiary: #0369a1;
+    --on-tertiary: #ffffff;
+    /* 面（青みのある淡いグレー）。背景 → 面 → カード（low）→ 表の見出し・hover（high）の順に濃くなる */
+    --background: #f4f6fd;
+    --on-background: #121933;
+    --surface: #f4f6fd;
+    --on-surface: #121933;
+    --surface-variant: #e9edfa;
+    --on-surface-variant: #454f73;
+    --surface-container-lowest: #ffffff;
+    --surface-container-low: #eef1fb;
+    --surface-container: #e9edfa;
+    --surface-container-high: #dfe5f6;
+    --surface-container-highest: #d3dbf1;
+    --outline: #66729e;
+    --outline-variant: #ccd4ec;
+    --link: #2f3fb8;
+    --link-hover: #1c2a8a;
+    /* 背景の光のにじみ（html の背景）。右上 → 左下 → 中央 */
+    --glow-1: rgba(79, 102, 230, 0.14);
+    --glow-2: rgba(59, 130, 246, 0.10);
+    --glow-3: rgba(99, 102, 241, 0.05);
+    /* 暗い地色（ヘッダー・左のメニュー・検索のシート）。ライトでも共通 */
+    --chrome-bg: linear-gradient(90deg, #0b1024 0%, #16214a 100%);
+    --chrome-focus: #a9b9ff;          /* 暗い地色の上のフォーカス枠 */
+    --chrome-active: #a9b9ff;         /* 左のメニューの現在のページの文字 */
+    --chrome-text-muted: #b4bddb;     /* 検索欄のプレースホルダー・アイコン */
+    --chrome-text-soft: #d5dbf2;      /* 検索の Ctrl K の表示・閉じるボタン */
+    --chrome-accent: #8ea2ff;         /* 検索欄のフォーカス枠・見出しの線のグラデーションの終点 */
+    /* 囲み（補足・注意など）の線と記号 */
+    --callout-note: #3447c9;
+    --callout-tip: #15803d;
+    --callout-important: #0369a1;
+    --callout-warning: #b45309;
+    --callout-caution: #b91c1c;
+    /* 形（角丸）。少し小さめにして引き締める（以前: 12px / 16px） */
+    --shape-s: 8px;
+    --shape-m: 12px;
+    --shape-button: 10px;
+    --font: "Segoe UI", "Hiragino Sans", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
+    --font-mono: ui-monospace, "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
+    --footer-h: 3.25rem;    /* PC の固定フッターの実高さ（約 52px。目次の高さを、フッターの上で止めるため） */
+    --notice-h: 3.75rem;    /* お知らせの帯の高さの目安（見出し 1 行 + 本文 1 行） */
+
+    /* kit（fara-blazor-component.css）の変数の上書き */
+    --fbc-header-bg: var(--chrome-bg);
+    --fbc-header-accent: linear-gradient(90deg, #6ea8ff 0%, #8b8dfc 100%);
+    --fbc-header-track: rgba(110, 168, 255, 0.22);
+    --fbc-sidebar-bg: linear-gradient(180deg, rgba(10, 15, 36, 0.94) 0%, rgba(20, 31, 70, 0.94) 60%, rgba(26, 40, 88, 0.94) 100%);
+    --fbc-sidebar-text: #d4daee;
+    --fbc-body-bg: #f4f6fd;
+    --fbc-border: #ccd4ec;
+    --fbc-muted: #4f5a82;
+    --fbc-field-bg: rgba(255, 255, 255, 0.7);
+    --fbc-brand: #3447c9;
+    --fbc-grad: linear-gradient(120deg, #3447c9 0%, #4f5fe0 50%, #0369a1 100%);
+    --fbc-focus: #3447c9;
+    --fbc-maintenance-bg: #090d1c;
+    --fbc-maintenance-text: #eaeefc;
+    --fbc-maintenance-muted: #aab4d6;
+}
+
+:root[data-bs-theme="dark"] {
+    color-scheme: dark;
+    --primary: #9fb0ff;
+    --on-primary: #0f1a52;
+    --primary-container: #26357f;
+    --on-primary-container: #dde3ff;
+    --secondary: #aab4d6;
+    --on-secondary: #121a33;
+    --secondary-container: #1f2a4f;
+    --on-secondary-container: #e0e5fb;
+    --tertiary: #8ec5ff;
+    --on-tertiary: #062744;
+    --background: #090d1c;
+    --on-background: #eaeefc;
+    --surface: #090d1c;
+    --on-surface: #eaeefc;
+    --surface-variant: #131a33;
+    --on-surface-variant: #aab4d6;
+    --surface-container-lowest: #060914;
+    --surface-container-low: #0f1428;
+    --surface-container: #131a33;
+    --surface-container-high: #1b2444;
+    --surface-container-highest: #242f58;
+    --outline: #7480ad;
+    --outline-variant: rgba(150, 170, 255, 0.2);
+    --link: #a5b4fc;
+    --link-hover: #d6ddff;
+    --glow-1: rgba(79, 110, 255, 0.20);
+    --glow-2: rgba(37, 99, 235, 0.28);
+    --glow-3: rgba(99, 102, 241, 0.05);
+    --callout-note: #9fb0ff;
+    --callout-tip: #6ee7a0;
+    --callout-important: #7dc3ff;
+    --callout-warning: #fbbf24;
+    --callout-caution: #fca5a5;
+    --fbc-body-bg: #090d1c;
+    --fbc-border: rgba(150, 170, 255, 0.18);
+    --fbc-muted: #aab4d6;
+    --fbc-field-bg: rgba(15, 20, 40, 0.7);
+    --fbc-brand: #4a5ee0;
+    --fbc-grad: linear-gradient(120deg, #6ea8ff 0%, #8b8dfc 50%, #5eb4ff 100%);
+    --fbc-focus: #c7d2fe;
+}
+
+/* kit の CSS に直接書かれている色（変数が無いもの）の上書き。kit の後に読まれるので、同じ詳細度で勝つ */
+.fbc-sidebar.mud-drawer { background-color: #0d1329; border-right-color: rgba(160, 180, 255, 0.14); }
+.fbc-sidebar .mud-nav-link { color: #e6eaf8; }
+.fbc-sidebar .mud-nav-link.active .mud-icon-root,
+.fbc-sidebar .mud-nav-link.active .mud-nav-link-icon { color: #e8edff !important; }
+.fbc-maintenance h1 { color: #9fb0ff; }
+.fbc-btn-primary.mud-button-root { background: linear-gradient(135deg, #4560e6, #3447c9); box-shadow: 0 10px 30px -8px rgba(69, 96, 230, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.25); }
+.fbc-skip-link { color: #121933; }
+.fbc-header :focus-visible { outline-color: var(--chrome-focus); }
+
+/* 見た目の性格（少しだけ）: 角を少し小さく、カードに細い枠、手順の番号は角丸の四角（コンソールのような印象）、見出しの線はアクセントのグラデーション */
+.button { border-radius: var(--shape-button); }
+.eyebrow { border-radius: 6px; }
+.card { border: 1px solid var(--outline-variant); }
+.card.highlight { border-color: var(--outline-variant); }
+.steps li::before,
+.prose ol > li::before { border-radius: var(--shape-s); }
+.prose code, .policy code { border-radius: 4px; }
+.doc-toc a, .doc-layout .inline-toc a { border-radius: var(--shape-s); }
+.prose :is(h2, h3).faq-q,
+.policy h2.policy-part-title { border-image: linear-gradient(180deg, var(--primary), var(--chrome-accent)) 1; }
+
+/* ---- 基本 ---- */
+* { box-sizing: border-box; }
+
+/* 背景の飾り: 配信画面の照明のような、光のにじみ（右上に紫、左下に濃い紫）。固定して、スクロールしても動かさない。
+   html（画面全体の背景）に描く。body は透明にして、背景の吹き出し（#site-scene。z-index: -1。js/bgscene.js）が、この上・本文の後ろに見えるようにする。
+   吹き出しは控えめな不透明度（bgscene.js）で、本文・ヘッダー・サイドバー・フッターの文字の邪魔にならない */
+/* index.html の読み込み表示の CSS（html[data-bs-theme="dark"] の背景）より強くするため、同じ形の選択子も書く */
+html,
+html[data-bs-theme="dark"] {
+    background:
+        radial-gradient(900px 520px at 85% -5%, var(--glow-1), transparent 65%),
+        radial-gradient(800px 600px at -5% 105%, var(--glow-2), transparent 65%),
+        radial-gradient(500px 360px at 50% 55%, var(--glow-3), transparent 70%),
+        var(--surface);
+    background-attachment: fixed;
+}
+
+body,
+html[data-bs-theme="dark"] body {
+    background: transparent;
+}
+
+body {
+    margin: 0;
+    color: var(--on-surface);
+    font-family: var(--font);
+    font-size: 16px;
+    line-height: 1.75;
+    letter-spacing: normal;
+    /* 日本語の改行: 語の途中（「制」と「定」の間など）では折り返さず、文節・句読点で折り返す。auto-phrase は Chromium 119+（それ以外は normal のまま）。
+       長い英数字は、はみ出すときだけ折る（overflow-wrap）。コード（pre・code）は、各規則で別に扱う */
+    word-break: normal;
+    word-break: auto-phrase;
+    line-break: strict;
+    overflow-wrap: break-word;
+    text-wrap: pretty;
+    -webkit-text-size-adjust: 100%;
+}
+
+a { color: var(--link); text-underline-offset: 3px; }
+a:hover { color: var(--link-hover); }
+
+/* ---- 以前の静的サイトは、部品の土台に BeerCSS を使っていた。BeerCSS の既定のうち、本文の見た目（間隔・リンク・コード）に効いていたものを、本文の中だけに同じ値で置く ----
+   - 前に兄弟がある見出し・段落・リスト・表・コード・セクションなどは、上に 1rem（本文の縦の間隔）
+   - リンクは inline-flex（行をまたいで折り返さず、1 つのまとまりにする）
+   - コードは 0.94rem・上下左右に 4px */
+.hero + .page-section,
+.page-section + .page-section {
+    margin-block-start: 1rem;
+}
+:is(.hero, .page-section, .doc-layout) > * + :is(address, article, blockquote, code, h1, h2, h3, h4, h5, h6, nav, ol, p, pre, section, aside, table, ul):not([class*="margin"]),
+:is(.hero, .page-section, .doc-layout) :not(nav) > * + :is(address, article, blockquote, code, h1, h2, h3, h4, h5, h6, nav, ol, p, pre, section, aside, table, ul):not([class*="margin"]) {
+    margin-block-start: 1rem;
+}
+:is(.hero, .page-section, .doc-layout) a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+/* ただし、カード全体のリンク（.link-card）は、中身を上から左揃えで並べる（inline-flex の中央寄せが効くと、短い題名だけが中央に寄る）。
+   本文中のリンク（.prose）は、長くても行をまたいで折り返せるように、ふつうのインラインのままにする */
+:is(.hero, .page-section, .doc-layout) a.link-card {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+}
+:is(.hero, .page-section, .doc-layout) .prose a { display: inline; }
+:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 4px; }
+[hidden] { display: none !important; }
+
+p { margin: 0 0 0.9rem; }
+h1, h2, h3, h4 { color: var(--on-surface); font-weight: 700; }
+
+/* ---- 画面の枠（kit のレイアウトの上に重ねる） ---- */
+/* 本文は、ページ全体が画面の高さに収まり、.fbc-content の中だけがスクロールする（kit の既定。フッターは画面の下に固定）。
+   見出しへのジャンプ（#見出し）は、このスクロールの枠が基準 */
+.fbc-content { scroll-behavior: smooth; scroll-padding-top: 16px; }
+
+/* ホーム・ドキュメント・更新履歴・プライバシーは、自分で余白を持つので、kit の本文の余白は付けない */
+.fbc-content:has(> .page-section, > .hero, > .doc-layout) { padding: 0; }
+
+/* フッターは、背景の飾りが透けないよう、面の色にする */
+.fbc-footer { background: var(--surface-container-low); }
+
+/* 背景の飾り: Twitch のチャットのような吹き出しが、ゆっくり浮かび上がる（js/bgscene.js が canvas に描く。画面の後ろに固定） */
+#site-scene {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+}
+/* 本文（ホームの各節・ドキュメント）の後ろには、ほぼ不透明な面を敷いて、吹き出しが文字に重ならないようにする。
+   吹き出しは、ヒーローの文字の外側と、本文の外側（広い画面の左右）にだけ見える（ヒーローの文字の面は .hero-inner） */
+.page-section,
+.doc-layout {
+    background: color-mix(in srgb, var(--surface) 94%, transparent);
+}
+
+/* Blazor の致命的なエラーの帯（index.html の #blazor-error-ui） */
+#blazor-error-ui {
+    display: none;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 2147483001;
+    padding: 0.6rem 1.25rem 0.7rem;
+    background: #ffffe0;
+    color: #121933;
+    box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
+}
+#blazor-error-ui .dismiss { position: absolute; right: 0.75rem; top: 0.5rem; cursor: pointer; }
+
+@media (prefers-reduced-motion: reduce) {
+    .fbc-content { scroll-behavior: auto; }
+}
+
+/* ---- 共通パーツ ---- */
+.page-section {
+    width: 100%;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 48px 20px 40px;
+}
+.page-section.narrow { max-width: 720px; }
+/* 節の最初の見出しは、上の余白を付けない（節の padding だけにする。ヒーローの下が空きすぎないように） */
+.page-section > h2:first-child { margin-top: 0; }
+/* 長文（プライバシーポリシー・更新履歴）は、PC では少し広げる（スマホは今のまま。問い合わせは、フォームの幅のまま） */
+@media (min-width: 900px) {
+    /* 長文（プライバシーポリシー）は 1 段組で 56rem（1 行 約 50 字。行が長くなりすぎないように）。更新履歴も 52rem */
+    .page-section.narrow.policy { max-width: 56rem; }
+    .page-section.narrow.changelog-page { max-width: 52rem; }
+}
+.page-section h1 { font-size: 2.1rem; margin: 0 0 12px; line-height: 1.3; font-weight: 800; }
+.page-section h2 {
+    font-size: 1.45rem;
+    margin: 44px 0 16px;
+    line-height: 1.35;
+    font-weight: 700;
+}
+.page-section .note { color: var(--on-surface-variant); font-size: 0.9rem; }
+.lead { font-size: 1.08rem; color: var(--on-surface-variant); }
+
+/* 必須・任意のラベル（色だけに頼らない: 文字で「必須」「任意」と書き、必須は塗りつぶし、任意は枠線だけにする）。文字は本文の中に置く（スクリーンリーダー・静的な HTML・検索に出る） */
+.page-section .req-badge {
+    display: inline-block;
+    padding: 0 0.7em;
+    border: 1.5px solid var(--primary);
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    line-height: 1.6;
+    white-space: nowrap;
+}
+.page-section .req-must { background: var(--primary); color: var(--on-primary); }
+.page-section .req-opt { background: transparent; border-color: var(--outline); color: var(--on-surface-variant); }
+.req-list { list-style: none; margin: 0; padding: 0; }
+.req-list > li { display: flex; align-items: baseline; gap: 0.75em; margin: 0 0 8px; }
+.page-section .req-list .req-badge { flex: none; min-width: 3.4em; text-align: center; }
+.nowrap { white-space: nowrap; }
+
+.button-row { display: flex; flex-wrap: wrap; gap: 12px; margin: 24px 0 0; }
+/* ボタン（塗りつぶしの .button と、枠線の .button.border）。以前は BeerCSS の部品。形・寸法は同じ値で作り直した */
+.button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    block-size: 2.5rem;
+    padding: 0 24px;
+    border: 0;
+    border-radius: 1.25rem;
+    box-sizing: content-box;
+    font: inherit;
+    font-size: 0.95rem;
+    font-weight: 700;
+    line-height: normal;
+    text-decoration: none;
+    cursor: pointer;
+    color: var(--on-primary);
+    background: var(--primary);
+}
+.button:hover { color: var(--on-primary); filter: brightness(1.06); }
+.button.border { box-sizing: border-box; background: transparent; color: var(--primary); border: 0.0625rem solid var(--outline); }
+.button.border:hover { color: var(--primary); background: var(--surface-container-high); filter: none; }
+
+/* ---- トップ ---- */
+.hero {
+    padding: 72px 20px 56px;
+    text-align: center;
+    background: linear-gradient(180deg, var(--glow-1), transparent);
+    border-bottom: 1px solid var(--outline-variant);
+}
+/* 文字の領域（見出し・説明・ボタン・注記）の後ろには、ほぼ不透明な面を敷く。背景の吹き出しが文字に重ならないようにするため（.page-section と同じ考え方） */
+.hero-inner {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 28px 32px;
+    border-radius: var(--shape-m);
+    background: color-mix(in srgb, var(--surface) 90%, transparent);
+}
+.eyebrow {
+    display: inline-block;
+    margin: 0 0 14px;
+    padding: 5px 14px;
+    border-radius: 999px;
+    background: var(--secondary-container);
+    color: var(--on-secondary-container);
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+.hero h1 {
+    margin: 0 0 16px;
+    /* 360px 幅でも、「FaraBotModerator」が単語の途中で折れない大きさにする（最小 1.9rem） */
+    font-size: clamp(1.9rem, 6vw, 3.4rem);
+    line-height: 1.2;
+    font-weight: 800;
+    color: var(--on-surface);
+    overflow-wrap: anywhere;
+}
+.hero .button-row { justify-content: center; }
+.hero-note { margin: 20px 0 0; font-size: 0.88rem; color: var(--on-surface-variant); }
+
+.card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+/* 前に兄弟があるカード（article）には、本文の上の間隔（上に 1rem）の規則が当たるため、グリッドの中では打ち消す。
+   詳細度は (0,3,0) にする（その規則は (0,2,2)）。打ち消さないと、2 枚目以降だけ 16px 下がり、行の上端がそろわない */
+.page-section .card-grid > .card { margin-block-start: 0; }
+.card {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 0;
+    padding: 20px;
+    border-radius: var(--shape-m);
+    background: var(--surface-container-low);
+    color: var(--on-surface);
+    box-shadow: none;
+}
+.card h3 { margin: 0; font-size: 1.1rem; font-weight: 700; line-height: normal; }
+.card p { margin: 0; color: var(--on-surface-variant); font-size: 0.94rem; line-height: 1.7; flex: 1; }
+.card > a { margin-top: 6px; font-size: 0.9rem; font-weight: 600; }
+.card.highlight { background: var(--primary-container); border-color: transparent; }
+.card.highlight h3, .card.highlight p, .card.highlight code { color: var(--on-primary-container); }
+.card.highlight code { background: var(--surface-container-lowest); }
+.link-card { text-decoration: none; color: inherit; transition: background-color 0.15s ease; }
+.link-card:hover { background: var(--surface-container-high); color: inherit; }
+.link-card:hover h3 { color: var(--primary); }
+
+.steps { counter-reset: step; list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.steps li {
+    counter-increment: step;
+    position: relative;
+    margin: 0;
+    padding: 14px 16px 14px 62px;
+    background: var(--surface-container-low);
+    border-radius: var(--shape-m);
+    display: flex;
+    flex-direction: column;
+}
+.steps li::before {
+    content: counter(step);
+    position: absolute;
+    left: 16px;
+    top: 14px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--primary);
+    color: var(--on-primary);
+    font-weight: 700;
+    display: grid;
+    place-items: center;
+}
+.steps span { color: var(--on-surface-variant); font-size: 0.94rem; }
+.link-list { padding-left: 1.2em; }
+
+/* コードのまとまり・文中のコード */
+code {
+    font-family: monospace;
+    font-size: 0.94rem;
+    line-height: inherit;
+    padding: 0.25rem;
+    border-radius: 0;
+    white-space: pre-wrap;
+    background: var(--surface-container-highest);
+    color: var(--on-surface);
+}
+.prose pre, .code-sample {
+    margin: 0 0 18px;
+    padding: 16px 18px;
+    background: var(--surface-container-low);
+    color: var(--on-surface);
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--shape-m);
+    overflow-x: auto;
+    line-height: 1.7;
+    white-space: pre;
+}
+.prose pre code, .code-sample code { padding: 0; border: 0; background: none; font-size: 0.9rem; overflow-wrap: normal; white-space: pre; }
+
+/* ---- ドキュメント ---- */
+.doc-layout {
+    width: 100%;
+    max-width: 72rem;
+    margin: 0 auto;
+    padding: 32px 20px 56px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 220px;
+    gap: 40px;
+    align-items: start;
+}
+/* 目次は、本文のスクロール（.fbc-content）の中で上に貼りつく。高さは、画面からヘッダーとフッターを引いた分 */
+.doc-toc { position: sticky; top: 20px; max-height: calc(100vh - 3.5rem - 40px - var(--footer-h)); overflow: auto; }
+.doc-nav-title { margin: 0 0 6px; font-size: 0.78rem; letter-spacing: 0.08em; color: var(--on-surface-variant); font-weight: 700; }
+.doc-toc ul { list-style: none; margin: 0; padding: 0; }
+.doc-toc li { display: block; margin: 0; }
+.doc-toc a {
+    display: block;
+    padding: 5px 12px;
+    border-radius: 999px;
+    color: var(--on-surface-variant);
+    text-decoration: none;
+    font-size: 0.92rem;
+    line-height: 1.5;
+}
+.doc-toc a:hover { background: var(--surface-container-high); color: var(--on-surface); }
+.doc-toc .sub a { padding-left: 24px; font-size: 0.86rem; }
+
+/* 本文の先頭の見出し一覧（pages.json の inlineToc。1 ページに多くの節を載せるページ用）。スマホでは右の目次が出ないので、これが目次になる */
+.doc-layout .inline-toc {
+    margin: 20px 0 8px;
+    padding: 14px 16px;
+    border: 1px solid var(--outline-variant);
+    border-radius: 12px;
+    background: var(--surface-container);
+}
+.doc-layout .inline-toc ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: 0 12px; }
+.doc-layout .inline-toc li { margin: 0; }
+.doc-layout .inline-toc a {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    text-align: left;
+    min-height: 44px;
+    padding: 4px 12px;
+    border-radius: 999px;
+    color: var(--on-surface-variant);
+    text-decoration: none;
+    font-size: 0.92rem;
+    line-height: 1.5;
+}
+.doc-layout .inline-toc a:hover { background: var(--surface-container-high); color: var(--on-surface); }
+
+.doc-main { min-width: 0; }
+.breadcrumb { margin: 0 0 8px; font-size: 0.85rem; color: var(--on-surface-variant); }
+.breadcrumb > span[aria-hidden="true"] { margin-inline: 0.4em; }
+.doc-main h1 { margin: 0 0 8px; font-size: 2.05rem; line-height: 1.3; font-weight: 800; }
+.doc-description { margin: 0 0 28px; color: var(--on-surface-variant); }
+
+.prose h2 {
+    font-size: 1.5rem;
+    margin: 44px 0 14px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--outline-variant);
+    line-height: 1.4;
+}
+.prose h3 { font-size: 1.2rem; margin: 32px 0 10px; line-height: 1.45; }
+.prose h4 { font-size: 1.05rem; margin: 24px 0 8px; }
+/* 「含まれるページ」の見出し。本文の h2（.prose h2）と同じ大きさにして、ページの題名（h1）より大きくならないようにする */
+.child-pages h2 { font-size: 1.5rem; line-height: 1.4; margin: 44px 0 14px; }
+.prose { overflow-wrap: break-word; }
+.prose p { margin: 0 0 14px; }
+.prose ul, .prose ol { margin: 0 0 16px; padding-left: 1.5em; }
+.prose li { margin: 4px 0; }
+.prose li > ul, .prose li > ol { margin: 4px 0; }
+.prose code { font-family: var(--font-mono); font-size: 0.88em; padding: 2px 6px; border-radius: 6px; overflow-wrap: anywhere; }
+.prose td:first-child code { overflow-wrap: break-word; }
+.table-wrap { overflow-x: auto; margin: 0 0 18px; border: 1px solid var(--outline-variant); border-radius: var(--shape-m); }
+.prose table { width: 100%; border-collapse: collapse; font-size: 0.93rem; }
+.prose th, .prose td { padding: 10px 14px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--outline-variant); }
+.prose th { background: var(--surface-container-high); white-space: nowrap; }
+.prose tr:last-child td { border-bottom: 0; }
+.prose td { min-width: 8em; }
+.prose blockquote { margin: 0 0 16px; padding: 4px 16px; border-radius: 0; border-inline-start: 4px solid var(--primary); color: var(--on-surface-variant); background: none; }
+.prose hr { border: 0; border-top: 1px solid var(--outline-variant); margin: 28px 0; }
+
+.doc-pager { display: flex; gap: 16px; margin-top: 56px; flex-wrap: wrap; white-space: nowrap; }
+.doc-pager a {
+    flex: 1 1 240px;
+    display: flex;
+    flex-direction: column;
+    padding: 14px 18px;
+    background: var(--surface-container-low);
+    border-radius: var(--shape-m);
+    text-decoration: none;
+    color: var(--on-surface);
+}
+.doc-pager a:hover { background: var(--surface-container-high); }
+.doc-pager a { white-space: normal; }
+.doc-pager small { color: var(--on-surface-variant); }
+.pager-next { text-align: right; margin-left: auto; }
+
+/* ---- 更新履歴（ホームは新しい数件の見出しだけ、/changelog は細かい内容まで） ---- */
+.changelog-date { font-size: 0.78rem; color: var(--on-surface-variant); font-variant-numeric: tabular-nums; margin-right: 0.35rem; }
+.changelog-entry .changelog-date { display: block; margin: 0 0 4px; }
+.changelog-recent { list-style: none; margin: 0 0 8px; padding: 0; }
+.changelog-recent li { padding: 3px 0; }
+.changelog-entry { padding: 0; margin-bottom: 20px; border-bottom: 1px solid var(--outline-variant); }
+.changelog-entry h2 { margin: 0 0 8px; font-size: 1.15rem; }
+.changelog-entry ul { margin: 0; padding-left: 1.2rem; color: var(--on-surface-variant); font-size: 0.94rem; line-height: 1.7; }
+
+/* ---- プライバシーポリシー ---- */
+/* 1 段組（PC でも 56rem まで）。「このサイト」と「アプリ」の 2 つの節は、見出し（.policy-part-title）で区切る。
+   段落・リスト・見出しの間隔は、このページの中だけで整える。表は、幅が足りないとき（.policy の幅が 40rem 未満）に 1 行ずつのカードにして、横にスクロールさせない */
+.policy { container-type: inline-size; }
+.policy p, .policy ul { line-height: 1.85; }
+.policy ul { margin: 0 0 14px; padding-left: 1.4em; list-style: disc; }
+.policy li + li { margin-top: 6px; }
+.policy .policy-dates { margin-bottom: 4px; }
+.policy h2 {
+    font-size: 1.3rem;
+    margin: 40px 0 12px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--outline-variant);
+}
+.policy h2.policy-part-title {
+    font-size: 1.5rem;
+    margin: 64px 0 8px;
+    padding: 12px 16px;
+    border: 0;
+    border-inline-start: 5px solid var(--primary);
+    border-radius: 0 var(--shape-s) var(--shape-s) 0;
+    background: var(--surface-container-low);
+}
+.policy h3 { font-size: 1.12rem; margin: 32px 0 10px; line-height: 1.5; }
+.policy h4 { font-size: 1rem; margin: 20px 0 6px; line-height: 1.5; color: var(--on-surface-variant); }
+.policy a { display: inline; text-decoration: underline; }
+.policy .note { line-height: 1.8; }
+/* 冒頭の説明ページへのリンクは、押せる範囲を 44px 以上にして横に並べる */
+.policy .policy-links { display: flex; flex-wrap: wrap; gap: 0 12px; margin: 0 0 8px; padding: 0; list-style: none; }
+.policy .policy-links li { margin: 0; }
+.policy .policy-links a { display: inline-block; min-width: 44px; min-height: 44px; line-height: 44px; }
+.policy a:hover { text-decoration-thickness: 2px; }
+.policy code { font-family: var(--font-mono); font-size: 0.88em; padding: 2px 6px; border-radius: 6px; overflow-wrap: anywhere; }
+.policy .prose { margin-bottom: 8px; }
+.policy .prose tbody th { background: none; white-space: normal; font-weight: 700; width: 22%; }
+.policy .prose tbody tr:nth-child(even) { background: var(--surface-container-low); }
+.policy .prose tbody tr:last-child th { border-bottom: 0; }
+.policy .twitch-scopes tbody th { width: 40%; }
+@container (max-width: 40rem) {
+    .policy .table-wrap { border: 0; border-radius: 0; overflow: visible; }
+    .policy .prose table, .policy .prose tbody, .policy .prose tr, .policy .prose th, .policy .prose td { display: block; }
+    .policy .prose thead { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); }
+    .policy .prose tbody tr { margin-bottom: 12px; border: 1px solid var(--outline-variant); border-radius: var(--shape-s); overflow: hidden; }
+    .policy .prose tbody tr:nth-child(even) { background: none; }
+    .policy .prose th, .policy .prose td { border: 0; padding: 6px 14px; min-width: 0; }
+    .policy .prose tbody th, .policy .twitch-scopes tbody th { width: auto; padding-top: 10px; padding-bottom: 8px; background: var(--surface-container-high); border-bottom: 1px solid var(--outline-variant); }
+    .policy .prose td::before { content: attr(data-label); display: block; color: var(--on-surface-variant); font-size: 0.8rem; line-height: 1.5; }
+    .policy .prose td:last-child { padding-bottom: 10px; }
+}
+
+/* ---- 問い合わせ ---- */
+.report-github-note { margin-top: 0.75rem; margin-bottom: 0; }
+
+/* ---- 狭い画面 ---- */
+@media (max-width: 1250px) {
+    .doc-layout { grid-template-columns: minmax(0, 1fr); }
+    .doc-toc { display: none; }
+}
+/* 本文の先頭の見出し一覧は、右の目次が出ない幅（1250px 以下）だけ。広い幅では右の目次だけ */
+@media (min-width: 1251px) {
+    .doc-layout .inline-toc { display: none; }
+}
+
+@media (max-width: 899.98px) {
+    .doc-layout { padding-top: 20px; }
+    /* 表は、狭い画面では文字を折り返して、横にはみ出さないようにする（はみ出すと、表の中で横にスクロールするだけで、右側が切れて見える）。
+       ここは .prose td の既定（8em）の後に読まれるよう、この位置に置く */
+    .prose th { white-space: normal; }
+    .prose td { min-width: 0; }
+    .hero { padding: 48px 20px 40px; }
+    /* 狭い画面では、面の中の左右の余白を小さくして、見出しの幅を残す（360px でも h1 が語の途中で折れないように） */
+    .hero-inner { padding: 20px 14px; }
+    .page-section { padding-top: 32px; }
+    .doc-main h1, .page-section h1 { font-size: 1.65rem; }
+    .pager-next { margin-left: 0; text-align: left; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .button, .link-card { transition: none; }
+}
+
+/* お知らせの帯が出ているときは、目次の高さを帯の分だけ縮める */
+html:has(.fbc-notice) .doc-toc { max-height: calc(100vh - 3.5rem - var(--notice-h) - 40px - var(--footer-h)); }
+
+/* ---- サイドメニュー（NavMenu.razor） ---- */
+/* 子ページ（親の下に入れ子で出す）は、段ごとに字下げして、少し小さく（MudNavLink の class は、項目の外側の div に付く） */
+.fbc-sidebar .site-nav-child .mud-nav-link { font-size: 0.85rem; }
+.fbc-sidebar .site-nav-depth-1 .mud-nav-link { padding-left: calc(1rem + 1.15rem); }
+.fbc-sidebar .site-nav-depth-2 .mud-nav-link { padding-left: calc(1rem + 1.85rem); }
+.fbc-sidebar .site-nav-depth-3 .mud-nav-link { padding-left: calc(1rem + 2.55rem); }
+.side-settings { padding: 0.75rem 0.75rem 0.25rem; }
+
+/* ---- 検索欄（SiteSearch.razor）。PC はヘッダー、スマホは検索ボタンで開く欄の中。ヘッダーの暗い背景に合わせた半透明の欄 ---- */
+.site-search { position: relative; }
+.fbc-header .site-search { flex: 1 1 360px; max-width: 560px; margin-left: auto; }
+.fbc-search-sheet .site-search-sheet { position: static; }
+.site-search-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    width: 18px;
+    height: 18px;
+    margin-top: -9px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    color: var(--chrome-text-muted);
+    pointer-events: none;
+}
+.site-search-input {
+    width: 100%;
+    height: 44px;
+    padding: 0 76px 0 42px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+    font: inherit;
+    font-size: 0.95rem;
+}
+.site-search-input::placeholder { color: var(--chrome-text-muted); }
+.site-search-input:focus { outline: none; border-color: var(--chrome-accent); background: rgba(255, 255, 255, 0.14); }
+.site-search-input::-webkit-search-cancel-button { display: none; }
+.site-search-hint { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); display: flex; gap: 4px; pointer-events: none; }
+.site-search:focus-within .site-search-hint { opacity: 0; }
+.site-search-hint kbd {
+    padding: 1px 6px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 5px;
+    background: transparent;
+    color: var(--chrome-text-soft);
+    font: inherit;
+    font-size: 0.75rem;   /* 12px 以上（レビュー: 11.5px は小さすぎる） */
+}
+.site-search-close {
+    position: absolute;
+    right: 4px;
+    top: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    margin-top: -22px;
+    padding: 0;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--chrome-text-soft);
+    cursor: pointer;
+}
+.site-search-close svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.site-search-close:hover { background: rgba(255, 255, 255, 0.12); }
+
+.site-search-list {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    right: 0;
+    min-width: min(520px, 90vw);
+    z-index: 1060;
+    max-height: min(70vh, 560px);
+    overflow-y: auto;
+    padding: 6px;
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--shape-m);
+    background: var(--surface-container);
+    color: var(--on-surface);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.3);
+}
+.site-search-list[hidden] { display: none; }
+.site-search-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 9px 12px;
+    border-radius: var(--shape-s);
+    color: var(--on-surface);
+    text-decoration: none;
+    line-height: 1.5;
+}
+.site-search-item:hover,
+.site-search-item.is-active { background: var(--surface-container-high); color: var(--on-surface); }
+.site-search-title { font-weight: 700; font-size: 0.95rem; }
+.site-search-badge {
+    margin-left: 8px;
+    padding: 0 8px;
+    border-radius: 999px;
+    background: var(--secondary-container);
+    color: var(--on-secondary-container);
+    font-size: 0.7rem;
+    font-weight: 400;
+}
+.site-search-where { color: var(--on-surface-variant); font-size: 0.78rem; }
+.site-search-reading { display: block; margin-top: 1px; color: var(--on-surface-variant); font-size: 0.74rem; }
+.site-search-snippet { color: var(--on-surface-variant); font-size: 0.82rem; overflow-wrap: anywhere; }
+.site-search-list mark { background: rgba(250, 204, 21, 0.35); color: inherit; border-radius: 3px; padding: 0 1px; }
+.site-search-empty,
+.site-search-more { padding: 12px; color: var(--on-surface-variant); font-size: 0.88rem; }
+
+@media (max-width: 767.98px) {
+    html.fbc-search-open .fbc-search-sheet {
+        padding: 8px 56px 8px 12px;
+        background: var(--chrome-bg);
+        border-bottom: 1px solid rgba(160, 180, 255, 0.14);
+        box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+    }
+    .site-search-sheet .site-search-input { height: 44px; padding: 0 12px 0 38px; font-size: 1rem; }   /* 16px 未満だと、iOS は入力のとき拡大する */
+    .site-search-sheet .site-search-list { left: 12px; right: 12px; min-width: 0; max-height: calc(100vh - 9.5rem); }
+}
+@media (min-width: 768px) and (max-width: 1199.98px) {
+    .site-search-hint { display: none; }
+}
+
+/* ---- キーボードのフォーカス枠（MudBlazor が outline: none にしているので、詳細度を上げて出す） ---- */
+/* 暗い地色（ヘッダー・左のメニュー）の上は #c4a5ff（ライトでも暗い地色なので見える色で固定） */
+html body .fbc-header :is(a, button):focus-visible,
+html body .fbc-sidebar :is(a, button):focus-visible,
+html body .fbc-skip-link:focus-visible {
+    outline: 2px solid var(--chrome-focus);
+    outline-offset: 2px;
+}
+/* 左のメニューの項目は、ドロワーの端で枠が切れないように内側に描く */
+html body .fbc-sidebar .mud-nav-link:focus-visible {
+    outline-offset: -2px;
+}
+/* 本文の部品（主要ボタン・カードのリンク・本文のリンク）。本文の色（ライトは紫、ダークは明るい紫）に合わせる */
+html body a:focus-visible,
+html body button:focus-visible,
+html body .mud-button-root:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+/* 検索欄（.site-search-input は :focus で枠を消しているので、キーボードのときだけ枠を出す。kit の検索欄に枠が入るまでの暫定。
+   色はヘッダーの他のフォーカス枠と同じ #c4a5ff（ヘッダーは暗い地色）） */
+html body .site-search-input:focus-visible {
+    outline: 2px solid var(--chrome-focus);
+    outline-offset: 2px;
+}
+
+/* ---- 押せる大きさ（44px 以上）。見た目の幅・色は変えず、高さ（と幅）の下限だけを足す。幅によらず効かせる（768px 以上の左のメニューも含む） ---- */
+.fbc-menu-toggle,
+.fbc-search-toggle { min-width: 44px; min-height: 44px; }
+.fbc-sidebar .mud-nav-link { min-height: 44px; display: flex; align-items: center; }
+.fbc-theme-switch { min-height: 44px; display: inline-flex; align-items: center; }
+.fbc-theme-switch .mud-switch { min-height: 44px; }
+.site-search-input { height: 44px; }
+.button { min-block-size: 2.75rem; }
+.card > a,
+.link-list a,
+.page-section > p > a { min-height: 44px; display: inline-flex; align-items: center; }
+/* フッターの文字リンク（600px 以上）。スマホ（600px 未満）は kit の ::after（44px の当たり判定）に任せ、行の高さを詰める（高さを 44px にすると、2 段のフッターが約 140px になる） */
+@media (min-width: 600px) {
+    .fbc-footer a:not(.fbc-footer-social) { min-height: 44px; display: inline-flex; align-items: center; }
+}
+.fbc-header .mud-icon-button { min-width: 44px; min-height: 44px; }
+/* 左のメニューの「現在のページ」: MudBlazor の既定（テーマの主色 #6d28d9）は暗い地色の上で 2.6:1 しかないので、明るい紫にする */
+html body .fbc-sidebar .mud-nav-link.active .mud-nav-link-text { color: var(--chrome-active); }
+
+/* ---- スマホ（600px 以下）の操作の大きさ（指で押せるように 44px 以上）。見た目の幅・色は変えず、高さの下限だけを足す ---- */
+@media (max-width: 600px) {
+    .button { min-block-size: 2.75rem; }
+    .side-settings .mud-button-root { min-height: 44px; }
+    .breadcrumb a,
+    .card > a,
+    .link-list a,
+    .page-section > p > a { min-height: 44px; display: inline-flex; align-items: center; }
+    /* 表のセルの中のリンク（Beat Saber の表の「Releases」など。文字が横にあっても、表のセルは文中のリンクから外れない）。
+       見た目（行の高さ・文字の位置）は変えず、押せる範囲だけを 44px 以上にする（上下の余白を足し、負の margin で打ち消す） */
+    .prose td a,
+    .prose th a { display: inline-block; padding-block: 12px; margin-block: -12px; }
+}
+
+/* ---- 表の中のコマンド（狭い幅では、長い英数字をどこでも折れるようにして、字を少し小さくする） ---- */
+.prose table code { overflow-wrap: anywhere; }
+@media (max-width: 479.98px) {
+    .prose table code { font-size: 0.82em; }
+    /* コードの例（pre）は、横にスクロールすると右側が切れて見える（スクロールバーも出ない）ので、狭い画面では折り返す */
+    .prose pre, .code-sample { white-space: pre-wrap; overflow-wrap: anywhere; }
+    .prose pre code, .code-sample code { white-space: pre-wrap; overflow-wrap: anywhere; }
+}
+
+/* ---- 問い合わせフォーム（kit の部品）。レイアウト計測（layout-check）の指摘を直す ----
+   入力欄は MudBlazor が outline:0 にする（.mud-input > input:focus など）。その規則に負けない詳細度で、フォーカス中の枠を出す（色は kit の --fbc-focus）。
+   送信ボタンは高さ 48px（タップの大きさ。44px ちょうどだと、判定の端が隣の要素に当たるため）。 */
+html :is(input, textarea).mud-input-slot.mud-input-root:is(:focus, :focus-visible) { outline: 2px solid var(--fbc-focus); outline-offset: 2px; }
+.fbc-report-submit { min-height: 48px; }
+
+/* ---- ドキュメントの読みやすさ（文章が続くページを、区切り・囲み・手順・表で見やすくする） ----
+   本文（.prose）は Manual.md から作る。ここは見た目だけで、文章は変えない。
+   - 1 行の長さ: 文章・箇条書き・囲みは 46rem（全角 46 文字ほど）まで。表・コードは本文の幅いっぱい
+   - 節の区切り: h2 は左の太い線と下線、h3 は点線の下線（Manual.md の ##### の小見出しも、ページでは h3 になる。ContentBuilder の Extract が見出しの深さをそろえるため。h4 は使っていない）
+   - 長い項目のある箇条書き（ContentBuilder が long-list を付ける）は、項目ごとの面にして、文章の壁にしない
+   - 番号付きの手順は、番号の丸と間隔で「手順」に見せる
+   - 囲み（Manual.md の > [!NOTE] など。ContentBuilder が見出しを日本語にする）は、色に加えて「補足」「注意」の文字と記号で区別する */
+.prose { line-height: 1.85; }
+.prose :is(p, ul, ol, .markdown-alert) { max-width: 46rem; }
+
+.prose h2 {
+    margin: 60px 0 18px;
+    padding: 8px 0 8px 14px;
+    border-left: 5px solid var(--primary);
+    border-radius: 2px;
+}
+.prose > h2:first-child { margin-top: 12px; }
+.prose h3 {
+    margin: 44px 0 14px;
+    padding-bottom: 6px;
+    border-bottom: 1px dashed var(--outline-variant);
+}
+.prose p { margin: 0 0 16px; }
+
+.prose li { margin: 4px 0; }
+.prose li > p { margin: 0 0 8px; }
+.prose li > ul, .prose li > ol { margin: 6px 0 4px; }
+
+/* 長い項目のある箇条書き: 項目ごとの面 */
+.prose ul.long-list { list-style: none; padding: 0; }
+.prose ul.long-list > li {
+    margin: 0 0 8px;
+    padding: 9px 14px;
+    background: var(--surface-container-low);
+    border: 1px solid var(--outline-variant);
+    border-left: 4px solid var(--outline);
+    border-radius: var(--shape-s);
+}
+.prose ul.long-list > li > ul { list-style: disc; padding-left: 1.4em; }
+
+/* 番号付きの手順 */
+.prose ol { list-style: none; counter-reset: step; padding: 0; }
+.prose ol > li { counter-increment: step; position: relative; margin: 12px 0; padding-left: 2.75rem; min-height: 2rem; }
+.prose ol > li::before {
+    content: counter(step);
+    position: absolute;
+    left: 0;
+    top: 0.2rem;
+    width: 1.9rem;
+    height: 1.9rem;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--primary-container);
+    color: var(--on-primary-container);
+    font-size: 0.9rem;
+    font-weight: 700;
+    line-height: 1;
+}
+.prose ol > li > ul { list-style: disc; padding-left: 1.4em; }
+
+/* 囲み（補足・注意など）。--callout-c が種類の色（線と記号。文字はふつうの文字色のまま） */
+.prose .markdown-alert {
+    --callout-c: var(--callout-note);
+    margin: 22px 0;
+    padding: 12px 18px 6px;
+    border: 1px solid var(--callout-c);
+    border-left-width: 6px;
+    border-radius: var(--shape-s);
+    background: var(--surface-container-low);
+    line-height: 1.85;
+}
+.prose .markdown-alert-tip { --callout-c: var(--callout-tip); }
+.prose .markdown-alert-important { --callout-c: var(--callout-important); }
+.prose .markdown-alert-warning { --callout-c: var(--callout-warning); }
+.prose .markdown-alert-caution { --callout-c: var(--callout-caution); }
+.prose .markdown-alert-title {
+    margin: 0 0 6px;
+    font-weight: 800;
+    color: var(--on-surface);
+}
+.prose .markdown-alert-title svg { display: none; }
+.prose .markdown-alert-title::before {
+    content: "ⓘ";
+    margin-right: 0.45em;
+    color: var(--callout-c);
+    font-weight: 800;
+}
+.prose .markdown-alert-warning .markdown-alert-title::before,
+.prose .markdown-alert-caution .markdown-alert-title::before { content: "⚠"; }
+.prose .markdown-alert-tip .markdown-alert-title::before { content: "★"; }
+.prose .markdown-alert > :last-child { margin-bottom: 8px; }
+.prose .markdown-alert ul { margin-bottom: 8px; }
+
+/* コード（コマンドの例）。左の線で、本文と区別する */
+.prose pre { border-left: 4px solid var(--primary); }
+
+/* FAQ の質問（ContentBuilder が faq-q を付ける） */
+.prose :is(h2, h3).faq-q {
+    margin: 36px 0 12px;
+    padding: 10px 14px;
+    border: 0;
+    border-left: 5px solid var(--primary);
+    border-radius: 0 var(--shape-s) var(--shape-s) 0;
+    background: var(--surface-container);
+    font-size: 1.1rem;
+}
+
+/* 2 列の表（コマンド → 説明など）は、スマホでは縦に積む（左の列が細くなって、コードが縦に折れるのを避ける） */
+@media (max-width: 599.98px) {
+    .prose table.stack-sm, .prose table.stack-sm tbody, .prose table.stack-sm tr, .prose table.stack-sm td { display: block; }
+    /* 見出し行は消さず、「項目 ／ 項目」の 1 行の帯にする（ラベルと説明でない表でも、列の意味が分かる） */
+    .prose table.stack-sm thead { display: block; }
+    .prose table.stack-sm thead tr { background: var(--surface-container-high); }
+    .prose table.stack-sm thead th { display: inline; padding: 0; border: 0; background: none; font-size: 0.85rem; }
+    .prose table.stack-sm thead th + th::before { content: " ／ "; font-weight: 400; }
+    .prose table.stack-sm tr { padding: 10px 14px; border-bottom: 1px solid var(--outline-variant); }
+    .prose table.stack-sm tr:last-child { border-bottom: 0; }
+    .prose table.stack-sm td { padding: 0; border: 0; }
+    .prose table.stack-sm td:first-child { margin-bottom: 4px; font-weight: 700; }
+    .prose ul.long-list > li { padding: 8px 12px; }
+    .prose h2 { margin-top: 48px; font-size: 1.35rem; }
+    .prose .markdown-alert { padding-inline: 14px; }
+}

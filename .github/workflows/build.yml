@@ -1,0 +1,153 @@
+name: Build and test
+
+# FaraBotModerator のビルドとテスト。Pull Request と、develop・master への push で動く。公開はしない（Cloudflare のシークレットも使わない）。
+#   app  … アプリ本体（WPF。Windows でビルド）
+#   site … 紹介サイト（site/）
+# 公開は、deploy-develop.yml（develop → 確認用）と deploy.yml（master → 本番）がそれぞれ自分でビルドして行う。成果物（artifact）は保存しない。
+# fara-pokemon-battle-assistant と同じ形（build.yml / deploy-develop.yml / deploy.yml）。アプリのインストーラーのリリースは release-app.yml（タグ v* か手動実行）。
+
+on:
+  # PR の間は pull_request の 1 回だけ動かす（作業ブランチへの push では動かさない）。develop・master に入ったときは push で動く
+  push:
+    branches: [develop, master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  app:
+    name: Build app
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Restore
+        run: dotnet restore FaraBotModerator.csproj
+
+      - name: Build
+        run: dotnet build FaraBotModerator.csproj -c Release --no-restore
+
+      - name: Test (app unit tests)
+        run: dotnet test tests/FaraBotModerator.Tests/FaraBotModerator.Tests.csproj -c Release --nologo
+
+  site:
+    name: Build site
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Build
+        working-directory: site
+        run: dotnet build FaraBotModeratorSite.sln -c Release --nologo
+
+      - name: Test
+        working-directory: site
+        run: |
+          dotnet test tests/FaraBotModeratorSite.Content.Tests -c Release --no-build --nologo
+          dotnet test tests/FaraBotModeratorSite.Shared.Tests -c Release --no-build --nologo
+          dotnet test tests/FaraBotModeratorSite.Web.Tests -c Release --no-build --nologo
+
+      - name: Node tests (worker and page scripts)
+        working-directory: site
+        run: |
+          node --test worker/index.test.mjs tests/js/site-init.test.mjs
+          node --test ../external/fara-blazor-component/worker/report.test.mjs ../external/fara-blazor-component/worker/report-rate-limit.test.mjs ../external/fara-blazor-component/worker/maintenance.test.mjs
+
+      - name: Deploy gate test
+        run: |
+          node --test .github/scripts/require-maintenance.test.mjs
+          node --test .github/scripts/check-maintenance-message.test.mjs
+
+      # 公開物を、本番用と確認用の両方で作れること（公開のワークフローは、どちらか一方だけを作る）
+      - name: Build site (production)
+        working-directory: site
+        run: node tools/build-site.mjs --env production
+
+      - name: Build site (develop)
+        working-directory: site
+        run: node tools/build-site.mjs --env develop
+
+  # 配信中のサイトを、幅ごと（360〜1440px）に開いて、レイアウトの数値の崩れを見る（site/layout-check.config.mjs・docs/layout-check.md）。公開はしない
+  layout-check:
+    name: Layout check (site)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # kit の計測と、site の設定は、それぞれ自分の node_modules を見る（kit の依存は kit の中から読まれるため、kit でも npm ci する）
+      - name: Install (kit)
+        working-directory: external/fara-blazor-component
+        run: npm ci
+
+      - name: Install (site)
+        working-directory: site
+        run: npm ci
+
+      - name: Build site (production, publish/wwwroot)
+        working-directory: site
+        run: node tools/build-site.mjs --env production
+
+      - name: Install Chromium
+        working-directory: site
+        run: npx playwright-core install --with-deps chromium
+
+      - name: Layout check
+        working-directory: site
+        run: npm run layout-check
+
+  # ESLint（site/ の JS。対象と設定は site/eslint.config.mjs）。C# のアナライザーは、各ビルド（app・site）の中で動く（Directory.Build.props）
+  lint:
+    name: Lint (site JS)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install (kit)
+        working-directory: external/fara-blazor-component
+        run: npm ci
+
+      - name: Install (site)
+        working-directory: site
+        run: npm ci
+
+      - name: Lint
+        working-directory: site
+        run: npm run lint

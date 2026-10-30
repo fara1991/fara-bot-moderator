@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+
+  <!--
+    紹介サイトの本体（Blazor WebAssembly + MudBlazor。共通部品は external/fara-blazor-component）。
+    ページの部品は Pages、説明ページの中身（Manual.md から作った data/site.json）は Build が書き出す。
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>FaraBotModeratorSite.Web</RootNamespace>
+    <BlazorEnableCompression>false</BlazorEnableCompression>
+    <!-- ICU（文化依存の比較・書式）を載せない。検索は SearchText が自前でそろえる（string.Normalize に頼らない）ので、結果は変わらない -->
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.13" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.13" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FaraBotModeratorSite.Pages\FaraBotModeratorSite.Pages.csproj" />
+    <ProjectReference Include="..\FaraBotModeratorSite.Shared\FaraBotModeratorSite.Shared.csproj" />
+    <ProjectReference Include="..\..\..\external\fara-blazor-component\src\FaraBlazorComponent.Core\FaraBlazorComponent.Core.csproj" />
+    <ProjectReference Include="..\..\..\external\fara-blazor-component\src\FaraBlazorComponent.Razor\FaraBlazorComponent.Razor.csproj" />
+  </ItemGroup>
+
+</Project>

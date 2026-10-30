@@ -1,0 +1,19 @@
+{
+  "name": "fara-bot-moderator-site",
+  "private": true,
+  "type": "module",
+  "description": "紹介サイト（Blazor WebAssembly）の組み立てと Cloudflare Workers への公開用。wrangler のバージョンは固定。サイト本体は src/FaraBotModeratorSite.Web",
+  "scripts": {
+    "build:site": "node tools/build-site.mjs --env production",
+    "build:site:develop": "node tools/build-site.mjs --env develop",
+    "test:js": "node --test worker/index.test.mjs ../external/fara-blazor-component/worker/report.test.mjs ../external/fara-blazor-component/worker/report-rate-limit.test.mjs ../external/fara-blazor-component/worker/maintenance.test.mjs",
+    "layout-check": "node tools/run-layout-check.mjs",
+    "lint": "eslint ."
+  },
+  "devDependencies": {
+    "eslint": "10.13.0",
+    "globals": "17.13.0",
+    "playwright-core": "1.64.1",
+    "wrangler": "4.149.0"
+  }
+}

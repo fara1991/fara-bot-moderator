@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    ビルドツール（node build-pages の前に動かす）。Manual.md・Content/*.json から、次を書き出す:
+      - ブラウザが起動時に読む /data/site.json（説明ページの本文・更新履歴・検索の索引）
+      - fara-blazor-component の build-pages に渡す pages.json（ページごとの題名・説明・本文入りの静的 HTML）と site.json
+    静的 HTML の本文は、ブラウザと同じページの部品（Pages）を HtmlRenderer で描いて作る（文章が二重にならない）。
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>FaraBotModeratorSite.Build</RootNamespace>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FaraBotModeratorSite.Shared\FaraBotModeratorSite.Shared.csproj" />
+    <ProjectReference Include="..\FaraBotModeratorSite.Content\FaraBotModeratorSite.Content.csproj" />
+    <ProjectReference Include="..\FaraBotModeratorSite.Pages\FaraBotModeratorSite.Pages.csproj" />
+  </ItemGroup>
+
+</Project>
