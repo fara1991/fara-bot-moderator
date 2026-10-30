@@ -199,23 +199,47 @@ jobs:
           gh api --method POST "repos/$GITHUB_REPOSITORY/git/refs" -f ref="refs/tags/$VERSION" -f sha="$GITHUB_SHA"
           echo "Tag $VERSION created."
 
+      # Release の本文を組み立てる。docs/release-notes/<タグ>.md があればそれを先頭にし、無ければ見出しだけにする。後ろに共通のインストール方法・必要条件を足す。
+      # タグ名は式展開でスクリプトに埋め込まず、環境変数で受ける。ファイル名に使うので、形式（vX.Y.Z、任意で -prerelease）を、ここでも検査する
+      - name: Build release body
+        env:
+          VERSION: ${{ needs.build.outputs.version }}
+        run: |
+          if ! [[ "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]] || [[ "$VERSION" == *..* ]]; then
+            echo "::error::バージョンの形式が正しくありません: $VERSION"
+            exit 1
+          fi
+          notes="docs/release-notes/$VERSION.md"
+          {
+            if [ -f "$notes" ]; then
+              cat "$notes"
+              echo
+            else
+              echo "## FaraBotModerator $VERSION"
+              echo
+            fi
+            cat <<'COMMON'
+          ### インストール方法
+          1. `FaraBotModerator_Setup.exe` をダウンロード
+          2. インストーラーを実行
+          3. 画面の指示に従ってインストール
+
+          インストーラーは自己署名のため、Windows の SmartScreen の警告が出ることがあります。公式のこのページから入手したものであれば、「詳細情報」→「実行」で進めてください。
+
+          ### 必要条件
+          - Windows 10/11（x64）
+          - WebView2 ランタイム（無ければインストーラーが入れます）
+
+          .NET のランタイムは同梱されています。別にインストールする必要はありません。
+          COMMON
+          } > release-body.md
+
       - name: Create Release
         uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 # v0.1.15
         with:
           tag_name: ${{ needs.build.outputs.version }}
           name: FaraBotModerator ${{ needs.build.outputs.version }}
-          body: |
-            ## FaraBotModerator ${{ needs.build.outputs.version }}
-
-            ### インストール方法
-            1. `FaraBotModerator_Setup.exe` をダウンロード
-            2. インストーラーを実行
-            3. 画面の指示に従ってインストール
-
-            ### 必要条件
-            - Windows 10/11
-            - .NET ランタイムは同梱されています（別にインストールする必要はありません）
-            - WebView2 ランタイム（無ければインストーラーが入れます）
+          body_path: release-body.md
           files: |
             Releases/FaraBotModerator_Setup.exe
           draft: false
