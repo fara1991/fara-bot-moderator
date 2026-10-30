@@ -39,7 +39,7 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 
 [Files]
 ; 設定ファイル（Resources\secrets.json）は入れ直しで上書きしない。無ければアプリが初回起動時に作る
-Source: "..\bin\Release\net8.0-windows10.0.22621.0\publish\win-x64\*"; DestDir: "{app}"; Excludes: "Resources\secrets.json"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\bin\Release\net10.0-windows10.0.22621.0\publish\win-x64\*"; DestDir: "{app}"; Excludes: "Resources\secrets.json"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "..\Manual.md"; DestDir: "{app}"; Flags: ignoreversion
 Source: "WebView2RuntimeInstaller.exe"; DestDir: "{tmp}"; Flags: deleteafterinstall
 

@@ -9,7 +9,7 @@ param(
 Write-Host "Starting Build Process..." -ForegroundColor Cyan
 
 $projectName = "FaraBotModerator"
-$publishDir = "bin\Release\net8.0-windows10.0.22621.0\publish\win-x64"
+$publishDir = "bin\Release\net10.0-windows10.0.22621.0\publish\win-x64"
 
 if (-not $PackageOnly) {
     # 1. Clean and Publish
