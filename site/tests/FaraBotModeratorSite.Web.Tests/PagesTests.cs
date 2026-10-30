@@ -242,12 +242,12 @@ public class PagesTests
         var html = await RenderAsync<Download>();
         var text = Text(html);
         Assert.Contains($"href=\"{SiteInfo.ReleasesUrl}\"", html);
-        foreach (var fact in new[] { "FaraBotModerator_Setup.exe", "Windows 10 / 11（x64）", ".NET 8 ランタイム", "WebView2 ランタイム", "設定・認証情報・ログ" })
+        foreach (var fact in new[] { "FaraBotModerator_Setup.exe", "Windows 10 / 11（x64）", "WebView2 ランタイム", "設定・認証情報・ログ" })
             Assert.Contains(fact, text);
         foreach (var href in new[] { "/docs/overview", "/docs/main-settings", "/privacy" })
             Assert.Contains($"href=\"{href}\"", html);
         // 動作環境は、アプリの対象とリリースの設定と同じ（変わったらこのページも直す）
-        Assert.Contains("<TargetFramework>net8.0-windows", File.ReadAllText(FindUp("FaraBotModerator.csproj")));
+        Assert.Contains("<TargetFramework>net10.0-windows", File.ReadAllText(FindUp("FaraBotModerator.csproj")));
         Assert.Contains("FaraBotModerator_Setup.exe", File.ReadAllText(FindUp(".github/workflows/release-app.yml")));
     }
 
