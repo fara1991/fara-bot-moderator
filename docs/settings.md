@@ -5,11 +5,11 @@
 ## 目次
 
 - [棒読みちゃん連携](#棒読みちゃん連携)
-- [リアクションイベント（Reaction Event Settings）](#リアクションイベントreaction-event-settings)
-- [翻訳（Translate）](#翻訳translate)
-- [ゲーム設定（Game）](#ゲーム設定game)
-- [タイマー（Timer）](#タイマーtimer)
-- [ウィンドウ設定（Windows Settings）](#ウィンドウ設定windows-settings)
+- [リアクションイベント](#リアクションイベント)
+- [翻訳](#翻訳)
+- [ゲーム設定](#ゲーム設定)
+- [タイマー](#タイマー)
+- [ウィンドウ設定](#ウィンドウ設定)
 
 ## 棒読みちゃん連携
 
@@ -22,7 +22,7 @@
 > [!NOTE]
 > Twitch に接続する前に、棒読みちゃんを起動しておいてください。
 
-## リアクションイベント（Reaction Event Settings）
+## リアクションイベント
 
 「Reaction Event Settings」タブでは、Twitch のイベントが起きたときに自動で送るメッセージを設定します。
 
@@ -73,7 +73,7 @@ Subscription: {subscriberName}さん、{totalSubscriptionMonth}ヶ月目のサ�
 Bits: {bitsSendUserName}さん、{bitsAmount}ビッツありがとうございます！
 ```
 
-## 翻訳（Translate）
+## 翻訳
 
 「Auto Bot Settings」タブの「Translate」タブで、DeepL API を使った自動翻訳を設定します。
 
@@ -95,7 +95,7 @@ Bits: {bitsSendUserName}さん、{bitsAmount}ビッツありがとうござい�
 - 翻訳結果をチャットに送信します。
 - `!poke` 系コマンドは、翻訳・読み上げの対象外です。
 
-## ゲーム設定（Game）
+## ゲーム設定
 
 「Auto Bot Settings」タブの「Game」タブで、ゲームごとの設定をします。上の選択欄でゲームを選ぶと、そのゲームの設定が表示されます。「初期化」ボタンで、選んでいるゲームの設定を初期値に戻せます。
 
@@ -107,7 +107,7 @@ Bits: {bitsSendUserName}さん、{bitsAmount}ビッツありがとうござい�
 - Beat Saber の変換パターンは、[Beat Saber のコマンド](beatsaber.md#曲リクエストbsr) を見てください。
 - ポケモンシリーズの設定は、[ポケモンのコマンド](pokemon.md#設定画面) を見てください。
 
-## タイマー（Timer）
+## タイマー
 
 「Auto Bot Settings」タブの「Timer」タブで、定期的または指定した時刻にメッセージを自動で送ります。
 
@@ -142,7 +142,7 @@ Bits: {bitsSendUserName}さん、{bitsAmount}ビッツありがとうござい�
 - イベント開始告知
 - 特定時刻のお知らせ
 
-## ウィンドウ設定（Windows Settings）
+## ウィンドウ設定
 
 「Windows Settings」タブで、補助ウィンドウを開きます。
 

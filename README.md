@@ -4,7 +4,9 @@ Twitch 配信者向けの Windows 用チャットボットです。チャット�
 
 ## ダウンロード
 
-[最新版（GitHub Releases）](https://github.com/fara1991/fara-bot-moderator/releases/latest) から `FaraBotModerator_Setup.exe` をダウンロードして実行してください。
+[GitHub Releases の最新版](https://github.com/fara1991/fara-bot-moderator/releases/latest) から `FaraBotModerator_Setup.exe` をダウンロードして実行してください。
+
+## 動作環境
 
 - Windows 10 / 11（x64）
 - .NET 8.0 ランタイム
@@ -29,7 +31,6 @@ Twitch 配信者向けの Windows 用チャットボットです。チャット�
 | 各設定（イベント・翻訳・タイマーなど） | [settings.md](docs/settings.md) |
 | よくある質問 | [faq.md](docs/faq.md) |
 | 困ったとき | [troubleshooting.md](docs/troubleshooting.md) |
-| プライバシーポリシー | [PRIVACY.md](PRIVACY.md) |
 | 操作説明書（全文） | [Manual.md](Manual.md) |
 | 開発者向け（ビルド方法など） | [development.md](docs/development.md) |
 

@@ -42,9 +42,9 @@
 | コマンド | 説明 | 例 | 使える人 |
 |---|---|---|---|
 | `!bsr XXX` | 曲をリクエスト（外部のソングリクエスト用ボットが処理） | `!bsr XXX` | 記載なし |
-| `!bomb [位置]` | 爆弾を 1 個出す（1〜12。省くとランダム） | `!bomb 5` | 記載なし |
-| `!bombline [位置]` | 同じ位置に、爆弾を 5 個の列にして出す | `!bombline 3` | 記載なし |
-| `!bombreset [位置]` | 上段か下段の 4 か所に、同時に爆弾を出す | `!bombreset 9` | 記載なし |
+| `!bomb [位置]` | 爆弾を 1 個出す（FaraBombRush の場合: 1〜12。省くとランダム） | `!bomb 5` | 記載なし |
+| `!bombline [位置]` | 同じ位置に、爆弾を 5 個の列にして出す（FaraBombRush の場合） | `!bombline 3` | 記載なし |
+| `!bombreset [位置]` | 上段か下段の 4 か所に、同時に爆弾を出す（FaraBombRush の場合） | `!bombreset 9` | 記載なし |
 
 > [!NOTE]
-> `!bomb` 系は、Mod（FaraBombRush）の Play Mode が「Interactive」のときに使えます。
+> `!bomb` 系は、Beat Saber 側の Mod が処理します（FaraBombRush を含め、対応する Mod が受け取ります）。FaraBombRush を入れていない場合は、使っている Mod の説明に従ってください。FaraBombRush の場合は、Play Mode が「Interactive」のときに使えます。

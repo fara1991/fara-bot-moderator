@@ -2,11 +2,14 @@
 
 インストールから、Twitch チャットにつなぐところまでの手順です。初めて使うときに、上から順に進めてください。
 
-## 用意するもの
+## 動作環境
 
-- Windows 10 / 11
+- Windows 10 / 11（x64）
 - .NET 8.0 ランタイム
-- WebView2 ランタイム（Microsoft Edge ベース）
+- WebView2 ランタイム（Microsoft Edge ベース。インストーラーが必要に応じて入れます）
+
+## 用意するアカウント・ソフト
+
 - Twitch アカウント
 - Twitch Developer アプリケーション（このページの手順で作ります）
 - DeepL API キー（翻訳を使う場合）
@@ -41,7 +44,7 @@
 6. 認証が終わると、`Token expiration` に有効期限が表示されます。
 
 > [!NOTE]
-> 認可のときに Twitch が求める権限は 7 つです。内容は [プライバシーポリシー](../PRIVACY.md#twitch-の認可で求める権限) にまとめています。
+> 認可のときに Twitch が求める権限は 7 つです。`chat:read`・`chat:edit`・`channel:read:redemptions`・`bits:read`・`moderator:read:followers`・`user:read:follows`・`moderator:manage:shoutouts` です。取得した情報は、アプリの画面への表示・読み上げ・ログに使います。
 
 ## 4. Twitch チャットにつなぐ
 
@@ -57,10 +60,10 @@
 
 | やりたいこと | 見るページ |
 |---|---|
-| チャットを翻訳したい | [settings.md の「翻訳」](settings.md#翻訳translate) |
+| チャットを翻訳したい | [settings.md の「翻訳」](settings.md#翻訳) |
 | 読み上げたい（棒読みちゃん） | [settings.md の「棒読みちゃん連携」](settings.md#棒読みちゃん連携) |
-| フォローやレイドに自動で返信したい | [settings.md の「リアクションイベント」](settings.md#リアクションイベントreaction-event-settings) |
-| 定期的にメッセージを送りたい | [settings.md の「タイマー」](settings.md#タイマーtimer) |
+| フォローやレイドに自動で返信したい | [settings.md の「リアクションイベント」](settings.md#リアクションイベント) |
+| 定期的にメッセージを送りたい | [settings.md の「タイマー」](settings.md#タイマー) |
 | ポケモンのコマンドを使いたい | [pokemon.md](pokemon.md) |
 | Beat Saber のコマンドを使いたい | [beatsaber.md](beatsaber.md) |
 
