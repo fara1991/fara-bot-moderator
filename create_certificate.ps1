@@ -2,11 +2,12 @@
 # 使い方: PowerShellで一度だけ実行してください。パスワードは自分で決めて、実行時に入力します（SecureString。画面には表示されません）
 #   例: ./create_certificate.ps1            （-Password を省くと入力を求められます）
 #   例: $pw = Read-Host -AsSecureString "PFX のパスワード"; ./create_certificate.ps1 -Password $pw
+# 出力先の既定は、このスクリプトと同じフォルダーの cert.pfx です（どのフォルダーから実行しても同じ。-OutputPath で変えられます）。
 # 出力される .pfx には秘密鍵が含まれます。リポジトリにコミットしないでください（.gitignore で *.pfx を除外済み）。
 
 param(
     [string]$SubjectName = "FaraBotModerator",
-    [string]$OutputPath  = ".\cert.pfx",
+    [string]$OutputPath  = (Join-Path $PSScriptRoot "cert.pfx"),
     [Parameter(Mandatory = $true)]
     [securestring]$Password
 )
