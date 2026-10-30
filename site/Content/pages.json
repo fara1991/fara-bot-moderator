@@ -12,12 +12,12 @@
   },
   {
     "slug": "main-settings",
-    "title": "初期設定（Main Settings）",
+    "title": "初期設定",
     "reading": "しょきせってい",
     "group": "設定",
     "description": "Twitch との連携設定。Client 設定、Twitch Developer アプリケーションの作成と認証、棒読みちゃん連携、接続・切断。",
     "sections": [
-      { "heading": "3. 初期設定（Main Settings）" }
+      { "heading": "3. 初期設定" }
     ],
     "inlineToc": true
   },
@@ -27,37 +27,37 @@
     "group": "設定",
     "description": "フォロー・レイド・サブスク・ビッツ・ギフト・チャンネルポイントの自動応答メッセージと、使えるプレースホルダー。",
     "sections": [
-      { "heading": "4. リアクションイベント設定（Reaction Event Settings）" }
+      { "heading": "4. リアクションイベント設定" }
     ],
     "inlineToc": true
   },
   {
     "slug": "translate",
-    "title": "翻訳（Translate）",
+    "title": "翻訳",
     "reading": "ほんやく",
     "group": "自動ボット",
     "description": "DeepL API を使った、チャットの日英自動翻訳の設定。",
     "sections": [
-      { "heading": "5.1. 翻訳設定（Translate）" }
+      { "heading": "5.1. 翻訳設定" }
     ]
   },
   {
     "slug": "game",
-    "title": "ゲーム設定（Game）",
+    "title": "ゲーム設定",
     "reading": "げーむせってい",
     "group": "自動ボット",
     "description": "Beat Saber・ポケモンシリーズなど、ゲームごとの設定。登録データの表示と一覧。",
     "sections": [
-      { "heading": "5.2. ゲーム設定（Game）" }
+      { "heading": "5.2. ゲーム設定" }
     ]
   },
   {
     "slug": "timer",
-    "title": "タイマー（Timer）",
+    "title": "タイマー",
     "group": "自動ボット",
     "description": "定期メッセージ（Cycle）と日時指定メッセージ（Fixed）の設定。",
     "sections": [
-      { "heading": "5.3. タイマー設定（Timer）" }
+      { "heading": "5.3. タイマー設定" }
     ]
   },
   {
@@ -67,7 +67,7 @@
     "group": "設定",
     "description": "チャットウィンドウとレイドリストウィンドウ。",
     "sections": [
-      { "heading": "6. ウィンドウ設定（Windows Settings）" }
+      { "heading": "6. ウィンドウ設定" }
     ]
   },
   {
@@ -102,13 +102,11 @@
     "slug": "beatsaber",
     "title": "Beat Saber コマンド（!bsr・!bomb）",
     "parent": "commands",
-    "description": "FaraBombRush v1.1.0 の対応バージョンと導入、曲リクエスト（!bsr）の読み上げ変換、爆弾のコマンド（!bomb・!bombline・!bombreset）と位置の表、Mod の設定。",
+    "description": "曲リクエスト（!bsr）の読み上げ変換と、爆弾のコマンド（!bomb 系）のこのアプリでの扱い。",
     "sections": [
       { "heading": "5.5. Beat Saber コマンド（!bsr・!bomb）", "own": true },
-      { "heading": "対応バージョンと導入" },
       { "heading": "曲リクエスト（!bsr）" },
       { "heading": "爆弾（!bomb・!bombline・!bombreset）" },
-      { "heading": "Mod の設定" },
       { "heading": "このアプリでの扱い" }
     ],
     "menuTitle": "Beat Saber",
@@ -116,12 +114,12 @@
   },
   {
     "slug": "faq",
-    "title": "よくある質問（FAQ）",
+    "title": "よくある質問",
     "reading": "よくあるしつもん",
     "group": "困ったときは",
     "description": "起動できない・チャットが取得できない・翻訳や読み上げが動かない、などの確認項目。",
     "sections": [
-      { "heading": "7. よくある質問（FAQ）" }
+      { "heading": "7. よくある質問" }
     ],
     "inlineToc": true
   },

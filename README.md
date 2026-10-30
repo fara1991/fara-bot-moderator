@@ -1,83 +1,45 @@
-﻿# FaraBotModerator
+# FaraBotModerator
 
-Twitch配信者向けの多機能BOTツールです。WPF (C# / .NET 8) で構築されており、チャット管理、イベント通知、翻訳、棒読みちゃん連携などの機能を備えています。
+Twitch 配信者向けの Windows 用チャットボットです。チャットの翻訳・読み上げ、フォローやレイドなどへの自動応答、定期メッセージ、ポケモンと Beat Saber のチャットコマンドが使えます。
 
-## 紹介サイト
+## ダウンロード
 
-使い方や機能の紹介は、サイトでも読めます（本番: https://twitch-bot.fara-labs.com ）。サイトの中身は [Manual.md](Manual.md) をそのまま表示しているので、操作説明書を直すとサイトにも反映されます。作りと公開の手順は [site/README.md](site/README.md) を参照してください。
+[GitHub Releases の最新版](https://github.com/fara1991/fara-bot-moderator/releases/latest) から `FaraBotModerator_Setup.exe` をダウンロードして実行してください。
 
-## 主な機能
+## 動作環境
 
-- **チャット連携**: Twitchチャットの取得、送信、表示。
-- **イベント通知**: Follow, Raid, Subscription, Bits, チャンネルポイント等のイベントを検知し、自動応答チャットを送信。
-- **翻訳機能**: DeepL APIと連携し、受信したチャットをリアルタイムで翻訳。
-- **棒読みちゃん連携**: 受信したチャットを棒読みちゃんで読み上げ。
-- **API連携**: Twitch API (Helix) を使用したユーザー情報の取得や各種アクション。
-- **EventSub対応**: WebSocketを使用した低遅延なイベント受信。
-- **タイマー機能**: 定期的なメッセージ送信や指定日時での自動チャット。
-- **ポケモンコマンド**: チャットの `!pokech` / `!pokesv` / `!pokess` / `!poke` で育成済みポケモン・チームの登録、ダメージ計算（`dmg`）、素早さ比較（`faster`）、対戦中の相手ポケモン（`-r`）と試合の履歴（`-h`）。登録・削除・使用チーム変更と、相手の努力値推定（`scan`、相手ポケモンを登録する）は配信者本人とモデレーターのみ（`!poke help` で一覧）。
+- Windows 10 / 11（x64）
+- WebView2 ランタイム（インストーラーが必要に応じて入れます）
 
-## セットアップと使用方法
+## 使い始める 3 ステップ
 
-### 1. 動作環境
-- Windows 10/11 (x64)
-- [.NET 8 Runtime](https://dotnet.microsoft.com/download/dotnet/8.0)
-- [Microsoft Edge WebView2 Runtime](https://developer.microsoft.com/en-us/microsoft-edge/webview2/)
+1. `FaraBotModerator_Setup.exe` をインストールして起動する
+2. Twitch Developer でアプリを登録し、`ClientId` と `ClientSecret` を入れて「Authorize」を押す
+3. 「Connect」を押して Twitch チャットにつなぐ
 
-### 2. インストール
-- [Releases](https://github.com/fara1991/FaraBotModerator/releases) から最新の `FaraBotModerator_Setup.exe` をダウンロードして実行してください。
+手順の詳細は [導入の手順](docs/getting-started.md) を見てください。
 
-### 3. 初期設定
-詳細な設定手順や使い方は、[操作説明書 (Manual.md)](Manual.md) を参照してください。
+## 資料
 
-1. **Client設定**: `Get Token` ボタンからTwitch連携を行い、AccessTokenを取得して設定します。
-2. **API設定**: [Twitch Developers](https://dev.twitch.tv/console) でアプリを登録し、`ClientID` と `ClientSecret` を設定します。
-3. **DeepL連携 (任意)**: 翻訳機能を使用する場合は、DeepLの認証キーを設定します。
-4. **棒読みちゃん連携 (任意)**: 棒読みちゃんのHTTP連携設定（ポート 5008）を有効にします。
+| 見たいこと | ページ |
+|---|---|
+| 導入（登録・認証・接続） | [getting-started.md](docs/getting-started.md) |
+| コマンドの早見表 | [commands.md](docs/commands.md) |
+| ポケモンのコマンド | [pokemon.md](docs/pokemon.md) |
+| Beat Saber のコマンド | [beatsaber.md](docs/beatsaber.md) |
+| 各設定（イベント・翻訳・タイマーなど） | [settings.md](docs/settings.md) |
+| よくある質問 | [faq.md](docs/faq.md) |
+| 困ったとき | [troubleshooting.md](docs/troubleshooting.md) |
+| 操作説明書（全文） | [Manual.md](Manual.md) |
+| 開発者向け（ビルド方法など） | [development.md](docs/development.md) |
 
-## 開発者向け情報
+更新履歴は [GitHub Releases](https://github.com/fara1991/fara-bot-moderator/releases) にあります。
 
-### ビルド方法
-リポジトリをサブモジュールごとクローンし、PowerShellスクリプトを使用してビルドおよびパッケージングが可能です。
+## 問い合わせ
 
-ビルドには .NET 10 SDK が必要です（`global.json` で指定。アプリ本体の対象は `net8.0-windows` のままなので、実行には .NET 8 Runtime が必要です）。
-
-```powershell
-git clone --recursive https://github.com/fara1991/fara-bot-moderator.git
-# クローン済みの場合
-git submodule update --init
-./build_release.ps1
-```
-
-このスクリプトは以下の処理を行います：
-1. `dotnet publish` による実行ファイルの生成（シングルファイル形式）
-2. Inno Setupを使用したインストーラー (`.exe`) の作成（Inno Setup 6 がインストールされている場合）
-
-### 署名用の自己署名証明書を作る（任意）
-リリースの署名（GitHub Actions の `release-app.yml`）に使う自己署名証明書は、`create_certificate.ps1` で作れます。パスワードは自分で決めて、実行時に入力してください（スクリプトに既定のパスワードはありません。画面には表示されません）。
-
-```powershell
-./create_certificate.ps1
-# Password の入力を求められるので、自分で決めたパスワードを入力する
-```
-
-できた `cert.pfx` の中身を base64 にした文字列を、GitHub のリポジトリの Settings > Secrets and variables > Actions に次の名前で登録します。
-- `CERTIFICATE_PFX`: スクリプトが表示する base64 文字列
-- `CERTIFICATE_PASSWORD`: 入力したパスワード
-
-`cert.pfx` は秘密鍵を含みます。リポジトリにコミットせず、安全な場所に保管してください。
-
-### プロジェクト構成
-- `FaraBotModerator`: アプリ本体 (WPF)
-- `Installer`: Inno Setup用スクリプトおよび関連ファイル
-- `Resources`: アイコンや画像リソース
-- `external/fara-pokemon-battle-assistant`: `!poke` 系コマンドの計算ライブラリ（git submodule。`FaraPokemonBattleAssistant.Core` を参照）
+- 不具合・要望: [GitHub の Issues](https://github.com/fara1991/fara-bot-moderator/issues)
+- そのほか: Twitter（X）の [@game_fara](https://twitter.com/game_fara)
 
 ## ライセンス
-本プロジェクトは開発中のプロトタイプです。
 
-## 使用ライブラリ
-- [TwitchLib](https://github.com/TwitchLib/TwitchLib)
-- [DeepL.net](https://github.com/DeepLcom/deepl-dotnet)
-- [MaterialDesignInXamlToolkit](https://github.com/MaterialDesignInXAML/MaterialDesignInXamlToolkit)
-- [obs-websocket-dotnet](https://github.com/BarRaider/obs-websocket-dotnet)
+本プロジェクトは開発中のプロトタイプです。
