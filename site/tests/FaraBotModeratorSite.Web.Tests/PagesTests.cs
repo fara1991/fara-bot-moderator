@@ -246,6 +246,11 @@ public class PagesTests
             Assert.Contains(fact, text);
         foreach (var href in new[] { "/docs/overview", "/docs/main-settings", "/privacy" })
             Assert.Contains($"href=\"{href}\"", html);
+        // 警告が出るときの案内（自己署名のため SmartScreen などが出る。「必ず安全」とは書かず、公式の Releases から入手したものだけを勧める）
+        foreach (var guide in new[] { "警告が出るとき", "SmartScreen", "GitHub の Releases（公式）", "「詳細情報」", "「実行」", "自己署名", "公式の Releases から入手したものだけ" })
+            Assert.Contains(guide, text);
+        Assert.DoesNotContain("必ず安全", text);
+        Assert.DoesNotContain("Authenticode", text);
         // 動作環境は、アプリの対象とリリースの設定と同じ（変わったらこのページも直す）
         Assert.Contains("<TargetFramework>net10.0-windows", File.ReadAllText(FindUp("FaraBotModerator.csproj")));
         Assert.Contains("FaraBotModerator_Setup.exe", File.ReadAllText(FindUp(".github/workflows/release-app.yml")));

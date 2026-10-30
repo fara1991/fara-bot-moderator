@@ -18,7 +18,7 @@ public static class PageMeta
     public const string ChangelogDescription = SiteInfo.Name + " の更新履歴です。機能の追加や、説明・サイトの変更を新しい順に載せています。";
 
     public static readonly string DownloadTitle = Titled("ダウンロード");
-    public const string DownloadDescription = SiteInfo.Name + " の入手先。最新版のダウンロード、動作環境、導入の手順。";
+    public const string DownloadDescription = SiteInfo.Name + " の入手先。最新版のダウンロード、動作環境、導入の手順、警告が出るとき。";
 
     public static readonly string PrivacyTitle = Titled("プライバシーポリシー");
     public const string PrivacyDescription = SiteInfo.Name + " のサイトとアプリで、どんな情報を何のために扱うかのまとめです。";
