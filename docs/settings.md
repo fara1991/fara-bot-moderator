@@ -19,12 +19,16 @@
 2. 棒読みちゃんの設定で「HTTP連携」を有効にします（ポート: 5008）。
 3. アプリの「Main Settings」で、`BouyomiChanConnect` にチェックを入れます。
 
+![Main Settings タブで BouyomiChanConnect にチェックを入れた状態](images/bouyomi-settings.png)
+
 > [!NOTE]
 > Twitch に接続する前に、棒読みちゃんを起動しておいてください。
 
 ## リアクションイベント
 
 「Reaction Event Settings」タブでは、Twitch のイベントが起きたときに自動で送るメッセージを設定します。
+
+![Reaction Event Settings タブ。6 つのイベントごとに、チェックボックスとメッセージ欄、Test Send ボタンが並んでいる](images/reaction-events.png)
 
 ### 対応イベント
 
@@ -77,6 +81,8 @@ Bits: {bitsSendUserName}さん、{bitsAmount}ビッツありがとうござい�
 
 「Auto Bot Settings」タブの「Translate」タブで、DeepL API を使った自動翻訳を設定します。
 
+![Translate タブ。DeepL API Key の入力欄と DeepL Site ボタンがある](images/translate-settings.png)
+
 ### DeepL API キーを取得する
 
 1. [DeepL](https://www.deepl.com/) にアクセスします。
@@ -104,12 +110,18 @@ Bits: {bitsSendUserName}さん、{bitsAmount}ビッツありがとうござい�
 | Beat Saber | ソングリクエストのボットのメッセージを日本語に変換するパターン（正規表現パターン → 変換後テキスト） |
 | ポケモンシリーズ | 「対戦形式」「データの取得元」「アクセスキー」 |
 
+![Game タブで Beat Saber を選んだ画面。正規表現パターンと変換後テキストの表が出ている](images/game-beatsaber.png)
+
+![Game タブでポケモンシリーズを選んだ画面。対戦形式、データの取得元、アクセスキー、登録データの欄がある](images/game-pokemon.png)
+
 - Beat Saber の変換パターンは、[Beat Saber のコマンド](beatsaber.md#曲リクエストbsr) を見てください。
 - ポケモンシリーズの設定は、[ポケモンのコマンド](pokemon.md#設定画面) を見てください。
 
 ## タイマー
 
 「Auto Bot Settings」タブの「Timer」タブで、定期的または指定した時刻にメッセージを自動で送ります。
+
+![Timer タブ。CycleTimer と FixedTimer の設定欄が並んでいる（入力例）](images/timer-settings.png)
 
 ### Cycle Notifications（定期メッセージ）
 
@@ -146,6 +158,8 @@ Bits: {bitsSendUserName}さん、{bitsAmount}ビッツありがとうござい�
 
 「Windows Settings」タブで、補助ウィンドウを開きます。
 
+![Windows Settings タブ。Open Chat Window と Open Raid List Window のボタンがある](images/windows-settings.png)
+
 ### Chat Window（チャットウィンドウ）
 
 Twitch チャットをリアルタイムで表示・送信するウィンドウです。「**Open Chat Window**」ボタンで開きます。
@@ -154,6 +168,8 @@ Twitch チャットをリアルタイムで表示・送信するウィンドウ�
 - ユーザーアイコンの表示
 - メッセージの送信
 
+![Chat Window。Twitch に接続していないので、一覧は空](images/chat-window.png)
+
 ### Raid List Window（レイドリストウィンドウ）
 
 配信終了時のレイド先の候補を表示するウィンドウです。「**Open Raid List Window**」ボタンで開きます。
@@ -161,3 +177,5 @@ Twitch チャットをリアルタイムで表示・送信するウィンドウ�
 - 現在配信中のフォロー中ユーザーを表示
 - 同じゲームをプレイ中の配信者を表示
 - レイドコマンドをクリップボードにコピー
+
+![Raid List Window。Twitch に接続していないので、一覧は空](images/raid-list-window.png)
