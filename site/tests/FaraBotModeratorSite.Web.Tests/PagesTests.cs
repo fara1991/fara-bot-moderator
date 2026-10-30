@@ -234,6 +234,7 @@ public class PagesTests
         foreach (var entry in Content.Changelog.Take(3)) Assert.Contains((entry.Title), html);
         Assert.DoesNotContain((Content.Changelog[3].Title), html);
         Assert.Contains("href=\"/download\"", html);   // ダウンロードは専用のページ（/download）へ案内する
+        Assert.Contains("DeepL・棒読みちゃん <span class=\"req-badge req-opt\">任意</span>", html);   // 任意の手順は、文字のラベルで分かる
     }
 
     [Fact]
@@ -254,6 +255,28 @@ public class PagesTests
         // 動作環境は、アプリの対象とリリースの設定と同じ（変わったらこのページも直す）
         Assert.Contains("<TargetFramework>net10.0-windows", File.ReadAllText(FindUp("FaraBotModerator.csproj")));
         Assert.Contains("FaraBotModerator_Setup.exe", File.ReadAllText(FindUp(".github/workflows/release-app.yml")));
+    }
+
+    [Fact]
+    public async Task Download_page_labels_each_requirement_as_required_or_optional()
+    {
+        // 必須・任意は、アプリのコードで確かめた内容（Twitch の接続には認可が要る。DeepL のキーが空なら翻訳しない。棒読みちゃんはチェックを入れたときだけ）。項目ごとにラベルを確かめる
+        var html = await RenderAsync<Download>();
+        var items = Regex.Matches(html, "<li><span class=\"req-badge (req-must|req-opt)\">(必須|任意)</span><span>(.*?)</span></li>", RegexOptions.Singleline)
+            .Select(m => (Class: m.Groups[1].Value, Label: m.Groups[2].Value, Text: m.Groups[3].Value))
+            .ToList();
+        var expected = new (string Label, string Class, string Item)[]
+        {
+            ("必須", "req-must", "Windows 10 / 11（x64）"),
+            ("必須", "req-must", "WebView2 ランタイム"),
+            ("必須", "req-must", "Twitch のアカウント"),
+            ("必須", "req-must", "Twitch Developer のアプリケーション"),
+            ("任意", "req-opt", "DeepL の API キー"),
+            ("任意", "req-opt", "棒読みちゃん"),
+        };
+        Assert.Equal(expected.Length, items.Count);
+        foreach (var (label, cls, item) in expected)
+            Assert.Contains(items, i => i.Label == label && i.Class == cls && i.Text.StartsWith(item, StringComparison.Ordinal));
     }
 
     [Fact]
