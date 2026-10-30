@@ -292,6 +292,23 @@ h1, h2, h3, h4 { color: var(--on-surface); font-weight: 700; }
 }
 .page-section .note { color: var(--on-surface-variant); font-size: 0.9rem; }
 .lead { font-size: 1.08rem; color: var(--on-surface-variant); }
+
+/* 必須・任意のラベル（色だけに頼らない: 文字で「必須」「任意」と書き、必須は塗りつぶし、任意は枠線だけにする）。文字は本文の中に置く（スクリーンリーダー・静的な HTML・検索に出る） */
+.page-section .req-badge {
+    display: inline-block;
+    padding: 0 0.7em;
+    border: 1.5px solid var(--primary);
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    line-height: 1.6;
+    white-space: nowrap;
+}
+.page-section .req-must { background: var(--primary); color: var(--on-primary); }
+.page-section .req-opt { background: transparent; border-color: var(--outline); color: var(--on-surface-variant); }
+.req-list { list-style: none; margin: 0; padding: 0; }
+.req-list > li { display: flex; align-items: baseline; gap: 0.75em; margin: 0 0 8px; }
+.page-section .req-list .req-badge { flex: none; min-width: 3.4em; text-align: center; }
 .nowrap { white-space: nowrap; }
 
 .button-row { display: flex; flex-wrap: wrap; gap: 12px; margin: 24px 0 0; }
