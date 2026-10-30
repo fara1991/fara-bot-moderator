@@ -215,7 +215,7 @@ jobs:
             ### 必要条件
             - Windows 10/11
             - .NET ランタイムは同梱されています（別にインストールする必要はありません）
-            - WebView2 ランタイム（インストーラーが自動でインストールします）
+            - WebView2 ランタイム（無ければインストーラーが入れます）
           files: |
             Releases/FaraBotModerator_Setup.exe
           draft: false
