@@ -21,6 +21,8 @@
 
 起動すると、「Main Settings」タブが表示されます。
 
+![起動直後の Main Settings タブ。入力欄は空で、Connect や Authorize のボタンが並んでいる](images/main-settings-initial.png)
+
 ## 2. Twitch Developer アプリケーションを作る
 
 1. [Twitch Developer Console](https://dev.twitch.tv/console) にアクセスします。
@@ -41,6 +43,8 @@
 4. 「**Authorize**」ボタンをクリックします。
 5. 右側の WebView に Twitch のログイン画面が出るので、Twitch アカウントでログインして、アプリを許可します。
 6. 認証が終わると、`Token expiration` に有効期限が表示されます。
+
+![Client と API の欄に入力した Main Settings タブ（入力例はダミーの値）](images/main-settings.png)
 
 > [!NOTE]
 > 認可のときに Twitch が求める権限は 7 つです。`chat:read`・`chat:edit`・`channel:read:redemptions`・`bits:read`・`moderator:read:followers`・`user:read:follows`・`moderator:manage:shoutouts` です。取得した情報は、アプリの画面への表示・読み上げ・ログに使います。

@@ -17,6 +17,8 @@ Twitch 配信者向けの Windows 用チャットボットです。チャット�
 2. Twitch Developer でアプリを登録し、`ClientId` と `ClientSecret` を入れて「Authorize」を押す
 3. 「Connect」を押して Twitch チャットにつなぐ
 
+![Main Settings タブの画面。Client と API の入力欄、Connect などのボタンが並んでいる](docs/images/main-settings.png)
+
 手順の詳細は [導入の手順](docs/getting-started.md) を見てください。
 
 ## 資料
