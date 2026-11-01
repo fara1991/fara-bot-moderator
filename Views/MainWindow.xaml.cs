@@ -658,8 +658,8 @@ public partial class MainWindow : INotifyPropertyChanged
         // 監視からは、失敗した時刻から 10 分間は認可画面を開き直さない（消すと、リフレッシュ失敗のたびに 30 秒ごとに開き直してしまう）。
         // Authorize ボタンは抑止を受けないので、手動の再認可はできる
         LogController.OutputLog(error is null
-            ? "<Error> 認可のトークン取得に失敗しました（認可コードが無効、または期限切れ）"
-            : $"<Error> 認可のトークン取得で例外が起きました: {error.Message}");
+            ? "<Error> 認証のトークン取得に失敗しました（認証コードが無効、または期限切れ）"
+            : $"<Error> 認証のトークン取得で例外が起きました: {error.Message}");
         _authorizationStartedAt = TokenMonitorPolicy.AuthorizationAnchorAfterEnd(false, DateTime.Now);
         TwitchAuthStatusTextBlock.Text = TwitchAuthService.AuthorizationFailureStatus(error);
         UnlockWindowControl();
@@ -949,7 +949,7 @@ public partial class MainWindow : INotifyPropertyChanged
             // トークンの有効期限チェック
             if (DateTime.Now > Settings.Default.expiresDateTime)
             {
-                MessageBox.Show("アクセストークンの有効期限が切れています。Authorizeボタンから再認可を行ってください。", "警告", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show("アクセストークンの有効期限が切れています。Authorizeボタンから再認証を行ってください。", "警告", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
@@ -961,7 +961,7 @@ public partial class MainWindow : INotifyPropertyChanged
 
             if (!isTokenValid)
             {
-                MessageBox.Show("アクセストークンが無効または期限切れです。Authorizeボタンから再認可を行ってください。", "警告", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show("アクセストークンが無効または期限切れです。Authorizeボタンから再認証を行ってください。", "警告", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 

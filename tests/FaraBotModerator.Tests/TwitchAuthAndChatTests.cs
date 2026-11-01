@@ -96,7 +96,7 @@ public class TwitchAuthServiceTests
     [Fact]
     public void A_failed_authorization_status_tells_the_user_to_authorize_again()
     {
-        // コードが無効（例外なし）・例外のどちらでも、画面の文は「もう一度認可」を案内する
+        // コードが無効（例外なし）・例外のどちらでも、画面の文は「もう一度認証」を案内する
         Assert.Contains("もう一度", TwitchAuthService.AuthorizationFailureStatus(null));
         Assert.Contains("もう一度", TwitchAuthService.AuthorizationFailureStatus(new System.InvalidOperationException("secret")));
     }
