@@ -287,107 +287,125 @@ public partial class MainWindow : INotifyPropertyChanged
     }
 
     /// <summary>
+    /// 定期メッセージと日時指定メッセージの周期処理（1 秒ごと）。1 回の失敗（画面の値の読み取りや送信の例外）で止まらず、次の周期で続けます。
     /// </summary>
     /// <returns></returns>
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "画面の最上位（イベントハンドラー・起動・監視の周期処理）。例外で画面・ボット全体を止めないよう、ここで受けてログ・メッセージで知らせる")]
     [SuppressMessage("Usage", "VSTHRD001:Avoid legacy thread switching APIs", Justification = "WPF の Dispatcher で UI スレッドへ戻している。このアプリは JoinableTaskFactory を使っていないので、置き換え先が無い")]
     private async Task StartTimerAsync()
     {
-        var cycleTimerCounts = new int[4];
-
-        // UI element arrays for cycle timers
-        CheckBox[] cycleCheckBoxes = null!;
-        Slider[] cycleSliders = null!;
-        TextBox[] cycleTextBoxes = null!;
-
-        // UI element arrays for fixed timers
-        CheckBox[] fixedCheckBoxes = null!;
-        DatePicker[] fixedDatePickers = null!;
-        MaterialDesignThemes.Wpf.TimePicker[] fixedTimePickers = null!;
-        TextBox[] fixedTextBoxes = null!;
-
-        // Initialize UI element arrays on the UI thread
-        await Dispatcher.InvokeAsync(() =>
-        {
-            cycleCheckBoxes = [CycleTimer1CheckBox, CycleTimer2CheckBox, CycleTimer3CheckBox, CycleTimer4CheckBox];
-            cycleSliders = [CycleTimer1Slider, CycleTimer2Slider, CycleTimer3Slider, CycleTimer4Slider];
-            cycleTextBoxes = [CycleTimer1TextBox, CycleTimer2TextBox, CycleTimer3TextBox, CycleTimer4TextBox];
-
-            fixedCheckBoxes = [FixedTimer1CheckBox, FixedTimer2CheckBox, FixedTimer3CheckBox, FixedTimer4CheckBox];
-            fixedDatePickers = [FixedTimer1DatePicker, FixedTimer2DatePicker, FixedTimer3DatePicker, FixedTimer4DatePicker];
-            fixedTimePickers = [FixedTimer1TimePicker, FixedTimer2TimePicker, FixedTimer3TimePicker, FixedTimer4TimePicker];
-            fixedTextBoxes = [FixedTimer1TextBox, FixedTimer2TextBox, FixedTimer3TextBox, FixedTimer4TextBox];
-        });
+        var cycleStartedAt = new DateTime?[4];
+        var fixedFiredFor = new DateTime?[4];
 
         while (true)
         {
-            while (_twitchClientController is null) await Task.Delay(1);
-
             await Task.Delay(1000);
 
-            // Process cycle timers
-            for (var i = 0; i < 4; i++)
+            // 接続していない間は、何もしない（数え始めもしない）
+            var client = _twitchClientController;
+            if (client is null) continue;
+
+            try
             {
-                var isChecked = false;
-                var intervalMinutes = 0;
-                var message = "";
-
-                await Dispatcher.InvokeAsync(() =>
-                {
-                    isChecked = cycleCheckBoxes[i].IsChecked ?? false;
-                    intervalMinutes = (int)cycleSliders[i].Value;
-                    message = cycleTextBoxes[i].Text;
-                });
-
-                if (isChecked)
-                    cycleTimerCounts[i]++;
-                else
-                    cycleTimerCounts[i] = 0;
-
-                var intervalSeconds = intervalMinutes * 60;
-                if (cycleTimerCounts[i] >= intervalSeconds && intervalSeconds > 0)
-                {
-                    cycleTimerCounts[i] %= intervalSeconds;
-                    _twitchClientController.SendModeratorMessage(message);
-                }
+                var (cycles, fixeds) = await Dispatcher.InvokeAsync(ReadTimerSettings);
+                var now = DateTime.Now;
+                ProcessCycleTimers(client, cycles, cycleStartedAt, now);
+                ProcessFixedTimers(client, fixeds, fixedFiredFor, now);
             }
-
-            // Process fixed timers
-            for (var i = 0; i < 4; i++)
+            catch (Exception ex)
             {
-                var isChecked = false;
-                DateTime? date = null;
-                DateTime? time = null;
-                var message = "";
-
-                await Dispatcher.InvokeAsync(() =>
-                {
-                    isChecked = fixedCheckBoxes[i].IsChecked ?? false;
-                    date = fixedDatePickers[i].SelectedDate;
-                    time = fixedTimePickers[i].SelectedTime;
-                    message = fixedTextBoxes[i].Text;
-                });
-
-                if (isChecked)
-                {
-                    FixedTimerMessage(date, time, message);
-                }
+                LogController.OutputLog($"<Error> タイマーの処理に失敗しました（次の周期で続けます）: {ex.Message}");
             }
         }
     }
 
     /// <summary>
+    /// 定期メッセージ（1 つ分）の画面の設定。
     /// </summary>
-    /// <param name="date"></param>
-    /// <param name="time"></param>
-    /// <param name="message"></param>
-    private void FixedTimerMessage(DateTime? date, DateTime? time, string message)
-    {
-        if (date is null || time is null) return;
+    private sealed record CycleTimerSetting(bool IsChecked, int IntervalMinutes, string Message);
 
-        var datetime = new DateTime(date.Value.Year, date.Value.Month, date.Value.Day, time.Value.Hour,
-            time.Value.Minute, time.Value.Second);
-        if (DateTime.Now >= datetime && (DateTime.Now - datetime).TotalSeconds < 1)
-            _twitchClientController?.SendModeratorMessage(message);
+    /// <summary>
+    /// 日時指定メッセージ（1 つ分）の画面の設定。
+    /// </summary>
+    private sealed record FixedTimerSetting(bool IsChecked, DateTime? Target, string Message);
+
+    /// <summary>
+    /// 画面（UI スレッド）から、定期メッセージ 4 つと日時指定メッセージ 4 つの設定を読みます。
+    /// </summary>
+    private (CycleTimerSetting[] Cycles, FixedTimerSetting[] Fixeds) ReadTimerSettings()
+    {
+        CheckBox[] cycleCheckBoxes = [CycleTimer1CheckBox, CycleTimer2CheckBox, CycleTimer3CheckBox, CycleTimer4CheckBox];
+        Slider[] cycleSliders = [CycleTimer1Slider, CycleTimer2Slider, CycleTimer3Slider, CycleTimer4Slider];
+        TextBox[] cycleTextBoxes = [CycleTimer1TextBox, CycleTimer2TextBox, CycleTimer3TextBox, CycleTimer4TextBox];
+        CheckBox[] fixedCheckBoxes = [FixedTimer1CheckBox, FixedTimer2CheckBox, FixedTimer3CheckBox, FixedTimer4CheckBox];
+        DatePicker[] fixedDatePickers = [FixedTimer1DatePicker, FixedTimer2DatePicker, FixedTimer3DatePicker, FixedTimer4DatePicker];
+        MaterialDesignThemes.Wpf.TimePicker[] fixedTimePickers = [FixedTimer1TimePicker, FixedTimer2TimePicker, FixedTimer3TimePicker, FixedTimer4TimePicker];
+        TextBox[] fixedTextBoxes = [FixedTimer1TextBox, FixedTimer2TextBox, FixedTimer3TextBox, FixedTimer4TextBox];
+
+        var cycles = new CycleTimerSetting[4];
+        var fixeds = new FixedTimerSetting[4];
+        for (var i = 0; i < 4; i++)
+        {
+            cycles[i] = new CycleTimerSetting(cycleCheckBoxes[i].IsChecked ?? false, (int) cycleSliders[i].Value, cycleTextBoxes[i].Text);
+            fixeds[i] = new FixedTimerSetting(fixedCheckBoxes[i].IsChecked ?? false,
+                TimerPolicy.Combine(fixedDatePickers[i].SelectedDate, fixedTimePickers[i].SelectedTime), fixedTextBoxes[i].Text);
+        }
+
+        return (cycles, fixeds);
+    }
+
+    /// <summary>
+    /// 定期メッセージを、間隔が経ったものだけ送ります。チェックが外れている間は、数え始めに戻します（実際の経過時間で数える）。
+    /// </summary>
+    private static void ProcessCycleTimers(TwitchClientController client, CycleTimerSetting[] settings, DateTime?[] startedAt, DateTime now)
+    {
+        for (var i = 0; i < settings.Length; i++)
+        {
+            if (!settings[i].IsChecked)
+            {
+                startedAt[i] = null;
+                continue;
+            }
+
+            startedAt[i] ??= now;
+            if (!TimerPolicy.IsCycleDue(now, startedAt[i]!.Value, settings[i].IntervalMinutes)) continue;
+
+            // 送るのに失敗しても、次の周期で送り直さない（次の間隔まで待つ）
+            startedAt[i] = now;
+            TrySendTimerMessage(client, settings[i].Message, $"定期メッセージ {i + 1}");
+        }
+    }
+
+    /// <summary>
+    /// 日時指定メッセージを、指定の日時になったものだけ、1 回送ります。
+    /// </summary>
+    private static void ProcessFixedTimers(TwitchClientController client, FixedTimerSetting[] settings, DateTime?[] firedFor, DateTime now)
+    {
+        for (var i = 0; i < settings.Length; i++)
+        {
+            if (!settings[i].IsChecked || settings[i].Target is not { } target) continue;
+            if (!TimerPolicy.IsFixedDue(now, target, firedFor[i])) continue;
+
+            // 送るのに失敗しても、同じ日時の分は送り直さない
+            firedFor[i] = target;
+            TrySendTimerMessage(client, settings[i].Message, $"日時指定メッセージ {i + 1}");
+        }
+    }
+
+    /// <summary>
+    /// タイマーのメッセージを送ります。失敗しても、ほかのタイマーと周期処理を止めないよう、ログに残して続けます。
+    /// </summary>
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "画面の最上位（イベントハンドラー・起動・監視の周期処理）。例外で画面・ボット全体を止めないよう、ここで受けてログ・メッセージで知らせる")]
+    private static void TrySendTimerMessage(TwitchClientController client, string message, string timerName)
+    {
+        try
+        {
+            client.SendModeratorMessage(message);
+        }
+        catch (Exception ex)
+        {
+            LogController.OutputLog($"<Error> {timerName}の送信に失敗しました: {ex.Message}");
+        }
     }
 
     /// <summary>
