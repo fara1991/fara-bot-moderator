@@ -1,6 +1,6 @@
 name: Release (app installer)
 
-# アプリ本体のインストーラーを作り、GitHub の Release に公開する。タグ v* の push か、バージョンを入れた手動実行で動く（紹介サイトの公開は deploy.yml・deploy-develop.yml）。
+# アプリ本体のインストーラーを作り、GitHub の Release に公開する。タグ v* の push か、バージョンを入れた手動実行で動く。
 # job を 2 つに分けている。build（ビルド・署名。書き込み権限なし。証明書を持つのはこの job だけ）→ release（タグと Release の作成。contents: write はこの job だけ）。
 
 on:
