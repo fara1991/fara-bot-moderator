@@ -143,7 +143,7 @@ public partial class MainWindow : INotifyPropertyChanged
             if (SecretKeyController.QuarantinedPath is { } quarantined)
                 MessageBox.Show("secrets.json が壊れていたため、中身は消さずに別の名前で退避し、初期値で作り直しました。\n\n" +
                                 $"退避したファイル:\n{quarantined}\n\n" +
-                                "退避したファイルを開いて、必要な設定を入れ直してください（設定は初期値になっています）。",
+                                "退避したファイルを開いて、必要な設定を入れ直してください（設定は初期値になっています。Twitch の認証情報・API キーなどは空です）。",
                     "設定ファイル", MessageBoxButton.OK, MessageBoxImage.Warning);
 
             // UIスレッドで実行する必要がある処理
