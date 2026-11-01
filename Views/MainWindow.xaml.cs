@@ -143,7 +143,7 @@ public partial class MainWindow : INotifyPropertyChanged
             if (SecretKeyController.QuarantinedPath is { } quarantined)
                 MessageBox.Show("secrets.json が壊れていたため、中身は消さずに別の名前で退避し、初期値で作り直しました。\n\n" +
                                 $"退避したファイル:\n{quarantined}\n\n" +
-                                "退避したファイルを開いて、必要な設定を入れ直してください（設定は初期値になっています）。",
+                                "退避したファイルを開いて、必要な設定を入れ直してください（設定は初期値になっています。Twitch の認証情報・API キーなどは空です）。",
                     "設定ファイル", MessageBoxButton.OK, MessageBoxImage.Warning);
 
             // UIスレッドで実行する必要がある処理
@@ -392,10 +392,12 @@ public partial class MainWindow : INotifyPropertyChanged
             // 1 周期の失敗で監視を止めない。処理済みの URL は _lastHandledAuthUrl で 2 度処理しない（失敗した認可は、Authorize からやり直す）
             try
             {
-                if (FaraBotModeratorWebView.Source is null) continue;
+                // NavigationStarting で止めた戻りの URL があればそれを使う。無ければ、WebView の今の URL を見る
+                var url = _pendingAuthUrl ?? FaraBotModeratorWebView.Source?.ToString();
+                _pendingAuthUrl = null;
+                if (url is null) continue;
 
                 // 認証を始めていない・処理済み・戻りの形でない URL は無視する（処理した戻りの URL は、画面に残っていても 2 度処理しない）
-                var url = FaraBotModeratorWebView.Source.ToString();
                 if (!TwitchAuthService.ShouldHandleAuthUrl(url, _lastHandledAuthUrl, Settings.Default.OAuth2State, Settings.Default.Port))
                     continue;
 
@@ -413,6 +415,33 @@ public partial class MainWindow : INotifyPropertyChanged
     /// 最後に処理した認証の戻りの URL（同じ URL を 2 度処理しないため）。
     /// </summary>
     private string _lastHandledAuthUrl = "";
+
+    /// <summary>
+    /// WebView が戻り先（localhost）へ移る直前に止めた、認証の戻りの URL。監視の周期処理が受け取って、認証を完了する。
+    /// </summary>
+    private string? _pendingAuthUrl;
+
+    /// <summary>
+    ///     WebView が移動を始める直前の処理。認証の戻り先（localhost）にはサーバーが無く、読み込むと「接続が拒否されました」のページが
+    ///     一瞬出るので、読み込む前に止めて、「認証しています」のページに切り替える。戻りの URL は監視の周期処理に渡す。
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
+    [SuppressMessage("Usage", "VSTHRD001:Avoid legacy thread switching APIs", Justification = "WPF の Dispatcher で、移動を止めた処理が終わってから切り替えている。このアプリは JoinableTaskFactory を使っていないので、置き換え先が無い")]
+    private void FaraBotModeratorWebView_NavigationStarting(object? sender, CoreWebView2NavigationStartingEventArgs e)
+    {
+        if (!TwitchAuthService.ShouldHandleAuthUrl(e.Uri, _lastHandledAuthUrl, Settings.Default.OAuth2State, Settings.Default.Port))
+            return;
+
+        e.Cancel = true;
+        _pendingAuthUrl = e.Uri;
+        // 移動を止めた処理の中で、続けて移動させないよう、あとで切り替える
+        _ = Dispatcher.InvokeAsync(() =>
+        {
+            if (FaraBotModeratorWebView.CoreWebView2 is not null)
+                FaraBotModeratorWebView.NavigateToString(TwitchAuthService.AuthProgressPageHtml());
+        });
+    }
 
     /// <summary>
     /// </summary>
@@ -650,6 +679,7 @@ public partial class MainWindow : INotifyPropertyChanged
             _authorizationStartedAt = null;
             _consecutiveTemporaryRefreshFailures = 0;
             TwitchAuthStatusTextBlock.Text = "";
+            ShowAuthResultPage(true);
             UnlockWindowControl();
             return;
         }
@@ -662,7 +692,19 @@ public partial class MainWindow : INotifyPropertyChanged
             : $"<Error> 認証のトークン取得で例外が起きました: {error.Message}");
         _authorizationStartedAt = TokenMonitorPolicy.AuthorizationAnchorAfterEnd(false, DateTime.Now);
         TwitchAuthStatusTextBlock.Text = TwitchAuthService.AuthorizationFailureStatus(error);
+        ShowAuthResultPage(false);
         UnlockWindowControl();
+    }
+
+    /// <summary>
+    /// 認証が終わったあとの WebView を、結果のページに切り替えます（戻り先の localhost にはサーバーが無く、「接続が拒否されました」と出るため）。
+    /// WebView2 を初期化できなかったときは、何もしません。
+    /// </summary>
+    /// <param name="success">認証に成功したか</param>
+    private void ShowAuthResultPage(bool success)
+    {
+        if (FaraBotModeratorWebView.CoreWebView2 is null) return;
+        FaraBotModeratorWebView.NavigateToString(TwitchAuthService.AuthResultPageHtml(success));
     }
 
     /// <summary>

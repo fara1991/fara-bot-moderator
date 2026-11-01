@@ -101,6 +101,32 @@ public class TwitchAuthServiceTests
         Assert.Contains("もう一度", TwitchAuthService.AuthorizationFailureStatus(new System.InvalidOperationException("secret")));
     }
 
+    [Theory]
+    [InlineData(true, "認証が完了しました")]
+    [InlineData(false, "認証に失敗しました")]
+    public void The_auth_result_page_tells_the_result_without_scripts_or_external_loads(bool success, string expectedTitle)
+    {
+        var html = TwitchAuthService.AuthResultPageHtml(success);
+
+        Assert.Contains($"<h1", html);
+        Assert.Contains(expectedTitle, html);
+        // 外部の読み込み・スクリプトは使わない（localhost の戻り先の URL を持ち込まない）
+        Assert.DoesNotContain("<script", html, System.StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("http://", html);
+        Assert.DoesNotContain("https://", html);
+    }
+
+    [Fact]
+    public void The_auth_progress_page_has_no_scripts_or_external_loads()
+    {
+        var html = TwitchAuthService.AuthProgressPageHtml();
+
+        Assert.Contains("認証しています", html);
+        Assert.DoesNotContain("<script", html, System.StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("http://", html);
+        Assert.DoesNotContain("https://", html);
+    }
+
     [Fact]
     public void A_failed_authorization_status_does_not_show_the_exception_text()
     {

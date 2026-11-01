@@ -256,6 +256,45 @@ public class TwitchAuthService
     };
 
     /// <summary>
+    /// 認証が終わったあとに、WebView へ出すページ（HTML）。戻り先の localhost にはサーバーが無く、そのままだと「接続が拒否されました」と出るため、
+    /// 結果を知らせるページに切り替える。外部の読み込み・スクリプトは使わない。
+    /// </summary>
+    /// <param name="success">認証に成功したか</param>
+    internal static string AuthResultPageHtml(bool success) => success
+        ? AuthPageHtml("認証が完了しました", "Twitch の認証を受け取りました。この画面は、このままで大丈夫です。Connect で Twitch に接続できます。", "#8fd18f")
+        : AuthPageHtml("認証に失敗しました", "画面の左側に理由が出ています。確認して、Authorize からもう一度認証してください。", "#ff9a9a");
+
+    /// <summary>
+    /// 認証の戻りを受け取ってから、結果が出るまでの間に WebView へ出すページ（HTML）。
+    /// </summary>
+    internal static string AuthProgressPageHtml() => AuthPageHtml("認証しています", "Twitch の認証を確認しています。少しお待ちください。", "#dddddd");
+
+    private static string AuthPageHtml(string title, string message, string color)
+    {
+        return $$"""
+            <!DOCTYPE html>
+            <html lang="ja">
+            <head>
+            <meta charset="utf-8">
+            <title>{{title}}</title>
+            <style>
+            body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #262626; color: #eeeeee; font-family: "Yu Gothic UI", "Segoe UI", sans-serif; }
+            main { max-width: 28em; padding: 24px; text-align: center; }
+            h1 { margin: 0 0 16px; font-size: 1.5rem; color: {{color}}; }
+            p { margin: 0; line-height: 1.8; }
+            </style>
+            </head>
+            <body>
+            <main>
+            <h1>{{title}}</h1>
+            <p>{{message}}</p>
+            </main>
+            </body>
+            </html>
+            """;
+    }
+
+    /// <summary>
     /// トークンの有効期限が切れているかどうかを確認します。
     /// </summary>
     /// <returns>期限切れの場合はtrue</returns>
