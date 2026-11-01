@@ -38,10 +38,6 @@
         <EmbeddedResource Remove="external\**"/>
         <None Remove="external\**"/>
         <Page Remove="external\**"/>
-        <Compile Remove="site\**"/>
-        <EmbeddedResource Remove="site\**"/>
-        <None Remove="site\**"/>
-        <Page Remove="site\**"/>
         <Compile Remove="tests\**"/>
         <EmbeddedResource Remove="tests\**"/>
         <None Remove="tests\**"/>
