@@ -127,7 +127,8 @@ public class TwitchTestEventController
             new Dictionary<string, string>
             {
                 { "{bitsSendUserName}", TestUserName },
-                { "{bitsAmount}", bitsAmount.ToString() }
+                { "{bitsAmount}", bitsAmount.ToString() },
+                { TwitchClientController.BitsTotalPlaceholder, "1000" }
             },
             $"{TestUserName}さん{bitsAmount}bitsありがとうございます",
             $"<Bits Test> UserName: {TestUserName}, Amount: {bitsAmount}",

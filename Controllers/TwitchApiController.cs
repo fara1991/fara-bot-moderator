@@ -133,6 +133,28 @@ public class TwitchApiController
     }
 
     /// <summary>
+    /// ユーザーが、このチャンネルに投げたビッツの合計（Twitch の Bits ランキングの、全期間の値）を取得します。
+    /// ランキングへの反映が遅れると、今のチアーが入っていないことがあります。
+    /// </summary>
+    /// <param name="userId">ビッツを投げたユーザーの ID</param>
+    /// <returns>ビッツの合計。取得できなかったとき（ランキングに無い・通信の失敗）は null</returns>
+    public async Task<int?> GetBitsTotalAsync(string userId)
+    {
+        if (_twitchApi == null) return null;
+        try
+        {
+            var leaderboard = await _twitchApi.Helix.Bits.GetBitsLeaderboardAsync(1, BitsLeaderboardPeriodEnum.All, null, userId,
+                Settings.Default.AccessToken);
+            return leaderboard?.Listings is {Length: > 0} listing ? listing[0].Score : null;
+        }
+        catch (Exception ex) when (IsExpectedApiFailure(ex))
+        {
+            LogController.OutputLog($@"<Error> GetBitsTotalAsync failed: {ex.Message}");
+            return null;
+        }
+    }
+
+    /// <summary>
     /// ログイン名からTwitchユーザー情報を取得します。
     /// </summary>
     /// <param name="userName">Twitchログイン名</param>

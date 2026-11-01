@@ -65,32 +65,13 @@ public static class SecretKeyController
                 LogController.OutputLog("<Error> secrets.json を JSON として読めませんでした");
             }
 
-            if (secretKeys is not null)
-            {
-                RemoveLegacyBitsTotal(secretKeys);
-                return secretKeys;
-            }
+            if (secretKeys is not null) return secretKeys;
 
             // 壊れたファイルは改名して残す（消さない）。退避できなければ、中身を守るため上書きせずに例外にする
             quarantinedPath = Quarantine(path);
             LogController.OutputLog($"<Error> secrets.json が壊れていたため退避し、初期値で作り直しました: {quarantinedPath}");
             return CreateKeys(path);
         }
-    }
-
-    /// <summary>
-    /// 以前の既定の Bits のメッセージにあった、累計の部分。EventSub の Bits のイベントには累計が含まれず、置き換えられないので、取り除く。
-    /// </summary>
-    internal const string LegacyBitsTotalText = " (total {totalBitsAmount})";
-
-    /// <summary>
-    /// 保存済みの Bits のメッセージから、置き換えられない累計の部分（{totalBitsAmount}）を取り除きます（そのままだと、チャットに文字のまま出る）。
-    /// </summary>
-    /// <param name="secretKeys">読んだ設定</param>
-    internal static void RemoveLegacyBitsTotal(SecretKeyModel secretKeys)
-    {
-        var bits = secretKeys.Event.Bits;
-        bits.Message = bits.Message.Replace(LegacyBitsTotalText, "");
     }
 
     /// <summary>
@@ -244,7 +225,7 @@ public static class SecretKeyController
                 Bits = new ReactionBitsEvent
                 {
                     Checked = true,
-                    Message = "{bitsSendUserName}, thanks {bitsAmount} bits."
+                    Message = "{bitsSendUserName}, thanks {bitsAmount} bits (total {totalBitsAmount})."
                 },
                 Gift = new ReactionGiftEvent
                 {

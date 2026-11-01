@@ -118,8 +118,7 @@ public class TwitchEventSubController
     /// <param name="e"></param>
     private Task TwitchEventSubOnCheerReceivedAsync(object? sender, ChannelCheerArgs e)
     {
-        _twitchClientController.SendBitsEventSubMessage(e);
-        return Task.CompletedTask;
+        return _twitchClientController.SendBitsEventSubMessageAsync(e);
     }
 
     /// <summary>

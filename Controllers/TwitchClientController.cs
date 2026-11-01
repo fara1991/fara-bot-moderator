@@ -2,6 +2,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Threading.Tasks;
 using FaraBotModerator.Enums;
 using FaraBotModerator.Models;
@@ -333,18 +334,39 @@ public class TwitchClientController
 
 
     /// <summary>
+    /// Bits のメッセージの、累計の置き換え文字。
+    /// </summary>
+    internal const string BitsTotalPlaceholder = "{totalBitsAmount}";
+
+    /// <summary>
+    /// Bits のメッセージのテンプレートを、値で置き換えます。
+    /// </summary>
+    /// <param name="template">テンプレート</param>
+    /// <param name="userName">ビッツを投げたユーザーの名前</param>
+    /// <param name="amount">投げられたビッツの量</param>
+    /// <param name="total">ビッツの合計（取得できなかったときは null。「-」で表す）</param>
+    internal static string BuildBitsMessage(string template, string userName, int amount, int? total)
+        => template.Replace("{bitsAmount}", amount.ToString(CultureInfo.InvariantCulture), StringComparison.Ordinal)
+            .Replace("{bitsSendUserName}", userName, StringComparison.Ordinal)
+            .Replace(BitsTotalPlaceholder, total?.ToString(CultureInfo.InvariantCulture) ?? "-", StringComparison.Ordinal);
+
+    /// <summary>
     /// EventSubからのBitsイベントを処理し、メッセージ送信と読み上げを行います。
     /// </summary>
     /// <param name="e">Bitsイベント引数</param>
-    public void SendBitsEventSubMessage(ChannelCheerArgs e)
+    public async Task SendBitsEventSubMessageAsync(ChannelCheerArgs e)
     {
         var bitsEvent = e.Notification.Payload.Event;
         var bitsSendUserName = bitsEvent.UserName;
         if (bitsSendUserName == null) return;
 
         var bitsAmount = bitsEvent.Bits;
-        var message = _secretKeys.Event.Bits.Message.Replace("{bitsAmount}", bitsAmount.ToString())
-            .Replace("{bitsSendUserName}", bitsSendUserName);
+        var template = _secretKeys.Event.Bits.Message;
+        // 累計は、メッセージに {totalBitsAmount} がある（通知が有効）ときだけ、Twitch の API から取る
+        int? total = null;
+        if (_secretKeys.Event.Bits.Checked && template.Contains(BitsTotalPlaceholder, StringComparison.Ordinal))
+            total = await _twitchApiController.GetBitsTotalAsync(bitsEvent.UserId);
+        var message = BuildBitsMessage(template, bitsSendUserName, bitsAmount, total);
         SendEventNotification(_secretKeys.Event.Bits, bitsSendUserName, message,
             $"{bitsSendUserName}さん{bitsAmount}bitsありがとうございます");
         LogController.OutputLog($"<Bits> UserName: {bitsSendUserName}, Amount: {bitsAmount}", TwitchEventEnum.Bits);
