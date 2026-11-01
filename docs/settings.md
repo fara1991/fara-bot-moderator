@@ -16,7 +16,7 @@
 チャットを読み上げる場合の設定です。
 
 1. 棒読みちゃんを起動します。
-2. 棒読みちゃんの設定で「HTTP連携」を有効にします（ポート: 5008）。
+2. 棒読みちゃんの設定で「HTTP 連携」を有効にします（ポート: 5008）。
 3. アプリの「Main Settings」で、`BouyomiChanConnect` にチェックを入れます。
 
 ![Main Settings タブで BouyomiChanConnect にチェックを入れた状態](images/bouyomi-settings.png)
@@ -87,7 +87,7 @@ Bits: {bitsSendUserName}さん、{bitsAmount}ビッツありがとうござい�
 
 1. [DeepL](https://www.deepl.com/) にアクセスします。
 2. アカウントを作成します（無料プランあり）。
-3. マイページから「APIキー」を取得します。
+3. マイページから「API キー」を取得します。
 
 ### 設定する
 
