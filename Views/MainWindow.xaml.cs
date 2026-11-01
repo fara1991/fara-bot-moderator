@@ -71,6 +71,12 @@ public partial class MainWindow : INotifyPropertyChanged
     private TwitchApiController? _twitchApiController;
 
     /// <summary>
+    /// secrets.json の値を画面に入れ終えたか。false の間（読み込み中・読み込みに失敗したとき）は、画面の入力欄が空のままなので、
+    /// 保存すると secrets.json が空の値で上書きされてしまう。そのため、true になるまで保存しない。
+    /// </summary>
+    private bool _secretValuesLoaded;
+
+    /// <summary>
     /// </summary>
     private TwitchClientController? _twitchClientController;
 
@@ -148,6 +154,7 @@ public partial class MainWindow : INotifyPropertyChanged
 
             // UIスレッドで実行する必要がある処理
             InitializeSecretValue(secretKeys);
+            _secretValuesLoaded = true;
             LogController.OutputLog("UI initialized with secret values.");
             
             try
@@ -175,7 +182,10 @@ public partial class MainWindow : INotifyPropertyChanged
         catch (Exception ex)
         {
             LogController.OutputLog($"Initialization failed: {ex.Message}");
-            MessageBox.Show($"初期化に失敗しました: {ex.Message}", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
+            var notSavedNote = _secretValuesLoaded
+                ? ""
+                : "\n\n設定ファイル（secrets.json）を読み込めていないため、設定は保存しません（今の設定ファイルはそのまま残ります）。アプリを起動し直してください。";
+            MessageBox.Show($"初期化に失敗しました: {ex.Message}{notSavedNote}", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
         }
         finally
         {
@@ -783,6 +793,10 @@ public partial class MainWindow : INotifyPropertyChanged
     /// <param name="syncKey">保存するアクセスキー（省略時は今のアクセスキー。切り替える前に新しいキーを保存するときに使う）</param>
     private void SaveSecretValue(string? syncKey = null)
     {
+        // 読み込めていない（入力欄が空のまま）なら、secrets.json を空の値で上書きしないよう保存しない
+        if (!_secretValuesLoaded)
+            throw new InvalidOperationException("secrets.json を読み込めていないため、保存しません。");
+
         var timer1 =
             (FixedTimer1DatePicker.SelectedDate is not null
                 ? FixedTimer1DatePicker.SelectedDate.Value.ToShortDateString()
@@ -1051,6 +1065,13 @@ public partial class MainWindow : INotifyPropertyChanged
     {
         try
         {
+            if (!_secretValuesLoaded)
+            {
+                MessageBox.Show("設定ファイル（secrets.json）を読み込めていないため、接続できません。アプリを起動し直してください。",
+                    "設定ファイル", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
             SaveSecretValue();
 
             var state = TwitchConnectionStateLabel.Content.ToString();
@@ -1162,7 +1183,10 @@ public partial class MainWindow : INotifyPropertyChanged
         // チャットの format set が画面に反映される前に閉じても、古いコンボの値で上書きしないよう、最新の登録形式を画面に戻してから保存する
         if (_twitchClientController is not null)
             PokemonBattleFormatComboBox.SelectedIndex = PokemonBattleFormatIndex(_twitchClientController.PokemonBattleFormat);
-        SaveSecretValue();
+        if (_secretValuesLoaded)
+            SaveSecretValue();
+        else
+            LogController.OutputLog("secrets.json を読み込めていないため、終了時の保存は行いません。");
         _chatWindow?.Close();
         _raidListWindow?.Close();
         _pokemonRosterWindow?.Close();
