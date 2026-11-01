@@ -117,6 +117,17 @@ public class TwitchAuthServiceTests
     }
 
     [Fact]
+    public void The_auth_progress_page_has_no_scripts_or_external_loads()
+    {
+        var html = TwitchAuthService.AuthProgressPageHtml();
+
+        Assert.Contains("認証しています", html);
+        Assert.DoesNotContain("<script", html, System.StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("http://", html);
+        Assert.DoesNotContain("https://", html);
+    }
+
+    [Fact]
     public void A_failed_authorization_status_does_not_show_the_exception_text()
     {
         // 例外の文（URL や応答の本文を含みうる）は画面に出さない（ログにだけ出す）

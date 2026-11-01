@@ -258,6 +258,7 @@
                         </GroupBox.Header>
                         <Grid Background="White">
                             <wpf:WebView2 x:Name="FaraBotModeratorWebView"
+                                          NavigationStarting="FaraBotModeratorWebView_NavigationStarting"
                                           NavigationCompleted="FaraBotModeratorWebView_NavigationCompleted"
                                           HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
                         </Grid>
