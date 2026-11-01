@@ -53,7 +53,7 @@
 ![Client と API の欄に入力した Main Settings タブ（入力例はダミーの値）](images/main-settings.png)
 
 > [!NOTE]
-> 認可のときに Twitch が求める権限は 7 つです。`chat:read`・`chat:edit`・`channel:read:redemptions`・`bits:read`・`moderator:read:followers`・`user:read:follows`・`moderator:manage:shoutouts` です。取得した情報は、アプリの画面への表示・読み上げ・ログに使います。
+> 認証のときに Twitch が求める権限は 7 つです。`chat:read`・`chat:edit`・`channel:read:redemptions`・`bits:read`・`moderator:read:followers`・`user:read:follows`・`moderator:manage:shoutouts` です。取得した情報は、アプリの画面への表示・読み上げ・ログに使います。
 
 ## 4. Twitch チャットにつなぐ
 

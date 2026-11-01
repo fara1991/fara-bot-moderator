@@ -250,9 +250,9 @@ public class TwitchAuthService
     /// <param name="error">例外で失敗したときの例外（コードが無効などで false を返したときは null）</param>
     internal static string AuthorizationFailureStatus(Exception? error) => error switch
     {
-        null => "認可に失敗しました（認可コードが無効、または期限切れ）。Authorize からもう一度認可してください。",
-        AuthorizationStateMismatchException => "認可の検証（state）が一致しませんでした。Authorize からもう一度認可してください。",
-        _ => "認可に失敗しました（Twitch との通信・応答の処理に失敗）。Authorize からもう一度認可してください。",
+        null => "認証に失敗しました（認証コードが無効、または期限切れ）。Authorize からもう一度認証してください。",
+        AuthorizationStateMismatchException => "認証の検証（state）が一致しませんでした。Authorize からもう一度認証してください。",
+        _ => "認証に失敗しました（Twitch との通信・応答の処理に失敗）。Authorize からもう一度認証してください。",
     };
 
     /// <summary>

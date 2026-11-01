@@ -45,7 +45,3 @@ Twitch のアカウントなど、用意するものの一覧は [導入の手�
 
 - 不具合・要望: [GitHub の Issues](https://github.com/fara1991/fara-bot-moderator/issues)
 - そのほか: Twitter（X）の [@game_fara](https://twitter.com/game_fara)
-
-## ライセンス
-
-本プロジェクトは開発中のプロトタイプです。
