@@ -650,6 +650,7 @@ public partial class MainWindow : INotifyPropertyChanged
             _authorizationStartedAt = null;
             _consecutiveTemporaryRefreshFailures = 0;
             TwitchAuthStatusTextBlock.Text = "";
+            ShowAuthResultPage(true);
             UnlockWindowControl();
             return;
         }
@@ -662,7 +663,19 @@ public partial class MainWindow : INotifyPropertyChanged
             : $"<Error> 認証のトークン取得で例外が起きました: {error.Message}");
         _authorizationStartedAt = TokenMonitorPolicy.AuthorizationAnchorAfterEnd(false, DateTime.Now);
         TwitchAuthStatusTextBlock.Text = TwitchAuthService.AuthorizationFailureStatus(error);
+        ShowAuthResultPage(false);
         UnlockWindowControl();
+    }
+
+    /// <summary>
+    /// 認証が終わったあとの WebView を、結果のページに切り替えます（戻り先の localhost にはサーバーが無く、「接続が拒否されました」と出るため）。
+    /// WebView2 を初期化できなかったときは、何もしません。
+    /// </summary>
+    /// <param name="success">認証に成功したか</param>
+    private void ShowAuthResultPage(bool success)
+    {
+        if (FaraBotModeratorWebView.CoreWebView2 is null) return;
+        FaraBotModeratorWebView.NavigateToString(TwitchAuthService.AuthResultPageHtml(success));
     }
 
     /// <summary>
