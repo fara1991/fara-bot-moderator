@@ -45,6 +45,20 @@ public class ReviewFixesTests : IDisposable
     }
 
     [Fact]
+    public void The_interval_is_counted_separately_for_each_kind_of_notification()
+    {
+        var throttle = new NotificationThrottle(TimeSpan.FromMinutes(5));
+
+        Assert.True(throttle.TryAcquire(Now, "key"));
+        // 別の理由の通知は、間隔の内でも出す
+        Assert.True(throttle.TryAcquire(Now.AddMinutes(1), "quota"));
+        // 同じ理由は、間隔が経つまで出さない
+        Assert.False(throttle.TryAcquire(Now.AddMinutes(2), "key"));
+        Assert.False(throttle.TryAcquire(Now.AddMinutes(3), "quota"));
+        Assert.True(throttle.TryAcquire(Now.AddMinutes(5), "key"));
+    }
+
+    [Fact]
     public void Only_consecutive_failures_reach_the_threshold()
     {
         var counter = new ConsecutiveFailureCounter(3);
@@ -92,6 +106,7 @@ public class ReviewFixesTests : IDisposable
     [InlineData("a?b=c", false)]
     [InlineData("../x", false)]
     [InlineData("ファーラ", false)]
+    [InlineData("abc\n", false)]
     [InlineData("abcdefghijklmnopqrstuvwxyz", false)]
     public void A_twitch_login_name_is_letters_digits_and_underscore_up_to_25(string? name, bool expected)
     {
@@ -148,6 +163,29 @@ public class ReviewFixesTests : IDisposable
             Assert.True(TimerPolicy.TryParseFixed("02.11.2026 18:30:45", out var value));
             Assert.Equal(new DateTime(2026, 11, 2, 18, 30, 45), value);
             Assert.False(TimerPolicy.TryParseFixed("garbage", out _));
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = original;
+        }
+    }
+
+    [Theory]
+    [InlineData("en-GB", "02/11/2026 18:30:45", 2026, 11, 2, 18, 30, 45)]
+    [InlineData("en-US", "11/2/2026 6:30:45 PM", 2026, 11, 2, 18, 30, 45)]
+    [InlineData("ja-JP", "2026/11/2 6:30:45", 2026, 11, 2, 6, 30, 45)]
+    [InlineData("de-DE", "02.11.2026 18:30:45", 2026, 11, 2, 18, 30, 45)]
+    public void An_old_format_date_is_read_with_the_current_culture_before_the_invariant_one(
+        string culture, string text, int year, int month, int day, int hour, int minute, int second)
+    {
+        var original = CultureInfo.CurrentCulture;
+        try
+        {
+            CultureInfo.CurrentCulture = new CultureInfo(culture);
+
+            // 地域設定に依らない読み方を先にすると、en-GB の「02/11/2026」が、2 月 11 日になってしまう
+            Assert.True(TimerPolicy.TryParseFixed(text, out var value));
+            Assert.Equal(new DateTime(year, month, day, hour, minute, second), value);
         }
         finally
         {

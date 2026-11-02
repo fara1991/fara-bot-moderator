@@ -31,7 +31,7 @@ public class TwitchClientController
     private IrcClient? _irc;
 
     /// <summary>
-    /// 翻訳の失敗をチャットに知らせる間隔の管理（5 分に 1 回まで）。
+    /// 翻訳の失敗をチャットに知らせる間隔の管理（失敗の理由ごとに、5 分に 1 回まで）。
     /// </summary>
     private readonly NotificationThrottle _translationErrorThrottle = new(TimeSpan.FromMinutes(5));
 
@@ -701,8 +701,8 @@ public class TwitchClientController
         catch (Exception ex)
         {
             var errorMessage = TranslationFailure.Describe(ex);
-            // 視聴者のメッセージのたびに、同じエラーをチャットに出し続けない（5 分に 1 回まで）。ログには毎回残す
-            if (_irc != null && _translationErrorThrottle.TryAcquire(DateTime.UtcNow))
+            // 視聴者のメッセージのたびに、同じ理由のエラーをチャットに出し続けない（理由ごとに 5 分に 1 回まで）。ログには毎回残す
+            if (_irc != null && _translationErrorThrottle.TryAcquire(DateTime.UtcNow, errorMessage))
             {
                 SendMessage(displayName,
                     $"[{Settings.Default.BotName}] @{_twitchUserName} {errorMessage}", userId);

@@ -1,27 +1,30 @@
 using System;
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
 namespace FaraBotModerator.Controllers;
 
 /// <summary>
 /// 同じ通知を、続けて出さないための間隔の管理（DeepL の失敗を、視聴者のメッセージのたびに、チャットへ出し続けないため）。
+/// 間隔は、通知の種類（キー）ごとに数える（別の理由の失敗は、間隔の内でも通知する）。
 /// </summary>
 internal sealed class NotificationThrottle(TimeSpan interval)
 {
     private readonly object _lock = new();
-    private DateTime? _lastAt;
+    private readonly Dictionary<string, DateTime> _lastAt = [];
 
     /// <summary>
-    /// 今、通知してよいか。よいときは、通知した時刻として覚える（続けて呼ぶと、間隔が経つまで false）。
+    /// 今、通知してよいか。よいときは、通知した時刻として覚える（同じキーで続けて呼ぶと、間隔が経つまで false）。
     /// </summary>
     /// <param name="now">今の時刻</param>
-    internal bool TryAcquire(DateTime now)
+    /// <param name="key">通知の種類（失敗の理由など）。省略すると、すべて同じ種類として数える</param>
+    internal bool TryAcquire(DateTime now, string key = "")
     {
         lock (_lock)
         {
-            if (_lastAt is { } last && now - last < interval) return false;
+            if (_lastAt.TryGetValue(key, out var last) && now - last < interval) return false;
 
-            _lastAt = now;
+            _lastAt[key] = now;
             return true;
         }
     }
@@ -87,6 +90,6 @@ internal static partial class TwitchLoginName
     /// <param name="name">ログイン名</param>
     internal static bool IsValid(string? name) => !string.IsNullOrEmpty(name) && LoginRegex().IsMatch(name);
 
-    [GeneratedRegex("^[A-Za-z0-9_]{1,25}$")]
+    [GeneratedRegex("^[A-Za-z0-9_]{1,25}\\z")]
     private static partial Regex LoginRegex();
 }
