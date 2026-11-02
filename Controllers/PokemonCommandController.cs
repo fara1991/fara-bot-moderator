@@ -70,8 +70,7 @@ public class PokemonCommandController
     /// <summary>
     /// ボットのデータの保存先（%LOCALAPPDATA%\FaraBotModerator）。ポケモンのデータ（CSV）のキャッシュを置きます
     /// </summary>
-    public static readonly string AppDirectory = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "FaraBotModerator");
+    public static readonly string AppDirectory = AppPaths.DataDirectory;
 
     private volatile PokeCommand _command;
     private PokemonDataSource _dataSource;

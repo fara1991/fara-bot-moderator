@@ -35,20 +35,20 @@
 
 ## 設定が保存されません
 
-アプリ終了時に自動で保存されます。設定は `Resources\secrets.json` ファイルに保存されます。
+アプリ終了時に自動で保存されます。設定は `%LOCALAPPDATA%\FaraBotModerator\secrets.json` ファイルに保存されます。
 
 ## 設定やログはどこに保存されますか
 
 設定やログは、この PC の中に保存されます。
 
-- 設定と認証情報: `Resources\secrets.json`（暗号化せずに保存されます）
+- 設定と認証情報: `%LOCALAPPDATA%\FaraBotModerator\secrets.json`（暗号化せずに保存されます）
 - Twitch のログイン状態: アプリのユーザー設定ファイル（`user.config`。暗号化せずに保存されます）
-- ログ: インストールフォルダ内の `Log` フォルダ（視聴者のユーザー名とチャットの本文が入ります）
+- ログ: `%LOCALAPPDATA%\FaraBotModerator\Log` フォルダー（視聴者のユーザー名とチャットの本文が入ります）
 
 これらのファイルは、他の人に渡したり、配信画面に映したりしないでください。
 
 ## 起動時に「secrets.json が壊れていた」と表示されました
 
-壊れたファイルは、中身を消さずに `secrets.broken-日時.json` という名前で `Resources` フォルダに残します。設定は初期値で作り直しています。
+壊れたファイルは、中身を消さずに `secrets.broken-日時.json` という名前で、`secrets.json` と同じフォルダーに残します。設定は初期値で作り直しています。
 
 退避したファイルを開いて、必要な設定（Twitch の接続・API キーなど）を入れ直してください。

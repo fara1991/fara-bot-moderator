@@ -17,7 +17,7 @@ namespace FaraBotModerator.Controllers;
 /// </summary>
 public static class TextRegexController
 {
-    private static readonly string BeatSaberDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ChatSetting", "BeatSaber");
+    private static readonly string BeatSaberDirectory = AppPaths.BeatSaberDirectory;
     private static readonly string BeatSaberFile = Path.Combine(BeatSaberDirectory, "bsr.json");
 
     /// <summary>
