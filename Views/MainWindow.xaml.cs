@@ -561,11 +561,30 @@ public partial class MainWindow : INotifyPropertyChanged
     /// </summary>
     private void UpdateConnectionStateOnce()
     {
-        var isConnected = IsTwitchConnected();
+        var state = ConnectionPolicy.StateOf(_twitchClientController is not null || _twitchEventSubController is not null,
+            _twitchClientController?.IsConnected ?? false, _twitchEventSubController?.IsConnected ?? false,
+            Settings.Default.expiresDateTime, DateTime.Now);
+        var isConnected = state == TwitchConnectionState.Connected;
 
-        TwitchConnectionStateLabel.Content = isConnected
-            ? @"State: Connect"
-            : @"State: Disconnect";
+        TwitchConnectionStateLabel.Content = state switch
+        {
+            TwitchConnectionState.Connected => @"State: Connect",
+            TwitchConnectionState.Reconnecting => @"State: Reconnecting...",
+            _ => @"State: Disconnect",
+        };
+        // つなぎ直し中は、切断中と見分けがつくよう、色を変える
+        if (state == TwitchConnectionState.Reconnecting)
+            TwitchConnectionStateLabel.Foreground = System.Windows.Media.Brushes.DarkOrange;
+        else
+            TwitchConnectionStateLabel.ClearValue(Control.ForegroundProperty);
+
+        // つながっていないのに、Connect・Authorize が無効のままだと、接続中のように見える。つなぎ直し中は、有効に戻す
+        // （Connect で、つなぎ直しをやり直せる。Authorize で、トークンの問題を直せる。つながったら、また無効にする）
+        if (state != TwitchConnectionState.Disconnected)
+        {
+            TwitchConnectionButton.IsEnabled = !isConnected;
+            TwitchApiAuthorizeButton.IsEnabled = !isConnected;
+        }
 
         // Test Sendボタンの状態を制御
         FollowTestButton.IsEnabled = isConnected;
