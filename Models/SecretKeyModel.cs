@@ -49,6 +49,38 @@ public class SecretKeyModel
     /// </summary>
     [JsonPropertyName("beatSaber")]
     public BeatSaberModel BeatSaber { get; init; } = new();
+
+    /// <summary>
+    /// ポケモン関連コマンドの設定
+    /// </summary>
+    [JsonPropertyName("pokemon")]
+    public PokemonModel Pokemon { get; init; } = new();
+}
+
+/// <summary>
+/// ポケモン関連コマンドの設定を保持するモデル
+/// </summary>
+public class PokemonModel
+{
+    /// <summary>
+    /// 登録している対戦形式（"Singles" または "Doubles"）。null は未登録（シングルとして動く）。
+    /// Auto Bot Settings の「対戦形式」と、チャットの <c>format set</c> / <c>format clear</c> は、この同じ値を読み書きします。
+    /// </summary>
+    [JsonPropertyName("battleFormat")]
+    public string? BattleFormat { get; init; }
+
+    /// <summary>
+    /// ポケモンのデータの取得元（"Production" または "Develop"）
+    /// </summary>
+    [JsonPropertyName("dataSource")]
+    public string DataSource { get; init; } = "Production";
+
+    /// <summary>
+    /// 登録データ（ポケモン・チーム）をサイトと共有するアクセスキー（43 文字）。空なら登録系のコマンドは使えません。
+    /// パスワードと同じ扱いで、ログや画面のメッセージには出しません。
+    /// </summary>
+    [JsonPropertyName("syncKey")]
+    public string SyncKey { get; init; } = "";
 }
 
 /// <summary>

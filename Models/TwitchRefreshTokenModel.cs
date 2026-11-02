@@ -18,6 +18,12 @@ public class TwitchRefreshTokenModel
     public string RefreshToken { get; init; } = "";
 
     /// <summary>
+    /// アクセストークンの有効秒数。refresh の後の期限の計算に使う（認証コードの交換と同じ計算）
+    /// </summary>
+    [JsonPropertyName("expires_in")]
+    public int ExpiresIn { get; init; }
+
+    /// <summary>
     /// </summary>
     [JsonPropertyName("scope")]
     public List<string> Scope { get; init; } = [];

@@ -1,0 +1,42 @@
+name: Build and test
+
+# FaraBotModerator のアプリ本体のビルドとテスト。Pull Request と、develop・master への push で動く。公開はしない。
+#   app  … アプリ本体（WPF。Windows でビルド）
+# アプリのインストーラーのリリースは release-app.yml（タグ v* か手動実行）。
+# （紹介サイトは廃止した。アプリの説明は GitHub の README と docs/ に置く）
+
+on:
+  # PR の間は pull_request の 1 回だけ動かす（作業ブランチへの push では動かさない）。develop・master に入ったときは push で動く
+  push:
+    branches: [develop, master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  app:
+    name: Build app
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Restore
+        run: dotnet restore FaraBotModerator.csproj
+
+      - name: Build
+        run: dotnet build FaraBotModerator.csproj -c Release --no-restore
+
+      - name: Test (app unit tests)
+        run: dotnet test tests/FaraBotModerator.Tests/FaraBotModerator.Tests.csproj -c Release --nologo

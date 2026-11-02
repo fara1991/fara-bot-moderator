@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
@@ -17,14 +18,14 @@ namespace FaraBotModerator.Views;
 /// </summary>
 public partial class RaidListWindow : Window
 {
-    private readonly TwitchApiController _twitchApiController;
+    private readonly Func<TwitchApiController?> _getTwitchApiController;
 
     /// <summary>
     /// 
     /// </summary>
-    public RaidListWindow(TwitchApiController twitchApiController)
+    public RaidListWindow(Func<TwitchApiController?> getTwitchApiController)
     {
-        _twitchApiController = twitchApiController;
+        _getTwitchApiController = getTwitchApiController;
         InitializeComponent();
     }
 
@@ -44,7 +45,16 @@ public partial class RaidListWindow : Window
         if (rowData is StreamingUserModel userModel)
         {
             var command = $"/raid {userModel.LoginId}";
-            Clipboard.SetText(command);
+            try
+            {
+                Clipboard.SetText(command);
+            }
+            catch (System.Runtime.InteropServices.ExternalException ex)
+            {
+                // 別のアプリがクリップボードを使っているとき。アプリは止めず、コピーできなかったことをログに残す
+                LogController.OutputLog($"<Error> レイドのコマンドをコピーできませんでした: {ex.GetType().Name}");
+                return;
+            }
 
             // ボタンと同じレベルにあるPopupを探す
             var grid = VisualTreeHelper.GetParent(button) as Grid;
@@ -81,15 +91,36 @@ public partial class RaidListWindow : Window
         }
     }
 
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "画面のイベントハンドラー。例外でアプリを落とさないよう、ここで受けてログに残す")]
+    [SuppressMessage("Usage", "VSTHRD100:Avoid async void methods", Justification = "イベントハンドラーの型（void を返すデリゲート）の都合で async void が必要。例外は本文の try/catch で受けて、ログ・画面で知らせている")]
     private async void TwitchStreamingFollowerButton_OnClick(object sender, RoutedEventArgs e)
     {
-        var streamingUsers = await _twitchApiController.GetStreamingFollowerUsersAsync();
-        SetRaidDataGridView(streamingUsers);
+        try
+        {
+            if (_getTwitchApiController() is not { } api) return;
+            var streamingUsers = await api.GetStreamingFollowerUsersAsync();
+            SetRaidDataGridView(streamingUsers);
+        }
+        catch (Exception ex)
+        {
+            // async void の中で例外を出すとアプリが落ちるので、必ず受けてログに残す
+            LogController.OutputLog($"<Error> フォロー中の配信の取得に失敗しました: {ex.GetType().Name}");
+        }
     }
 
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "画面のイベントハンドラー。例外でアプリを落とさないよう、ここで受けてログに残す")]
+    [SuppressMessage("Usage", "VSTHRD100:Avoid async void methods", Justification = "イベントハンドラーの型（void を返すデリゲート）の都合で async void が必要。例外は本文の try/catch で受けて、ログ・画面で知らせている")]
     private async void TwitchStreamingSameGameButton_OnClick(object sender, RoutedEventArgs e)
     {
-        var streamingUsers = await _twitchApiController.GetStreamingSameGameUsersAsync();
-        SetRaidDataGridView(streamingUsers);
+        try
+        {
+            if (_getTwitchApiController() is not { } api) return;
+            var streamingUsers = await api.GetStreamingSameGameUsersAsync();
+            SetRaidDataGridView(streamingUsers);
+        }
+        catch (Exception ex)
+        {
+            LogController.OutputLog($"<Error> 同じゲームの配信の取得に失敗しました: {ex.GetType().Name}");
+        }
     }
 }

@@ -1,4 +1,5 @@
-﻿using System.Windows;
+﻿using System;
+using System.Windows;
 using System.Windows.Input;
 using FaraBotModerator.Controllers;
 
@@ -9,13 +10,14 @@ namespace FaraBotModerator.Views;
 /// </summary>
 public partial class ChatWindow : Window
 {
-    private readonly TwitchClientController _twitchClientController;
+    private readonly Func<TwitchClientController?> _getTwitchClientController;
 
     /// <summary>
     /// </summary>
-    public ChatWindow(TwitchClientController twitchClientController)
+    /// <param name="getTwitchClientController">今のチャットクライアントを返す関数（接続し直すと別のものに替わるので、送るたびに取る。接続していなければ null）</param>
+    public ChatWindow(Func<TwitchClientController?> getTwitchClientController)
     {
-        _twitchClientController = twitchClientController;
+        _getTwitchClientController = getTwitchClientController;
         InitializeComponent();
     }
 
@@ -25,12 +27,10 @@ public partial class ChatWindow : Window
     /// <param name="e"></param>
     private void TwitchRequestChatTextBox_KeyDown(object sender, KeyEventArgs e)
     {
-        var message = TwitchRequestChatTextBox.Text;
-        if (e.Key == Key.Enter)
-        {
-            _twitchClientController.SendApplicationMessage(message);
-            TwitchRequestChatTextBox.Text = "";
-        }
+        if (e.Key != Key.Enter) return;
+
+        e.Handled = true;
+        SendMessageFromTextBox();
     }
 
     /// <summary>
@@ -39,8 +39,21 @@ public partial class ChatWindow : Window
     /// <param name="e"></param>
     private void TwitchRequestChatButton_Click(object sender, RoutedEventArgs e)
     {
+        SendMessageFromTextBox();
+    }
+
+    /// <summary>
+    /// 入力欄のメッセージを送ります。空のとき、または接続していないときは、何もしません（入力欄は消しません）。
+    /// </summary>
+    private void SendMessageFromTextBox()
+    {
         var message = TwitchRequestChatTextBox.Text;
-        _twitchClientController.SendApplicationMessage(message);
+        if (string.IsNullOrWhiteSpace(message)) return;
+
+        var client = _getTwitchClientController();
+        if (client is null) return;
+
+        _ = client.SendApplicationMessageAsync(message);
         TwitchRequestChatTextBox.Text = "";
     }
 }
