@@ -18,14 +18,14 @@ namespace FaraBotModerator.Views;
 /// </summary>
 public partial class RaidListWindow : Window
 {
-    private readonly TwitchApiController _twitchApiController;
+    private readonly Func<TwitchApiController?> _getTwitchApiController;
 
     /// <summary>
     /// 
     /// </summary>
-    public RaidListWindow(TwitchApiController twitchApiController)
+    public RaidListWindow(Func<TwitchApiController?> getTwitchApiController)
     {
-        _twitchApiController = twitchApiController;
+        _getTwitchApiController = getTwitchApiController;
         InitializeComponent();
     }
 
@@ -88,7 +88,8 @@ public partial class RaidListWindow : Window
     {
         try
         {
-            var streamingUsers = await _twitchApiController.GetStreamingFollowerUsersAsync();
+            if (_getTwitchApiController() is not { } api) return;
+            var streamingUsers = await api.GetStreamingFollowerUsersAsync();
             SetRaidDataGridView(streamingUsers);
         }
         catch (Exception ex)
@@ -104,7 +105,8 @@ public partial class RaidListWindow : Window
     {
         try
         {
-            var streamingUsers = await _twitchApiController.GetStreamingSameGameUsersAsync();
+            if (_getTwitchApiController() is not { } api) return;
+            var streamingUsers = await api.GetStreamingSameGameUsersAsync();
             SetRaidDataGridView(streamingUsers);
         }
         catch (Exception ex)

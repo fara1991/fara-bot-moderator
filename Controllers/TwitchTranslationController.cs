@@ -2,7 +2,6 @@
 using DeepL.Model;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using TwitchLib.Client;
 using FaraBotModerator.Properties;
 
 namespace FaraBotModerator.Controllers;
@@ -52,11 +51,11 @@ public partial class TwitchTranslationController : System.IDisposable
     /// メッセージ内からTwitchのエモート文字列（URL形式に変換されたものも含む）を削除します。
     /// </summary>
     /// <param name="message">メッセージ</param>
-    /// <param name="twitchClient">Twitchクライアントインスタンス</param>
+    /// <param name="emotes">これまでに受け取ったメッセージから覚えた、エモートの名前</param>
     /// <returns>エモート削除後のメッセージ</returns>
-    public static string RemoveEmotes(string message, TwitchClient twitchClient)
+    internal static string RemoveEmotes(string message, EmoteFilter emotes)
     {
-        var replaceEmoteMessage = twitchClient.ChannelEmotes.ReplaceEmotes(message);
+        var replaceEmoteMessage = emotes.Remove(message);
         var deleteEmoteMessage = EmoteRegex().Replace(replaceEmoteMessage, "");
         return deleteEmoteMessage.Trim();
     }

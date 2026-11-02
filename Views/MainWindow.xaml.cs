@@ -117,7 +117,7 @@ public partial class MainWindow : INotifyPropertyChanged
         _ = RunWithExceptionHandlingAsync(StartTimerAsync, "Timer");
         _ = RunWithExceptionHandlingAsync(StartWebServerAsync, "WebServer");
         _ = RunWithExceptionHandlingAsync(StartMonitoringAsync, "Monitoring");
-        _ = RunWithExceptionHandlingAsync(StartTwitchLibEventSubAsync, "TwitchPubSub");
+        _ = RunWithExceptionHandlingAsync(StartConnectionStateMonitoringAsync, "ConnectionState");
 
         Loaded += MainWindow_Loaded;
     }
@@ -173,10 +173,10 @@ public partial class MainWindow : INotifyPropertyChanged
             await _twitchApiController.InitializeAsync();
             _twitchClientController ??= new TwitchClientController(secretKeys, _twitchApiController);
 
-            _chatWindow ??= new ChatWindow(_twitchClientController);
+            _chatWindow ??= new ChatWindow(() => _twitchClientController);
             _chatWindow.Show();
 
-            _raidListWindow ??= new RaidListWindow(_twitchApiController);
+            _raidListWindow ??= new RaidListWindow(() => _twitchApiController);
             _raidListWindow.Show();
         }
         catch (Exception ex)
@@ -516,7 +516,7 @@ public partial class MainWindow : INotifyPropertyChanged
         if (_twitchClientController is not null) AddGridViewChatData();
 
         // 棒読みちゃん接続チェック
-        if (BouyomiChanConnectCheckBox.IsChecked != true || TwitchConnectionStateLabel.Content.ToString() != "State: Connect") return;
+        if (BouyomiChanConnectCheckBox.IsChecked != true || !IsTwitchConnected()) return;
         if (_twitchClientController != null && !await BouyomiChanController.IsBouyomiChanRunningAsync())
         {
             // Dispatcher.InvokeAsync は Task を返すので、中の TwitchDisconnect まで待つために await を 2 回書く
@@ -529,7 +529,7 @@ public partial class MainWindow : INotifyPropertyChanged
     }
 
     [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "画面の最上位（イベントハンドラー・起動・監視の周期処理）。例外で画面・ボット全体を止めないよう、ここで受けてログ・メッセージで知らせる")]
-    private async Task StartTwitchLibEventSubAsync()
+    private async Task StartConnectionStateMonitoringAsync()
     {
         while (true)
         {
@@ -549,17 +549,43 @@ public partial class MainWindow : INotifyPropertyChanged
     }
 
     /// <summary>
+    /// 今、Twitch に接続している状態か（チャットと EventSub の両方がつながっていて、トークンが期限内）。
+    /// 表示・Connect ボタンの動き・棒読みちゃんの確認は、画面のラベルの文字列ではなく、これで判断する。
+    /// </summary>
+    private bool IsTwitchConnected()
+        => ConnectionPolicy.IsFullyConnected(_twitchClientController?.IsConnected ?? false,
+            _twitchEventSubController?.IsConnected ?? false, Settings.Default.expiresDateTime, DateTime.Now);
+
+    /// <summary>
     /// 接続状態の表示と、テスト送信ボタンの有効・無効を 1 回更新します。
     /// </summary>
     private void UpdateConnectionStateOnce()
     {
-        var isConnected = _twitchClientController is { IsConnected: true } &&
-                          _twitchEventSubController is { IsConnected: true } &&
-                          DateTime.Now <= Settings.Default.expiresDateTime;
+        // 「接続の仕組みがある」の目印は、EventSub の controller（Connect したときにだけ作る）。チャットの controller は、起動時にも作るので、目印にならない
+        var state = ConnectionPolicy.StateOf(_twitchEventSubController is not null,
+            _twitchClientController?.IsConnected ?? false, _twitchEventSubController?.IsConnected ?? false,
+            Settings.Default.expiresDateTime, DateTime.Now);
+        var isConnected = state == TwitchConnectionState.Connected;
 
-        TwitchConnectionStateLabel.Content = isConnected
-            ? @"State: Connect"
-            : @"State: Disconnect";
+        TwitchConnectionStateLabel.Content = state switch
+        {
+            TwitchConnectionState.Connected => @"State: Connect",
+            TwitchConnectionState.Reconnecting => @"State: Reconnecting...",
+            _ => @"State: Disconnect",
+        };
+        // つなぎ直し中は、切断中と見分けがつくよう、色を変える
+        if (state == TwitchConnectionState.Reconnecting)
+            TwitchConnectionStateLabel.Foreground = System.Windows.Media.Brushes.DarkOrange;
+        else
+            TwitchConnectionStateLabel.ClearValue(Control.ForegroundProperty);
+
+        // つながっていないのに、Connect・Authorize が無効のままだと、接続中のように見える。つなぎ直し中は、有効に戻す
+        // （Connect で、つなぎ直しをやり直せる。Authorize で、トークンの問題を直せる。つながったら、また無効にする）
+        if (state != TwitchConnectionState.Disconnected)
+        {
+            TwitchConnectionButton.IsEnabled = !isConnected;
+            TwitchApiAuthorizeButton.IsEnabled = !isConnected;
+        }
 
         // Test Sendボタンの状態を制御
         FollowTestButton.IsEnabled = isConnected;
@@ -1027,6 +1053,11 @@ public partial class MainWindow : INotifyPropertyChanged
                 return;
             }
 
+            // 前の接続が残っている（EventSub だけ切れた・接続の途中で失敗した、など）と、作り直したときに古いクライアントが切断されないまま残り、
+            // 二重に接続されるので、先に切る
+            if (_twitchClientController is { IsConnected: true } || _twitchEventSubController is not null)
+                await TearDownTwitchConnectionAsync();
+
             _twitchApiController = new TwitchApiController(secretKeys);
             await _twitchApiController.InitializeAsync();
 
@@ -1051,7 +1082,7 @@ public partial class MainWindow : INotifyPropertyChanged
                 }
             }
 
-            _twitchClientController.Connect();
+            await _twitchClientController.ConnectAsync();
 
             // EventSub
             _twitchEventSubController = new TwitchEventSubController(_twitchClientController, _twitchApiController);
@@ -1062,12 +1093,47 @@ public partial class MainWindow : INotifyPropertyChanged
         catch (Exception ex)
         {
             LogController.OutputLog($"Twitch connect failed: {ex.Message}");
+            // チャットだけつながって、EventSub が失敗したときなど、中途半端につながったままにしない
+            await TearDownTwitchConnectionAsync();
             MessageBox.Show($"Twitchへの接続に失敗しました: {ex.Message}", "エラー", MessageBoxButton.OK, MessageBoxImage.Error);
         }
         finally
         {
             LoadingOverlay.Visibility = Visibility.Collapsed;
         }
+    }
+
+    /// <summary>
+    /// 今の Twitch への接続（EventSub とチャット）を切って、参照を外します。片方が失敗しても、もう片方は切ります。
+    /// API の controller（トークンでの問い合わせ）は、切断後もレイドリストなどが使うので、残します。
+    /// </summary>
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "画面の最上位（イベントハンドラー・起動・監視の周期処理）。例外で画面・ボット全体を止めないよう、ここで受けてログ・メッセージで知らせる")]
+    private async Task TearDownTwitchConnectionAsync()
+    {
+        try
+        {
+            if (_twitchEventSubController != null)
+            {
+                await _twitchEventSubController.DisconnectAsync();
+                _twitchEventSubController.Dispose();
+            }
+        }
+        catch (Exception ex)
+        {
+            LogController.OutputLog($"EventSub disconnect failed: {ex.Message}");
+        }
+
+        try
+        {
+            _twitchClientController?.Disconnect();
+        }
+        catch (Exception ex)
+        {
+            LogController.OutputLog($"Twitch client disconnect failed: {ex.Message}");
+        }
+
+        _twitchClientController = null;
+        _twitchEventSubController = null;
     }
 
     /// <summary>
@@ -1079,19 +1145,7 @@ public partial class MainWindow : INotifyPropertyChanged
         LoadingOverlay.Visibility = Visibility.Visible;
         try
         {
-            if (_twitchEventSubController != null)
-            {
-                await _twitchEventSubController.DisconnectAsync();
-            }
-
-            if (_twitchClientController != null)
-            {
-                _twitchClientController.Disconnect();
-            }
-
-            _twitchClientController = null;
-            _twitchApiController = null;
-            _twitchEventSubController = null;
+            await TearDownTwitchConnectionAsync();
 
             UnlockWindowControl();
         }
@@ -1134,8 +1188,7 @@ public partial class MainWindow : INotifyPropertyChanged
 
             SaveSecretValue();
 
-            var state = TwitchConnectionStateLabel.Content.ToString();
-            if (state is not null && state.Equals("State: Connect"))
+            if (IsTwitchConnected())
             {
                 await TwitchDisconnectAsync();
             }
@@ -1177,7 +1230,7 @@ public partial class MainWindow : INotifyPropertyChanged
 
         if (_chatWindow == null || !IsWindowOpen<ChatWindow>())
         {
-            _chatWindow = new ChatWindow(_twitchClientController);
+            _chatWindow = new ChatWindow(() => _twitchClientController);
             _chatWindow.Show();
         }
         else
@@ -1195,7 +1248,7 @@ public partial class MainWindow : INotifyPropertyChanged
 
         if (_raidListWindow == null || !IsWindowOpen<RaidListWindow>())
         {
-            _raidListWindow = new RaidListWindow(_twitchApiController);
+            _raidListWindow = new RaidListWindow(() => _twitchApiController);
             _raidListWindow.Show();
         }
         else

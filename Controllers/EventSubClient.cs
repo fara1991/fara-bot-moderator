@@ -147,6 +147,7 @@ internal sealed class EventSubClient : IDisposable
             try
             {
                 using var socket = new ClientWebSocket();
+                IrcClient.ConfigureKeepAlive(socket);
                 await socket.ConnectAsync(new Uri(_url), token);
                 await ReceiveLoopAsync(socket, () => delay = TimeSpan.FromSeconds(1), token);
             }
@@ -206,6 +207,7 @@ internal sealed class EventSubClient : IDisposable
 
                 // 別の URL へつなぎ直す: 新しい接続のセッションが続くことを確かめてから、古い接続を閉じる（取りこぼしを防ぐ）
                 var next = new ClientWebSocket();
+                IrcClient.ConfigureKeepAlive(next);
                 owned.Add(next);
                 await next.ConnectAsync(new Uri(message.ReconnectUrl), token);
                 var welcome = await ReceiveTextAsync(next, FirstConnectTimeout, token);
