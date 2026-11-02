@@ -271,6 +271,28 @@ public class TwitchApiController
     }
 
     /// <summary>
+    /// このセッションの EventSub の購読の状態（有効か）と、ほかのセッションに残っている購読の数を、ログに出します。
+    /// 通知が届かないときに、購読が Twitch 側で有効になっているかを見分けるため。失敗しても、何もしません（ログだけ）。
+    /// </summary>
+    /// <param name="sessionId">今の WebSocket のセッション ID</param>
+    public async Task LogEventSubStatusAsync(string sessionId)
+    {
+        if (_helix == null) return;
+        try
+        {
+            var subscriptions = await _helix.GetEventSubSubscriptionsAsync();
+            var mine = subscriptions.Where(s => s.Transport?.SessionId == sessionId).ToList();
+            foreach (var subscription in mine)
+                LogController.OutputLog($"EventSub subscription status: {subscription.Type} = {subscription.Status}");
+            LogController.OutputLog($"EventSub subscriptions: this session {mine.Count}, others {subscriptions.Length - mine.Count}");
+        }
+        catch (Exception ex) when (IsExpectedApiFailure(ex))
+        {
+            LogController.OutputLog($@"<Error> LogEventSubStatusAsync failed: {ex.Message}");
+        }
+    }
+
+    /// <summary>
     /// EventSub サブスクリプションを作成します。
     /// </summary>
     [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "呼び出し元（TwitchEventSubController）は `_ =` で結果を待たない（fire-and-forget）ため、ここで受けないと失敗がどこにも記録されない。Twitch API の呼び出しの最上位として、種類を問わずログに残して続ける")]

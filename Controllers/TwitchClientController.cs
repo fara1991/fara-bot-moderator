@@ -15,7 +15,6 @@ using TwitchLib.Communication.Clients;
 using TwitchLib.Communication.Enums;
 using TwitchLib.Communication.Events;
 using TwitchLib.Communication.Models;
-using TwitchLib.EventSub.Websockets.Core.EventArgs.Channel;
 using DeepL.Model;
 using OnLogArgs = TwitchLib.Client.Events.OnLogArgs;
 
@@ -318,12 +317,11 @@ public class TwitchClientController
     /// <summary>
     /// EventSubからのフォローイベントを処理し、メッセージ送信と読み上げを行います。
     /// </summary>
-    /// <param name="e">フォローイベント引数</param>
-    public void TwitchEventSubOnFollow(ChannelFollowArgs e)
+    /// <param name="e">フォローのイベント</param>
+    internal void TwitchEventSubOnFollow(FollowEvent e)
     {
-        var followEvent = e.Notification.Payload.Event;
-        var followerName = followEvent.UserName;
-        var followerChannelUrl = $"https://twitch.tv/{followEvent.UserLogin}";
+        var followerName = e.UserName;
+        var followerChannelUrl = $"https://twitch.tv/{e.UserLogin}";
         var message = _secretKeys.Event.Follow.Message.Replace("{followerName}", followerName)
             .Replace("{followerChannelUrl}", followerChannelUrl);
 
@@ -353,19 +351,18 @@ public class TwitchClientController
     /// <summary>
     /// EventSubからのBitsイベントを処理し、メッセージ送信と読み上げを行います。
     /// </summary>
-    /// <param name="e">Bitsイベント引数</param>
-    public async Task SendBitsEventSubMessageAsync(ChannelCheerArgs e)
+    /// <param name="e">ビッツのイベント（匿名のときは、ユーザーが無いので、何もしない）</param>
+    internal async Task SendBitsEventSubMessageAsync(CheerEvent e)
     {
-        var bitsEvent = e.Notification.Payload.Event;
-        var bitsSendUserName = bitsEvent.UserName;
+        var bitsSendUserName = e.UserName;
         if (bitsSendUserName == null) return;
 
-        var bitsAmount = bitsEvent.Bits;
+        var bitsAmount = e.Bits;
         var template = _secretKeys.Event.Bits.Message;
         // 累計は、メッセージに {totalBitsAmount} がある（通知が有効）ときだけ、Twitch の API から取る
         int? total = null;
         if (_secretKeys.Event.Bits.Checked && template.Contains(BitsTotalPlaceholder, StringComparison.Ordinal))
-            total = await _twitchApiController.GetBitsTotalAsync(bitsEvent.UserId);
+            total = e.UserId is null ? null : await _twitchApiController.GetBitsTotalAsync(e.UserId);
         var message = BuildBitsMessage(template, bitsSendUserName, bitsAmount, total);
         SendEventNotification(_secretKeys.Event.Bits, bitsSendUserName, message,
             $"{bitsSendUserName}さん{bitsAmount}bitsありがとうございます");
@@ -375,13 +372,12 @@ public class TwitchClientController
     /// <summary>
     /// EventSubからのチャンネルポイント交換イベントを処理します。
     /// </summary>
-    /// <param name="e">チャンネルポイント交換イベント引数</param>
-    public void SendChannelPointEventSubMessage(ChannelPointsCustomRewardRedemptionArgs e)
+    /// <param name="e">チャンネルポイント交換のイベント</param>
+    internal void SendChannelPointEventSubMessage(RedemptionEvent e)
     {
-        var channelPointEvent = e.Notification.Payload.Event;
-        var channelPointTitle = channelPointEvent.Reward.Title;
-        var channelPointCost = channelPointEvent.Reward.Cost;
-        var channelPointUserId = channelPointEvent.UserLogin;
+        var channelPointTitle = e.RewardTitle;
+        var channelPointCost = e.RewardCost;
+        var channelPointUserId = e.UserLogin;
         var message = _secretKeys.Event.ChannelPoint.Message
             .Replace("{channelPointCost}", channelPointCost.ToString())
             .Replace("{channelPointTitle}", channelPointTitle)
