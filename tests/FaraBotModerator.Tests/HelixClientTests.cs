@@ -203,4 +203,19 @@ public class HelixClientTests
         await client.GetUserAsync("1", null);
         Assert.Equal("second", recorder.Request.Headers.Authorization!.Parameter);
     }
+
+    [Fact]
+    public async Task The_eventsub_subscription_list_has_the_type_status_and_session()
+    {
+        var (client, recorder) = Make(HttpStatusCode.OK,
+            "{\"data\":[{\"id\":\"a\",\"status\":\"enabled\",\"type\":\"channel.follow\",\"version\":\"2\",\"transport\":{\"method\":\"websocket\",\"session_id\":\"S1\"}}],\"total\":1}");
+
+        var subscriptions = await client.GetEventSubSubscriptionsAsync();
+
+        Assert.Equal("https://api.twitch.tv/helix/eventsub/subscriptions", recorder.Request!.RequestUri!.ToString());
+        var subscription = Assert.Single(subscriptions);
+        Assert.Equal("channel.follow", subscription.Type);
+        Assert.Equal("enabled", subscription.Status);
+        Assert.Equal("S1", subscription.Transport!.SessionId);
+    }
 }

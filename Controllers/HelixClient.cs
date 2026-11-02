@@ -132,6 +132,16 @@ internal sealed class HelixClient
     }
 
     /// <summary>
+    /// 作ってある EventSub の購読の一覧を取得します（状態の確認用）。
+    /// </summary>
+    /// <returns>購読の一覧（1 ページ目。空なら空の配列）</returns>
+    internal async Task<HelixEventSubSubscription[]> GetEventSubSubscriptionsAsync()
+    {
+        var body = await SendAsync(HttpMethod.Get, $"{ApiBaseUrl}eventsub/subscriptions");
+        return Parse<HelixList<HelixEventSubSubscription>>(body)?.Data ?? [];
+    }
+
+    /// <summary>
     /// アクセストークンを検証します。認証に使う Client ID は要りません。
     /// </summary>
     /// <param name="accessToken">検証するアクセストークン</param>
@@ -255,6 +265,33 @@ internal sealed class HelixBitsLeader
 {
     [JsonPropertyName("score")]
     public int Score { get; set; }
+}
+
+/// <summary>
+/// 作ってある EventSub の購読。
+/// </summary>
+internal sealed class HelixEventSubSubscription
+{
+    [JsonPropertyName("type")]
+    public string Type { get; set; } = "";
+
+    [JsonPropertyName("status")]
+    public string Status { get; set; } = "";
+
+    [JsonPropertyName("transport")]
+    public HelixEventSubTransport? Transport { get; set; }
+}
+
+/// <summary>
+/// EventSub の購読の、受け取り方。
+/// </summary>
+internal sealed class HelixEventSubTransport
+{
+    [JsonPropertyName("method")]
+    public string Method { get; set; } = "";
+
+    [JsonPropertyName("session_id")]
+    public string? SessionId { get; set; }
 }
 
 /// <summary>

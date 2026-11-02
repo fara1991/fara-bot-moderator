@@ -71,10 +71,22 @@ public sealed class TwitchEventSubController : IDisposable
     /// <param name="sessionId">WebSocketセッションID</param>
     private Task OnSessionStartedAsync(string sessionId)
     {
-        _ = _twitchApiController.CreateEventSubFollowAsync(sessionId);
-        _ = _twitchApiController.CreateEventSubCheerAsync(sessionId);
-        _ = _twitchApiController.CreateEventSubChannelPointAsync(sessionId);
+        // 受信を止めないよう、購読は裏で作る（Twitch は、welcome から 10 秒以内に作ることを求める）。作り終えたら、状態をログに出す
+        _ = CreateSubscriptionsAsync(sessionId);
         return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// 購読を作り、作り終えたら、Twitch 側の状態をログに出します。
+    /// </summary>
+    /// <param name="sessionId">WebSocketセッションID</param>
+    private async Task CreateSubscriptionsAsync(string sessionId)
+    {
+        await Task.WhenAll(
+            _twitchApiController.CreateEventSubFollowAsync(sessionId),
+            _twitchApiController.CreateEventSubCheerAsync(sessionId),
+            _twitchApiController.CreateEventSubChannelPointAsync(sessionId));
+        await _twitchApiController.LogEventSubStatusAsync(sessionId);
     }
 
     /// <summary>
