@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics.CodeAnalysis;
+using System.Threading;
 using System.Windows;
 using FaraBotModerator.Controllers;
 
@@ -11,12 +12,25 @@ namespace FaraBotModerator;
 public partial class App : Application
 {
     /// <summary>
+    /// アプリの起動中、持ち続ける Mutex の名前。インストーラー（Installer\installer.iss の AppMutex）が、起動中かを調べるのに使う。
+    /// </summary>
+    private const string AppMutexName = "FaraBotModerator_Running";
+
+    /// <summary>
+    /// 起動中ずっと持つ（プロセスが終わると、解放される）。
+    /// </summary>
+    private static Mutex? _appMutex;
+
+    /// <summary>
     ///     Handles the startup logic for the application.
     /// </summary>
     /// <param name="e">Provides data for the startup event, including command-line arguments.</param>
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+
+        // 起動中であることを、インストーラー・アンインストーラーに知らせる（起動中は、インストール・アンインストールを止めるため）
+        _appMutex = new Mutex(false, AppMutexName);
 
         // 以前の保存先（インストール先のフォルダー内）にあるファイルを、新しい保存先へ移してから、書き込みを確認する
         MigrateLegacyData();

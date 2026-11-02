@@ -8,6 +8,10 @@
 AppId={{D3F9B6E1-4C5A-4B9D-8D3A-2A7C6E5B4A3D}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
+; 「アプリ」の一覧に出る名前。指定しないと、「FaraBotModerator バージョン 1.1.0」のように、バージョンが付く（バージョンは、別の欄に出る）
+AppVerName={#MyAppName}
+; アプリの起動中は、インストール・アンインストールを止める（起動中に消すと、アプリの終了時にエラーが出る）。アプリが、同じ名前の Mutex を持っている（App.xaml.cs）
+AppMutex=FaraBotModerator_Running
 AppPublisher={#MyAppPublisher}
 DefaultDirName={autopf}\{#MyAppName}
 DefaultGroupName={#MyAppName}
