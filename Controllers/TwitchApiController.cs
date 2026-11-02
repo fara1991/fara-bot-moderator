@@ -281,6 +281,7 @@ public class TwitchApiController
         try
         {
             await _helix.CreateEventSubSubscriptionAsync(subscriptionType, version, conditions, sessionId);
+            LogController.OutputLog($"EventSub subscription created ({subscriptionType})");
         }
         catch (Exception e)
         {
