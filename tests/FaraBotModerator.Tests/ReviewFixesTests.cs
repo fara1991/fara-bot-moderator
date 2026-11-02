@@ -74,7 +74,7 @@ public class ReviewFixesTests : IDisposable
     [Fact]
     public void A_translation_failure_is_described_by_its_reason_without_the_exception_text()
     {
-        Assert.Contains("API キー", TranslationFailure.Describe(new DeepL.AuthorizationException("secret-key-details")));
+        Assert.Contains("APIキー", TranslationFailure.Describe(new DeepL.AuthorizationException("secret-key-details")));
         Assert.Contains("上限", TranslationFailure.Describe(new DeepL.QuotaExceededException("secret-details")));
         var other = TranslationFailure.Describe(new InvalidOperationException("secret-details"));
         Assert.Equal("DeepL翻訳に失敗しています。", other);

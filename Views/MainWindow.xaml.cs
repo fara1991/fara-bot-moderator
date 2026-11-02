@@ -1835,9 +1835,9 @@ public partial class MainWindow : INotifyPropertyChanged
         }
         catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException)
         {
-            // 既定のブラウザーが無い・起動できないとき。アプリは止めず、知らせる
-            LogController.OutputLog($"<Error> サイトをブラウザーで開けませんでした: {ex.GetType().Name}");
-            MessageBox.Show("サイトをブラウザーで開けませんでした。", "エラー", MessageBoxButton.OK, MessageBoxImage.Warning);
+            // 既定のブラウザが無い・起動できないとき。アプリは止めず、知らせる
+            LogController.OutputLog($"<Error> サイトをブラウザで開けませんでした: {ex.GetType().Name}");
+            MessageBox.Show("サイトをブラウザで開けませんでした。", "エラー", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 

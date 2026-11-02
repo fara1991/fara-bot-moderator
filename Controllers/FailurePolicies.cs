@@ -70,8 +70,8 @@ internal static class TranslationFailure
     /// <param name="error">失敗の例外</param>
     internal static string Describe(Exception error) => error switch
     {
-        DeepL.AuthorizationException => "DeepL の API キーが正しくありません。設定を確認してください。",
-        DeepL.QuotaExceededException => "DeepL の利用上限に達しました。翻訳できません。",
+        DeepL.AuthorizationException => "DeepLのAPIキーが正しくありません。設定を確認してください。",
+        DeepL.QuotaExceededException => "DeepLの利用上限に達しました。翻訳できません。",
         _ => "DeepL翻訳に失敗しています。",
     };
 }
