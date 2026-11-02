@@ -108,26 +108,4 @@ public class SecretKeyControllerTests : IDisposable
 
         Assert.Equal("KEEP-KEY", model.DeepL.ApiKey);
     }
-
-    [Fact]
-    public void The_default_bits_message_has_no_total_that_cannot_be_replaced()
-    {
-        var path = Path.Combine(_directory, "secrets.json");
-
-        var model = SecretKeyController.LoadKeys(path, out _);
-
-        Assert.DoesNotContain("{totalBitsAmount}", model.Event.Bits.Message);
-    }
-
-    [Fact]
-    public void A_saved_bits_message_loses_the_old_total_but_keeps_the_rest()
-    {
-        var path = Path.Combine(_directory, "secrets.json");
-        File.WriteAllText(path,
-            "{ \"event\": { \"bits\": { \"checked\": true, \"message\": \"{bitsSendUserName}, thanks {bitsAmount} bits (total {totalBitsAmount}). Bye\" } } }");
-
-        var model = SecretKeyController.LoadKeys(path, out _);
-
-        Assert.Equal("{bitsSendUserName}, thanks {bitsAmount} bits. Bye", model.Event.Bits.Message);
-    }
 }

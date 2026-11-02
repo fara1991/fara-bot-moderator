@@ -63,6 +63,7 @@
 | Subscription | `{totalSubscriptionMonth}` | 累計サブスク月数 |
 | Bits | `{bitsSendUserName}` | ビッツを投げたユーザーの名前 |
 | Bits | `{bitsAmount}` | 投げられたビッツの量 |
+| Bits | `{totalBitsAmount}` | そのユーザーが、このチャンネルに投げたビッツの合計（Twitch のランキングの値。取得できないときは「-」。ランキングへの反映が遅れると、今回の分が入らないことがあります） |
 | Gift | `{giftedUserName}` | ギフトを贈ったユーザーの名前 |
 | ChannelPoint | `{channelPointUserName}` | チャンネルポイントを使用したユーザーの名前 |
 | ChannelPoint | `{channelPointTitle}` | 使用されたチャンネルポイント報酬のタイトル |
