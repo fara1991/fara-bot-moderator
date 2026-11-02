@@ -3,7 +3,6 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using FaraBotModerator.Controllers;
-using TwitchLib.Api.Core.Exceptions;
 using Xunit;
 
 namespace FaraBotModerator.Tests;
@@ -19,14 +18,12 @@ public class NarrowedExceptionTests
         new HttpRequestException("接続できない"),
         new TaskCanceledException("時間切れ"),
         new OperationCanceledException(),
-        new Newtonsoft.Json.JsonReaderException("壊れた応答"),
-        new BadParameterException("引数が足りない"),
-        new ClientIdAndOAuthTokenRequired("認証情報が無い"),
-        new InvalidCredentialException("認証情報が不正"),
-        new BadRequestException("400", null!),
-        new BadTokenException("401", null!),
-        new TooManyRequestsException("429", "0", null!),
-        new InternalServerErrorException("500", null!),
+        new System.Text.Json.JsonException("壊れた応答"),
+        new HelixCredentialsException("認証情報が無い"),
+        new HelixHttpException(System.Net.HttpStatusCode.BadRequest),
+        new HelixHttpException(System.Net.HttpStatusCode.Unauthorized),
+        new HelixHttpException((System.Net.HttpStatusCode) 429),
+        new HelixHttpException(System.Net.HttpStatusCode.InternalServerError),
     };
 
     public static TheoryData<Exception> UnexpectedFailures => new()
