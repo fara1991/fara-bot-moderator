@@ -561,7 +561,8 @@ public partial class MainWindow : INotifyPropertyChanged
     /// </summary>
     private void UpdateConnectionStateOnce()
     {
-        var state = ConnectionPolicy.StateOf(_twitchClientController is not null || _twitchEventSubController is not null,
+        // 「接続の仕組みがある」の目印は、EventSub の controller（Connect したときにだけ作る）。チャットの controller は、起動時にも作るので、目印にならない
+        var state = ConnectionPolicy.StateOf(_twitchEventSubController is not null,
             _twitchClientController?.IsConnected ?? false, _twitchEventSubController?.IsConnected ?? false,
             Settings.Default.expiresDateTime, DateTime.Now);
         var isConnected = state == TwitchConnectionState.Connected;
