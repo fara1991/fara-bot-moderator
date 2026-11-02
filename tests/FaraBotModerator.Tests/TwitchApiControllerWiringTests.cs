@@ -2,22 +2,21 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Net.Http;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using FaraBotModerator.Controllers;
 using FaraBotModerator.Models;
 using FaraBotModerator.Properties;
-using TwitchLib.Api.Core.HttpCallHandlers;
 using Xunit;
 
 namespace FaraBotModerator.Tests;
 
 /// <summary>
-/// TwitchApiController の実メソッドの配線。TwitchLib の通信（HttpClient）を偽物に差し替えて、
+/// TwitchApiController の実メソッドの配線。通信（HttpClient）を偽物に差し替えて、
 /// 「起こりうる失敗は握って続ける」「想定外の例外は握らず外へ出す」（catch … when が効く）ことと、
-/// 無効なトークン（Twitch は 401 で null を返す）を従来どおり false にすることを確かめる。
+/// 無効なトークン（Twitch は 401 を返す）を従来どおり false にすることを確かめる。
 /// </summary>
+[SuppressMessage("Reliability", "CA2000:Dispose objects before losing scope", Justification = "偽の HttpClient は、渡したコントローラーがテストの終わりまで持つ。テスト用で、破棄するタイミングが無い")]
 public class TwitchApiControllerWiringTests
 {
     private const string UserJson = "{\"data\":[{\"id\":\"1\",\"login\":\"me\",\"display_name\":\"Me\",\"profile_image_url\":\"https://example.invalid/u.png\"}]}";
@@ -40,15 +39,9 @@ public class TwitchApiControllerWiringTests
         }
     };
 
-    /// <summary>TwitchLib の既定の通信（TwitchHttpClient）の HttpClient だけを偽物にして、状態コードの解釈は本物のままにする</summary>
-    [SuppressMessage("Reliability", "CA2000:Dispose objects before losing scope", Justification = "偽の HttpClient は、渡した TwitchHttpClient がテストの終わりまで持つ。テスト用で、破棄するタイミングが無い")]
-    private static TwitchHttpClient FakeHttp(Func<HttpRequestMessage, Task<HttpResponseMessage>> respond)
-    {
-        var client = new TwitchHttpClient(null!);
-        var field = typeof(TwitchHttpClient).GetField("_http", BindingFlags.NonPublic | BindingFlags.Instance)!;
-        field.SetValue(client, new HttpClient(new Route(respond)));
-        return client;
-    }
+    /// <summary>偽の応答を返す HttpClient（状態コードの解釈は、本物の HelixClient がする）</summary>
+    [SuppressMessage("Reliability", "CA2000:Dispose objects before losing scope", Justification = "偽の HttpClient は、渡したコントローラーがテストの終わりまで持つ。テスト用で、破棄するタイミングが無い")]
+    private static HttpClient FakeHttp(Func<HttpRequestMessage, Task<HttpResponseMessage>> respond) => new(new Route(respond));
 
     private static bool Ends(string path, string suffix) => path.EndsWith(suffix, StringComparison.Ordinal);
 
@@ -131,8 +124,8 @@ public class TwitchApiControllerWiringTests
         var controller = await StartedAsync(path =>
         {
             if (!Ends(path, "/streams")) return null;
-            // 1 回目（InitializeAsync の自分の配信）は配信中、2 回目（同じゲームの一覧）は空の本文
-            return Interlocked.Increment(ref calls) == 1 ? null : Json(HttpStatusCode.OK, body);
+            // 1 回目（InitializeAsync の自分の配信）・2 回目（一覧を出すときの取り直し）は配信中、3 回目（同じゲームの一覧）は空の本文
+            return Interlocked.Increment(ref calls) <= 2 ? null : Json(HttpStatusCode.OK, body);
         });
         Assert.Empty(await controller.GetStreamingSameGameUsersAsync());
     }
