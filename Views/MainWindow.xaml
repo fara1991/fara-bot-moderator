@@ -9,7 +9,7 @@
     mc:Ignorable="d"
     Title="FaraBotModerator"
     Height="600"
-    Width="1100"
+    Width="1500"
     HorizontalAlignment="Center"
     VerticalAlignment="Center"
     Left="0"
@@ -238,7 +238,7 @@
                         </Canvas>
                     </GroupBox>
                     <GroupBox x:Name="WebViewGroupBox" HorizontalAlignment="Left" Height="493"
-                              Canvas.Left="565" Canvas.Top="10" VerticalAlignment="Center" Width="510">
+                              Canvas.Left="565" Canvas.Top="10" VerticalAlignment="Center" Width="910">
                         <GroupBox.Header>
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="WebView" />
