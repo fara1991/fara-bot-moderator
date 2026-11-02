@@ -269,7 +269,7 @@ public partial class MainWindow : INotifyPropertyChanged
     private void SetFixedTimerValue(CheckBox checkBox, DatePicker datePicker, MaterialDesignThemes.Wpf.TimePicker timePicker, TextBox textBox, FixedTimerModel model)
     {
         checkBox.IsChecked = model.Checked;
-        if (DateTime.TryParse(model.DatetimeString, out var dt))
+        if (TimerPolicy.TryParseFixed(model.DatetimeString, out var dt))
         {
             datePicker.SelectedDate = dt;
             timePicker.SelectedTime = dt;
@@ -521,8 +521,14 @@ public partial class MainWindow : INotifyPropertyChanged
         if (_twitchClientController is not null) AddGridViewChatData();
 
         // 棒読みちゃん接続チェック
-        if (BouyomiChanConnectCheckBox.IsChecked != true || !IsTwitchConnected()) return;
-        if (_twitchClientController != null && !await BouyomiChanController.IsBouyomiChanRunningAsync())
+        if (BouyomiChanConnectCheckBox.IsChecked != true || !IsTwitchConnected())
+        {
+            _bouyomiFailures.Reset();
+            return;
+        }
+
+        // 1 回の確認の失敗（一時的な混雑・時間切れ）では切らない。続けて失敗したときだけ、棒読みちゃんが終了したものとして切る
+        if (_twitchClientController != null && _bouyomiFailures.Record(await BouyomiChanController.IsBouyomiChanRunningAsync()))
         {
             // Dispatcher.InvokeAsync は Task を返すので、中の TwitchDisconnect まで待つために await を 2 回書く
             await await Dispatcher.InvokeAsync(async () =>
@@ -619,6 +625,16 @@ public partial class MainWindow : INotifyPropertyChanged
     /// </summary>
     private const int MaxChatRowsPerTick = 50;
 
+    /// <summary>
+    /// チャットウィンドウに残す行の上限（長い配信で、増え続けないため。古い行から消す）。
+    /// </summary>
+    private const int MaxChatRowsKept = 1000;
+
+    /// <summary>
+    /// 棒読みちゃんの確認が、続けて失敗した回数（1 秒ごとの確認。5 回続けて失敗したら、終了したものとして切る）。
+    /// </summary>
+    private readonly ConsecutiveFailureCounter _bouyomiFailures = new(5);
+
     private static void AddChatRow(ChatWindow chatWindow, ChatModel chatModelData)
     {
         var beforeScrollBottom = true;
@@ -634,6 +650,7 @@ public partial class MainWindow : INotifyPropertyChanged
         }
 
         chatWindow.TwitchChatDataGrid.Items.Add(chatModelData);
+        while (chatWindow.TwitchChatDataGrid.Items.Count > MaxChatRowsKept) chatWindow.TwitchChatDataGrid.Items.RemoveAt(0);
         if (beforeScrollBottom) chatWindow.TwitchChatDataGrid.ScrollIntoView(chatModelData);
     }
 
@@ -888,34 +905,10 @@ public partial class MainWindow : INotifyPropertyChanged
         if (!_secretValuesLoaded)
             throw new InvalidOperationException("secrets.json を読み込めていないため、保存しません。");
 
-        var timer1 =
-            (FixedTimer1DatePicker.SelectedDate is not null
-                ? FixedTimer1DatePicker.SelectedDate.Value.ToShortDateString()
-                : "2023/1/1") + " " +
-            (FixedTimer1TimePicker.SelectedTime is not null
-                ? FixedTimer1TimePicker.SelectedTime.Value.ToLongTimeString()
-                : "00:00:00");
-        var timer2 =
-            (FixedTimer2DatePicker.SelectedDate is not null
-                ? FixedTimer2DatePicker.SelectedDate.Value.ToShortDateString()
-                : "2023/1/1") + " " +
-            (FixedTimer2TimePicker.SelectedTime is not null
-                ? FixedTimer2TimePicker.SelectedTime.Value.ToLongTimeString()
-                : "00:00:00");
-        var timer3 =
-            (FixedTimer3DatePicker.SelectedDate is not null
-                ? FixedTimer3DatePicker.SelectedDate.Value.ToShortDateString()
-                : "2023/1/1") + " " +
-            (FixedTimer3TimePicker.SelectedTime is not null
-                ? FixedTimer3TimePicker.SelectedTime.Value.ToLongTimeString()
-                : "00:00:00");
-        var timer4 =
-            (FixedTimer4DatePicker.SelectedDate is not null
-                ? FixedTimer4DatePicker.SelectedDate.Value.ToShortDateString()
-                : "2023/1/1") + " " +
-            (FixedTimer4TimePicker.SelectedTime is not null
-                ? FixedTimer4TimePicker.SelectedTime.Value.ToLongTimeString()
-                : "00:00:00");
+        var timer1 = TimerPolicy.FormatFixed(FixedTimer1DatePicker.SelectedDate, FixedTimer1TimePicker.SelectedTime);
+        var timer2 = TimerPolicy.FormatFixed(FixedTimer2DatePicker.SelectedDate, FixedTimer2TimePicker.SelectedTime);
+        var timer3 = TimerPolicy.FormatFixed(FixedTimer3DatePicker.SelectedDate, FixedTimer3TimePicker.SelectedTime);
+        var timer4 = TimerPolicy.FormatFixed(FixedTimer4DatePicker.SelectedDate, FixedTimer4TimePicker.SelectedTime);
 
         var secretKeys = new SecretKeyModel
         {
@@ -1171,7 +1164,14 @@ public partial class MainWindow : INotifyPropertyChanged
     /// <param name="e"></param>
     private void TwitchPageButton_Click(object sender, RoutedEventArgs e)
     {
-        FaraBotModeratorWebView.Source = new Uri($"https://twitch.tv/{TwitchClientUserNameTextBox.Text}");
+        var userName = TwitchClientUserNameTextBox.Text.Trim();
+        if (!TwitchLoginName.IsValid(userName))
+        {
+            MessageBox.Show("UserName は、英数字と「_」だけの Twitch のログイン名（25 文字まで）を入力してください。", "確認", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        FaraBotModeratorWebView.Source = new Uri($"https://twitch.tv/{userName}");
     }
 
     /// <summary>
@@ -1826,10 +1826,19 @@ public partial class MainWindow : INotifyPropertyChanged
     /// </summary>
     private void PokemonRosterOpenSiteButton_Click(object sender, RoutedEventArgs e)
     {
-        Process.Start(new ProcessStartInfo(PokemonSyncKeyController.RosterPageUrl(SelectedPokemonDataSourceValue()))
+        try
         {
-            UseShellExecute = true
-        });
+            Process.Start(new ProcessStartInfo(PokemonSyncKeyController.RosterPageUrl(SelectedPokemonDataSourceValue()))
+            {
+                UseShellExecute = true
+            });
+        }
+        catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException)
+        {
+            // 既定のブラウザーが無い・起動できないとき。アプリは止めず、知らせる
+            LogController.OutputLog($"<Error> サイトをブラウザーで開けませんでした: {ex.GetType().Name}");
+            MessageBox.Show("サイトをブラウザーで開けませんでした。", "エラー", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
     }
 
     private void GameResetButton_Click(object sender, RoutedEventArgs e)

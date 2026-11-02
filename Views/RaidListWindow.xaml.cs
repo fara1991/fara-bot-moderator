@@ -45,7 +45,16 @@ public partial class RaidListWindow : Window
         if (rowData is StreamingUserModel userModel)
         {
             var command = $"/raid {userModel.LoginId}";
-            Clipboard.SetText(command);
+            try
+            {
+                Clipboard.SetText(command);
+            }
+            catch (System.Runtime.InteropServices.ExternalException ex)
+            {
+                // 別のアプリがクリップボードを使っているとき。アプリは止めず、コピーできなかったことをログに残す
+                LogController.OutputLog($"<Error> レイドのコマンドをコピーできませんでした: {ex.GetType().Name}");
+                return;
+            }
 
             // ボタンと同じレベルにあるPopupを探す
             var grid = VisualTreeHelper.GetParent(button) as Grid;

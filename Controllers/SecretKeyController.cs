@@ -110,16 +110,15 @@ public static class SecretKeyController
         }
     }
 
-    private static void WriteKeys(SecretKeyModel secretKeys, string path)
+    internal static void WriteKeys(SecretKeyModel secretKeys, string path)
     {
         var options = new JsonSerializerOptions
         {
-            Encoder = JavaScriptEncoder.Create(UnicodeRanges.All),
+            Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
             WriteIndented = true
         };
         var jsonData = JsonSerializer.Serialize(secretKeys, options);
-        // \003Cだけ変換できないので手動で変換
-        WriteAtomically(path, jsonData.Replace("\\u003C", "<"));
+        WriteAtomically(path, jsonData);
     }
 
     /// <summary>
@@ -169,10 +168,10 @@ public static class SecretKeyController
 
             var options = new JsonSerializerOptions
             {
-                Encoder = JavaScriptEncoder.Create(UnicodeRanges.All),
+                Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
                 WriteIndented = true
             };
-            WriteAtomically(SecretFile, root.ToJsonString(options).Replace("\\u003C", "<"));
+            WriteAtomically(SecretFile, root.ToJsonString(options));
         }
     }
 

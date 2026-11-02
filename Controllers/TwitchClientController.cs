@@ -31,6 +31,11 @@ public class TwitchClientController
     private IrcClient? _irc;
 
     /// <summary>
+    /// 翻訳の失敗をチャットに知らせる間隔の管理（5 分に 1 回まで）。
+    /// </summary>
+    private readonly NotificationThrottle _translationErrorThrottle = new(TimeSpan.FromMinutes(5));
+
+    /// <summary>
     /// 「Login」の知らせを、すでに送ったか（つなぎ直しのたびに、同じ知らせをチャットに出さない）。
     /// </summary>
     private bool _loginAnnounced;
@@ -673,7 +678,7 @@ public class TwitchClientController
                     BouyomiChanController.AddTalkTask(displayName, sourceMessage, _secretKeys.BouyomiChan.Checked);
                     return;
                 }
-                var sourceLanguage = text.DetectedSourceLanguageCode.ToUpper();
+                var sourceLanguage = text.DetectedSourceLanguageCode.ToUpperInvariant();
                 // 誤検知対策: 日本語なのに他言語と判定された場合
                 if (sourceLanguage != "JA" && TwitchTranslationController.IsJapanese(sourceMessageForTranslation))
                 {
@@ -695,8 +700,9 @@ public class TwitchClientController
         }
         catch (Exception ex)
         {
-            var errorMessage = "DeepL翻訳に失敗しています。";
-            if (_irc != null)
+            var errorMessage = TranslationFailure.Describe(ex);
+            // 視聴者のメッセージのたびに、同じエラーをチャットに出し続けない（5 分に 1 回まで）。ログには毎回残す
+            if (_irc != null && _translationErrorThrottle.TryAcquire(DateTime.UtcNow))
             {
                 SendMessage(displayName,
                     $"[{Settings.Default.BotName}] @{_twitchUserName} {errorMessage}", userId);

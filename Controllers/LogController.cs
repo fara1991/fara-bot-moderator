@@ -13,6 +13,11 @@ namespace FaraBotModerator.Controllers;
 public static class LogController
 {
     /// <summary>
+    /// ログの排他制御（Mutex）を待つ上限。
+    /// </summary>
+    private static readonly TimeSpan MutexWaitTimeout = TimeSpan.FromSeconds(2);
+
+    /// <summary>
     /// 指定されたテキストをログファイルに出力します。
     /// </summary>
     /// <param name="text">出力するテキスト</param>
@@ -34,7 +39,8 @@ public static class LogController
 
             // 排他制御
             using var mutex = new Mutex(false, fileName);
-            mutex.WaitOne();
+            // 他のプロセスが握ったままのとき、UI スレッドが固まらないよう、待つのは短い間だけ（間に合わなければ、この行は記録しない）
+            if (!mutex.WaitOne(MutexWaitTimeout)) return;
             try
             {
                 using (var writer = new StreamWriter(filePath, true, Encoding.UTF8))
@@ -58,7 +64,7 @@ public static class LogController
 
             // 排他制御
             using var eventMutex = new Mutex(false, eventFileName);
-            eventMutex.WaitOne();
+            if (!eventMutex.WaitOne(MutexWaitTimeout)) return;
             try
             {
                 using (var writer = new StreamWriter(eventFilePath, true, Encoding.UTF8))
