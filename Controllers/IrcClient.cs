@@ -241,6 +241,7 @@ internal sealed class IrcClient : IDisposable
             try
             {
                 using var socket = new ClientWebSocket();
+                ConfigureKeepAlive(socket);
                 await socket.ConnectAsync(new Uri(_url), token);
                 await SessionAsync(socket, () => delay = TimeSpan.FromSeconds(1), token);
             }
@@ -281,6 +282,16 @@ internal sealed class IrcClient : IDisposable
             IsConnected = false;
             await RaiseAsync(Disconnected, "Disconnected");
         }
+    }
+
+    /// <summary>
+    /// 回線が切れたことを、早く見つけるための設定。WebSocket の PING を定期的に送り、返事が無ければ、接続を切って、つなぎ直す。
+    /// （無通信の検知だけだと、ネットワークが切れても、数分間、つながったままに見える）
+    /// </summary>
+    internal static void ConfigureKeepAlive(ClientWebSocket socket)
+    {
+        socket.Options.KeepAliveInterval = TimeSpan.FromSeconds(15);
+        socket.Options.KeepAliveTimeout = TimeSpan.FromSeconds(15);
     }
 
     /// <summary>
