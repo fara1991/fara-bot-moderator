@@ -23,7 +23,7 @@ public static class LogController
         try
         {
             var d = DateTime.Now;
-            var directoryName = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Log");
+            var directoryName = AppPaths.LogDirectory;
             var fileName = $"{d.Year:0000}.{d.Month:00}.{d.Day:00}.log";
             var filePath = Path.Combine(directoryName, fileName);
             

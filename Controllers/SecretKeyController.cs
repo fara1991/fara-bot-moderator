@@ -19,7 +19,7 @@ public static class SecretKeyController
     /// secrets.json の読み書きを 1 つずつにするロック（画面の保存とチャットの <c>format set</c> が同時に書いて、ファイルが壊れた状態を読まないため）
     /// </summary>
     private static readonly object FileLock = new();
-    private static readonly string SecretFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "secrets.json");
+    private static readonly string SecretFile = AppPaths.SecretFile;
 
     /// <summary>
     /// 直近の読み込みで、壊れていた secrets.json を退避した先（壊れていなければ null）。画面で復旧の案内を出すために使う。

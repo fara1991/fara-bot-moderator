@@ -108,6 +108,11 @@ public partial class MainWindow : INotifyPropertyChanged
     public MainWindow()
     {
         InitializeComponent();
+        // WebView2 のユーザーデータ（ログイン状態など）は、書き込める保存先に置く（指定しないと、実行ファイルの隣に作られる）
+        FaraBotModeratorWebView.CreationProperties = new Microsoft.Web.WebView2.Wpf.CoreWebView2CreationProperties
+        {
+            UserDataFolder = AppPaths.WebViewDirectory
+        };
         InitializeEncodeRegister();
         PokemonCommandController.RegisteredFormatChanged += OnPokemonRegisteredFormatChanged;
 
