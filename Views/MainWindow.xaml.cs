@@ -1055,7 +1055,7 @@ public partial class MainWindow : INotifyPropertyChanged
 
             // EventSub
             _twitchEventSubController = new TwitchEventSubController(_twitchClientController, _twitchApiController);
-            await TwitchEventSubController.ConnectAsync();
+            await _twitchEventSubController.ConnectAsync();
 
             LockWindowControl();
         }
@@ -1081,7 +1081,7 @@ public partial class MainWindow : INotifyPropertyChanged
         {
             if (_twitchEventSubController != null)
             {
-                await TwitchEventSubController.DisconnectAsync();
+                await _twitchEventSubController.DisconnectAsync();
             }
 
             if (_twitchClientController != null)

@@ -1,24 +1,21 @@
 ﻿using System;
 using System.Threading.Tasks;
-using TwitchLib.EventSub.Websockets;
-using TwitchLib.EventSub.Websockets.Core.EventArgs;
-using TwitchLib.EventSub.Websockets.Core.EventArgs.Channel;
 
 namespace FaraBotModerator.Controllers;
 
 /// <summary>
 /// Twitch EventSub（WebSocket）経由のイベント受信を管理するコントローラー
 /// </summary>
-public class TwitchEventSubController
+public sealed class TwitchEventSubController : IDisposable
 {
-    private static EventSubWebsocketClient? _eventSubClient;
+    private readonly EventSubClient _eventSubClient;
     private readonly TwitchClientController _twitchClientController;
     private readonly TwitchApiController _twitchApiController;
 
     /// <summary>
     /// EventSub クライアントが接続されているかどうかを取得します。
     /// </summary>
-    public bool IsConnected { get; private set; }
+    public bool IsConnected => _eventSubClient.IsConnected;
 
     /// <summary>
     /// TwitchEventSubController のコンストラクタ
@@ -30,82 +27,70 @@ public class TwitchEventSubController
     {
         _twitchClientController = twitchClientController;
         _twitchApiController = twitchApiController;
-        // EventSub WebSocketクライアントを初期化
-        _eventSubClient = new EventSubWebsocketClient();
+        _eventSubClient = new EventSubClient();
 
         // 接続関連のイベントハンドラを設定
-        _eventSubClient.WebsocketConnected += TwitchEventSubOnConnectedAsync;
-        _eventSubClient.WebsocketDisconnected += TwitchEventSubOnDisconnectedAsync;
+        _eventSubClient.SessionStarted += OnSessionStartedAsync;
+        _eventSubClient.Disconnected += OnDisconnectedAsync;
 
         // チャンネル関連のイベントハンドラを設定
-        _eventSubClient.ChannelFollow += TwitchEventSubOnFollowedAsync;
-        _eventSubClient.ChannelCheer += TwitchEventSubOnCheerReceivedAsync;
-        _eventSubClient.ChannelPointsCustomRewardRedemptionAdd += TwitchEventSubOnChannelPointRewardAsync;
+        _eventSubClient.Followed += OnFollowedAsync;
+        _eventSubClient.Cheered += OnCheerReceivedAsync;
+        _eventSubClient.Redeemed += OnChannelPointRewardAsync;
     }
 
     /// <summary>
-    /// EventSubクライアントを接続する
+    /// EventSubクライアントを接続する（最初のセッションが始まるまで待つ。つながらなければ例外）
     /// </summary>
-    public static async Task ConnectAsync()
+    public async Task ConnectAsync()
     {
-        if (_eventSubClient != null)
-        {
-            await _eventSubClient.ConnectAsync();
-            LogController.OutputLog("EventSub client connected");
-        }
+        await _eventSubClient.ConnectAsync();
+        LogController.OutputLog("EventSub client connected");
     }
 
     /// <summary>
-    /// EventSubクライアントを切断する
+    /// EventSubクライアントを切断する（つなぎ直しも止める）
     /// </summary>
-    public static async Task DisconnectAsync()
+    public async Task DisconnectAsync()
     {
-        if (_eventSubClient != null)
-        {
-            await _eventSubClient.DisconnectAsync();
-            LogController.OutputLog("EventSub client disconnected");
-        }
+        await _eventSubClient.DisconnectAsync();
+        LogController.OutputLog("EventSub client disconnected");
     }
 
     /// <summary>
-    /// WebSocket接続確立時のイベントハンドラ
+    /// 後始末をします。
     /// </summary>
-    /// <param name="sender"></param>
-    /// <param name="e"></param>
-    private Task TwitchEventSubOnConnectedAsync(object? sender, WebsocketConnectedArgs e)
+    public void Dispose()
     {
-        var sessionId = _eventSubClient?.SessionId;
-        if (sessionId == null) return Task.CompletedTask;
-        
-        LogController.OutputLog($"EventSub WebSocket {sessionId} connected.");
-        IsConnected = true;
-        if (e.IsRequestedReconnect) return Task.CompletedTask;
-        
+        _eventSubClient.Dispose();
+    }
+
+    /// <summary>
+    /// 新しいセッションが始まったときのイベントハンドラ。購読を作る（結果は、購読ごとにログに出る）。
+    /// </summary>
+    /// <param name="sessionId">WebSocketセッションID</param>
+    private Task OnSessionStartedAsync(string sessionId)
+    {
         _ = _twitchApiController.CreateEventSubFollowAsync(sessionId);
         _ = _twitchApiController.CreateEventSubCheerAsync(sessionId);
         _ = _twitchApiController.CreateEventSubChannelPointAsync(sessionId);
-
         return Task.CompletedTask;
     }
 
     /// <summary>
     /// WebSocket切断時のイベントハンドラ
     /// </summary>
-    /// <param name="sender"></param>
-    /// <param name="e"></param>
-    private Task TwitchEventSubOnDisconnectedAsync(object? sender, EventArgs e)
+    private static Task OnDisconnectedAsync()
     {
-        LogController.OutputLog($"EventSub WebSocket disconnected.");
-        IsConnected = false;
+        LogController.OutputLog("EventSub WebSocket disconnected.");
         return Task.CompletedTask;
     }
 
     /// <summary>
     /// フォロー発生時のイベントハンドラ
     /// </summary>
-    /// <param name="sender"></param>
-    /// <param name="e"></param>
-    private Task TwitchEventSubOnFollowedAsync(object? sender, ChannelFollowArgs e)
+    /// <param name="e">フォローのイベント</param>
+    private Task OnFollowedAsync(FollowEvent e)
     {
         _twitchClientController.TwitchEventSubOnFollow(e);
         return Task.CompletedTask;
@@ -114,9 +99,8 @@ public class TwitchEventSubController
     /// <summary>
     /// Cheer受信時のイベントハンドラ
     /// </summary>
-    /// <param name="sender"></param>
-    /// <param name="e"></param>
-    private Task TwitchEventSubOnCheerReceivedAsync(object? sender, ChannelCheerArgs e)
+    /// <param name="e">ビッツのイベント</param>
+    private Task OnCheerReceivedAsync(CheerEvent e)
     {
         return _twitchClientController.SendBitsEventSubMessageAsync(e);
     }
@@ -124,9 +108,8 @@ public class TwitchEventSubController
     /// <summary>
     /// チャンネルポイント交換時のイベントハンドラ
     /// </summary>
-    /// <param name="sender"></param>
-    /// <param name="e"></param>
-    private Task TwitchEventSubOnChannelPointRewardAsync(object? sender, ChannelPointsCustomRewardRedemptionArgs e)
+    /// <param name="e">チャンネルポイント交換のイベント</param>
+    private Task OnChannelPointRewardAsync(RedemptionEvent e)
     {
         _twitchClientController.SendChannelPointEventSubMessage(e);
         return Task.CompletedTask;
