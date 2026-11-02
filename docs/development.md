@@ -51,7 +51,6 @@ git submodule update --init
 
 ## 使用ライブラリ
 
-- [TwitchLib](https://github.com/TwitchLib/TwitchLib)
 - [DeepL.net](https://github.com/DeepLcom/deepl-dotnet)
 - [MaterialDesignInXamlToolkit](https://github.com/MaterialDesignInXAML/MaterialDesignInXamlToolkit)
 - [obs-websocket-dotnet](https://github.com/BarRaider/obs-websocket-dotnet)

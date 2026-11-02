@@ -117,7 +117,7 @@ public partial class MainWindow : INotifyPropertyChanged
         _ = RunWithExceptionHandlingAsync(StartTimerAsync, "Timer");
         _ = RunWithExceptionHandlingAsync(StartWebServerAsync, "WebServer");
         _ = RunWithExceptionHandlingAsync(StartMonitoringAsync, "Monitoring");
-        _ = RunWithExceptionHandlingAsync(StartTwitchLibEventSubAsync, "TwitchPubSub");
+        _ = RunWithExceptionHandlingAsync(StartConnectionStateMonitoringAsync, "ConnectionState");
 
         Loaded += MainWindow_Loaded;
     }
@@ -529,7 +529,7 @@ public partial class MainWindow : INotifyPropertyChanged
     }
 
     [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "画面の最上位（イベントハンドラー・起動・監視の周期処理）。例外で画面・ボット全体を止めないよう、ここで受けてログ・メッセージで知らせる")]
-    private async Task StartTwitchLibEventSubAsync()
+    private async Task StartConnectionStateMonitoringAsync()
     {
         while (true)
         {
@@ -1051,7 +1051,7 @@ public partial class MainWindow : INotifyPropertyChanged
                 }
             }
 
-            _twitchClientController.Connect();
+            await _twitchClientController.ConnectAsync();
 
             // EventSub
             _twitchEventSubController = new TwitchEventSubController(_twitchClientController, _twitchApiController);
