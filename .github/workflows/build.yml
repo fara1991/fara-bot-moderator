@@ -2,7 +2,7 @@ name: Build and test
 
 # FaraBotModerator のアプリ本体のビルドとテスト。Pull Request と、develop・master への push で動く。公開はしない。
 #   app  … アプリ本体（WPF。Windows でビルド）
-# アプリのインストーラーのリリースは release-app.yml（タグ v* か手動実行）。
+# アプリのインストーラーのリリースは release-app.yml（master への push か、手動実行）。
 # （紹介サイトは廃止した。アプリの説明は GitHub の README と docs/ に置く）
 
 on:

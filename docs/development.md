@@ -39,7 +39,10 @@ git submodule update --init
 1. `Installer/installer.iss` の `MyAppVersion` と、`Manual.md` の更新履歴を上げます。
 2. `docs/release-notes/vX.Y.Z.md` に変更点を書きます（利用者向けのやさしい言葉で）。見出しと導入文、「新機能」などの節を書き、インストール方法・必要条件は書きません（`release-app.yml` が共通の文として後ろに足します）。ファイルが無いときは、見出しと共通の文だけの本文になります。
 3. ここまでの PR を develop にマージします。
-4. develop の該当コミットに `vX.Y.Z` のタグを push します（`release-app.yml` は master に無いので、手動実行は使えません）。
+4. develop → master の PR をマージします。master への push で、`release-app.yml` が、インストーラーのビルド・署名のあと、**`MyAppVersion` と同じタグ（`vX.Y.Z`）を作って Release を公開します**（タグを自分で push する必要はありません）。同じタグがすでにあるときは、Release を作りません（上書きしません）。
+   - master への PR では、アプリを変えたのに版が上がっていないものを、Actions が止めます（`docs/`・`tests/`・`.github/`・`.md` だけの変更は、アプリの変更に数えません）。
+   - Release の作成だけ失敗して、タグが残ったとき（次の master への push では、タグがあるので Release を作りません）は、同じ実行の「Re-run failed jobs」で再実行するか、次の手動実行で作り直します。
+   - 手動で作り直したいときは、Actions の「Release (app installer)」を、バージョン（例: `v1.2.0`）を入れて実行します（同じタグがあっても、Release を作り直します）。
 5. Actions の成功と、Release の本文・署名（インストーラーのプロパティの「デジタル署名」）を確認します。本文の確認が済んだら、README の `.NET` の記述など、ほかの資料に影響が無いことも確かめます。
 
 ## プロジェクト構成
