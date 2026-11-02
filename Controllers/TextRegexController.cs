@@ -260,15 +260,10 @@ public static class TextRegexController
 
         var options = new JsonSerializerOptions
         {
-            Encoder = JavaScriptEncoder.Create(UnicodeRanges.All),
+            Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
             WriteIndented = true
         };
         var jsonData = JsonSerializer.Serialize(textRegex, options);
-
-        // 変換したい特殊文字は先に変換
-        jsonData = jsonData
-            .Replace("\\u002B", "+")
-            .Replace("\\u003C", "<");
 
         var temp = path + ".tmp";
         File.WriteAllText(temp, jsonData + Environment.NewLine, new UTF8Encoding(false));

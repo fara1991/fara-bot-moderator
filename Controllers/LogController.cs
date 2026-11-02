@@ -13,6 +13,11 @@ namespace FaraBotModerator.Controllers;
 public static class LogController
 {
     /// <summary>
+    /// ログの排他制御（Mutex）を待つ上限。
+    /// </summary>
+    private static readonly TimeSpan MutexWaitTimeout = TimeSpan.FromSeconds(2);
+
+    /// <summary>
     /// 指定されたテキストをログファイルに出力します。
     /// </summary>
     /// <param name="text">出力するテキスト</param>
@@ -32,22 +37,8 @@ public static class LogController
                 Directory.CreateDirectory(directoryName);
             }
 
-            // 排他制御
-            using var mutex = new Mutex(false, fileName);
-            mutex.WaitOne();
-            try
-            {
-                using (var writer = new StreamWriter(filePath, true, Encoding.UTF8))
-                {
-                    var logTime = $"[{d.Year:0000}/{d.Month:00}/{d.Day:00} {d.Hour:00}:{d.Minute:00}:{d.Second:00}] ";
-                    var logText = logTime + text;
-                    writer.WriteLine(logText);
-                }
-            }
-            finally
-            {
-                mutex.ReleaseMutex();
-            }
+            var logText = $"[{d.Year:0000}/{d.Month:00}/{d.Day:00} {d.Hour:00}:{d.Minute:00}:{d.Second:00}] " + text;
+            AppendWithLock(fileName, filePath, logText);
 
             if (eventEnum == TwitchEventEnum.None) return;
 
@@ -55,28 +46,46 @@ public static class LogController
             var eventFileName =
                 $"{Enum.GetName(typeof(TwitchEventEnum), eventEnum)}_{d.Year:0000}.{d.Month:00}.{d.Day:00}.log";
             var eventFilePath = Path.Combine(directoryName, eventFileName);
-
-            // 排他制御
-            using var eventMutex = new Mutex(false, eventFileName);
-            eventMutex.WaitOne();
-            try
-            {
-                using (var writer = new StreamWriter(eventFilePath, true, Encoding.UTF8))
-                {
-                    var logTime = $"[{d.Year:0000}/{d.Month:00}/{d.Day:00} {d.Hour:00}:{d.Minute:00}:{d.Second:00}] ";
-                    var logText = logTime + text;
-                    writer.WriteLine(logText);
-                }
-            }
-            finally
-            {
-                eventMutex.ReleaseMutex();
-            }
+            AppendWithLock(eventFileName, eventFilePath, logText);
         }
         catch (Exception ex)
         {
             // ログ出力自体が失敗した場合は、コンソールやデバッグ出力に逃がすか、無視するしかない
             System.Diagnostics.Debug.WriteLine($"Failed to write log: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 排他制御（Mutex）をかけて、1 行を追記します。待つのは短い間だけで、間に合わなければ、この 1 行は記録しません（呼び出し元の処理は続けます）。
+    /// </summary>
+    /// <param name="mutexName">排他制御の名前</param>
+    /// <param name="filePath">追記するファイル</param>
+    /// <param name="line">追記する 1 行</param>
+    private static void AppendWithLock(string mutexName, string filePath, string line)
+    {
+        using var mutex = new Mutex(false, mutexName);
+
+        // 他のプロセスが握ったままのとき、UI スレッドが固まらないよう、待つのは短い間だけ
+        bool acquired;
+        try
+        {
+            acquired = mutex.WaitOne(MutexWaitTimeout);
+        }
+        catch (AbandonedMutexException)
+        {
+            // 前の持ち主が放さずに終了した場合。この時点で、こちらが握っているので、そのまま書く
+            acquired = true;
+        }
+
+        if (!acquired) return;
+        try
+        {
+            using var writer = new StreamWriter(filePath, true, Encoding.UTF8);
+            writer.WriteLine(line);
+        }
+        finally
+        {
+            mutex.ReleaseMutex();
         }
     }
 }
