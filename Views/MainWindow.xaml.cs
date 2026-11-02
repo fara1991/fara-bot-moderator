@@ -108,6 +108,9 @@ public partial class MainWindow : INotifyPropertyChanged
     public MainWindow()
     {
         InitializeComponent();
+        // 画面（作業領域）が、ウィンドウの既定の大きさより小さい PC では、最大化して使う
+        if (WindowLayoutPolicy.ShouldMaximize(SystemParameters.WorkArea.Width, SystemParameters.WorkArea.Height, Width, Height))
+            WindowState = WindowState.Maximized;
         // WebView2 のユーザーデータ（ログイン状態など）は、書き込める保存先に置く（指定しないと、実行ファイルの隣に作られる）
         FaraBotModeratorWebView.CreationProperties = new Microsoft.Web.WebView2.Wpf.CoreWebView2CreationProperties
         {
@@ -453,6 +456,16 @@ public partial class MainWindow : INotifyPropertyChanged
     /// WebView が戻り先（localhost）へ移る直前に止めた、認証の戻りの URL。監視の周期処理が受け取って、認証を完了する。
     /// </summary>
     private string? _pendingAuthUrl;
+
+    /// <summary>
+    /// ウィンドウの大きさが変わったとき、WebView の枠を、空いた分だけ広げます（Canvas の中の部品は、自動では広がらないため）。
+    /// </summary>
+    private void MainSettingsCanvas_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        var (width, height) = WindowLayoutPolicy.WebViewSize(MainSettingsCanvas.ActualWidth, MainSettingsCanvas.ActualHeight);
+        WebViewGroupBox.Width = width;
+        WebViewGroupBox.Height = height;
+    }
 
     /// <summary>
     ///     WebView が移動を始める直前の処理。認証の戻り先（localhost）にはサーバーが無く、読み込むと「接続が拒否されました」のページが

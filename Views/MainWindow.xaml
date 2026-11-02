@@ -9,14 +9,16 @@
     mc:Ignorable="d"
     Title="FaraBotModerator"
     Height="600"
-    Width="1100"
+    Width="1500"
+    MinWidth="1100"
+    MinHeight="600"
     HorizontalAlignment="Center"
     VerticalAlignment="Center"
     Left="0"
     Top="0"
     Closed="MainWindow_Closed"
     Icon="/Resources/app.ico"
-    ResizeMode="CanMinimize">
+    ResizeMode="CanResize">
     <ToolTipService.InitialShowDelay>1000</ToolTipService.InitialShowDelay>
     <ToolTipService.ShowDuration>10000</ToolTipService.ShowDuration>
     <Window.Resources>
@@ -53,7 +55,7 @@
     <Grid>
         <TabControl x:Name="MenuTabControl">
             <TabItem x:Name="MainSettingsTabItem" Header="Main Settings">
-                <Canvas x:Name="MainSettingsCanvas" Background="#FFE5E5E5">
+                <Canvas x:Name="MainSettingsCanvas" Background="#FFE5E5E5" SizeChanged="MainSettingsCanvas_SizeChanged">
                     <GroupBox x:Name="TwitchGroupBox" HorizontalAlignment="Center" Height="495"
                               Canvas.Left="10" Canvas.Top="10" VerticalAlignment="Center" Width="550">
                         <GroupBox.Header>
@@ -238,7 +240,7 @@
                         </Canvas>
                     </GroupBox>
                     <GroupBox x:Name="WebViewGroupBox" HorizontalAlignment="Left" Height="493"
-                              Canvas.Left="565" Canvas.Top="10" VerticalAlignment="Center" Width="510">
+                              Canvas.Left="565" Canvas.Top="10" VerticalAlignment="Center" Width="910">
                         <GroupBox.Header>
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="WebView" />
