@@ -41,6 +41,7 @@ git submodule update --init
 3. ここまでの PR を develop にマージします。
 4. develop → master の PR をマージします。master への push で、`release-app.yml` が、インストーラーのビルド・署名のあと、**`MyAppVersion` と同じタグ（`vX.Y.Z`）を作って Release を公開します**（タグを自分で push する必要はありません）。同じタグがすでにあるときは、Release を作りません（上書きしません）。
    - master への PR では、アプリを変えたのに版が上がっていないものを、Actions が止めます（`docs/`・`tests/`・`.github/`・`.md` だけの変更は、アプリの変更に数えません）。
+   - Release の作成だけ失敗して、タグが残ったとき（次の master への push では、タグがあるので Release を作りません）は、同じ実行の「Re-run failed jobs」で再実行するか、次の手動実行で作り直します。
    - 手動で作り直したいときは、Actions の「Release (app installer)」を、バージョン（例: `v1.2.0`）を入れて実行します（同じタグがあっても、Release を作り直します）。
 5. Actions の成功と、Release の本文・署名（インストーラーのプロパティの「デジタル署名」）を確認します。本文の確認が済んだら、README の `.NET` の記述など、ほかの資料に影響が無いことも確かめます。
 

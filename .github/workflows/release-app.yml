@@ -3,7 +3,7 @@ name: Release (app installer)
 # アプリ本体のインストーラーを作り、GitHub の Release に公開する。
 # master への push（develop → master の PR のマージ）で動く。版は Installer/installer.iss の MyAppVersion。
 # 版と同じタグ（v<版>）がすでにあるときは、新しく作らない（上書きしない）。バージョンを入れた手動実行でも動く（その場合は、同じタグがあっても、Release を作り直す）。
-# master への PR では、アプリを変えたのに版が上がっていないものを、ここで止める（version-check）。
+# master への PR では、アプリを変えたのに版が上がっていないものを、このワークフローで止める（version-check）。
 # job を分けている。prepare（版の決定）→ build（ビルド・署名。書き込み権限なし。証明書を持つのはこの job だけ）→ release（タグと Release の作成。contents: write はこの job だけ）。
 
 on:
@@ -21,9 +21,9 @@ on:
 permissions:
   contents: read
 
-# 同じ ref の実行が重なっても、途中で止めない（Release の作成の途中で止めると、タグだけ残るため）。順番に動かす
+# 実行が重なっても、途中で止めない（Release の作成の途中で止めると、タグだけ残るため）。順番に動かす。master への push と手動実行は、同じ group にまとめる（PR の確認は、PR ごと）
 concurrency:
-  group: release-app-${{ github.ref }}
+  group: release-app-${{ github.event_name == 'pull_request' && github.ref || 'release' }}
   cancel-in-progress: false
 
 jobs:
@@ -96,8 +96,9 @@ jobs:
             version="v$version"
           fi
           release=true
-          # タグが存在するか確認（公開リポジトリなので、認証なしで読める）。手動実行は、同じタグがあっても作り直す
-          if [ "$EVENT_NAME" != "workflow_dispatch" ] && git ls-remote --tags origin "refs/tags/$version" | grep -q .; then
+          # タグが存在するか確認（公開リポジトリなので、認証なしで読める）。通信に失敗したら、ここで止まる（「タグが無い」と取り違えない）。手動実行は、同じタグがあっても作り直す
+          remote_tag=$(git ls-remote --tags origin "refs/tags/$version")
+          if [ "$EVENT_NAME" != "workflow_dispatch" ] && [ -n "$remote_tag" ]; then
             release=false
             echo "::notice::タグ $version はすでにあるので、Release は作りません（版を上げていません）。"
           fi
@@ -121,7 +122,7 @@ jobs:
           submodules: true
           persist-credentials: false
 
-      # prepare で決めた版を受ける。環境変数で受けて、形式を、ここでも検査する（vX.Y.Z、任意で -prerelease）
+      # prepare で決めた版を、環境変数で受けて、形式をここでも検査する（vX.Y.Z、任意で -prerelease）
       - name: Set version
         id: version
         env:
