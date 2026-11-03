@@ -1,12 +1,16 @@
 name: Release (app installer)
 
-# アプリ本体のインストーラーを作り、GitHub の Release に公開する。タグ v* の push か、バージョンを入れた手動実行で動く。
-# job を 2 つに分けている。build（ビルド・署名。書き込み権限なし。証明書を持つのはこの job だけ）→ release（タグと Release の作成。contents: write はこの job だけ）。
+# アプリ本体のインストーラーを作り、GitHub の Release に公開する。
+# master への push（develop → master の PR のマージ）で動く。版は Installer/installer.iss の MyAppVersion。
+# 版と同じタグ（v<版>）がすでにあるときは、新しく作らない（上書きしない）。バージョンを入れた手動実行でも動く（その場合は、同じタグがあっても、Release を作り直す）。
+# master への PR では、アプリを変えたのに版が上がっていないものを、このワークフローで止める（version-check）。
+# job を分けている。prepare（版の決定）→ build（ビルド・署名。書き込み権限なし。証明書を持つのはこの job だけ）→ release（タグと Release の作成。contents: write はこの job だけ）。
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches: [master]
+  pull_request:
+    branches: [master]
   workflow_dispatch:
     inputs:
       version:
@@ -17,8 +21,94 @@ on:
 permissions:
   contents: read
 
+# 実行が重なっても、途中で止めない（Release の作成の途中で止めると、タグだけ残るため）。順番に動かす。master への push と手動実行は、同じ group にまとめる（PR の確認は、PR ごと）
+concurrency:
+  group: release-app-${{ github.event_name == 'pull_request' && github.ref || 'release' }}
+  cancel-in-progress: false
+
 jobs:
+  version-check:
+    name: Version bump check
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      # アプリを変えたのに、版（Installer/installer.iss の MyAppVersion）のタグがすでにあるときは、止める。
+      # docs・tests・.github・.md だけの変更は、アプリの変更に数えない
+      - name: Require a new version when the app changed
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          number=$(sed -n 's/^#define MyAppVersion "\([0-9][0-9.]*\)".*/\1/p' Installer/installer.iss | tr -d '\r' | head -n 1)
+          if [ -z "$number" ]; then
+            echo "::error::Installer/installer.iss から、MyAppVersion を読めませんでした。"
+            exit 1
+          fi
+          tag="v$number"
+          git fetch --tags --quiet
+          exists=$(git tag --list "$tag")
+          changed=$(git diff --name-only "origin/${BASE_REF}...HEAD" | grep -v -E '^(docs/|tests/|\.github/)|\.md$' || true)
+          if [ -n "$exists" ] && [ -n "$changed" ]; then
+            echo "::error::アプリを変更していますが、版（$number）のリリース（$tag）がすでにあります。Installer/installer.iss の MyAppVersion と、Manual.md の更新履歴を上げてください。"
+            exit 1
+          fi
+          echo "版 $number（タグ $tag: $([ -n "$exists" ] && echo あり || echo まだ無い)）。アプリの変更: $(printf '%s' "$changed" | grep -c . || true) ファイル"
+
+  prepare:
+    name: Decide version
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.ver.outputs.VERSION }}
+      release: ${{ steps.ver.outputs.RELEASE }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      # 入力は式展開でスクリプトに埋め込まず、環境変数で受ける（引用符を含む入力で、スクリプトを壊したり、命令を混ぜられないように）。
+      # push（master）のときは、Installer/installer.iss の MyAppVersion から決める。同じタグがすでにあれば、Release は作らない。
+      # 形式は vX.Y.Z（任意で -prerelease）だけを受ける
+      - name: Decide the version and whether to release
+        id: ver
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            version="$INPUT_VERSION"
+          else
+            number=$(sed -n 's/^#define MyAppVersion "\([0-9][0-9.]*\)".*/\1/p' Installer/installer.iss | tr -d '\r' | head -n 1)
+            version="v$number"
+          fi
+          version=$(printf '%s' "$version" | tr -d '[:space:]')
+          if ! [[ "$version" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::バージョンの形式が正しくありません（例: v1.0.0）: $version"
+            exit 1
+          fi
+          if [[ "$version" != v* ]]; then
+            version="v$version"
+          fi
+          release=true
+          # タグが存在するか確認（公開リポジトリなので、認証なしで読める）。通信に失敗したら、ここで止まる（「タグが無い」と取り違えない）。手動実行は、同じタグがあっても作り直す
+          remote_tag=$(git ls-remote --tags origin "refs/tags/$version")
+          if [ "$EVENT_NAME" != "workflow_dispatch" ] && [ -n "$remote_tag" ]; then
+            release=false
+            echo "::notice::タグ $version はすでにあるので、Release は作りません（版を上げていません）。"
+          fi
+          echo "VERSION=$version" >> "$GITHUB_OUTPUT"
+          echo "RELEASE=$release" >> "$GITHUB_OUTPUT"
+          echo "Version: $version (release: $release)"
+
   build:
+    needs: prepare
+    if: needs.prepare.outputs.release == 'true'
     runs-on: windows-latest
     # 書き込み権限は持たない（ビルドのスクリプトや依存関係が、リポジトリに書き込めないように）
     outputs:
@@ -32,21 +122,13 @@ jobs:
           submodules: true
           persist-credentials: false
 
-      # 入力は式展開でスクリプトに埋め込まず、環境変数で受ける（引用符を含む入力で、スクリプトを壊したり、命令を混ぜられないように）。
-      # 形式は vX.Y.Z（任意で -prerelease）だけを受ける
+      # prepare で決めた版を、環境変数で受けて、形式をここでも検査する（vX.Y.Z、任意で -prerelease）
       - name: Set version
         id: version
         env:
-          EVENT_NAME: ${{ github.event_name }}
-          REF_NAME: ${{ github.ref_name }}
-          INPUT_VERSION: ${{ inputs.version }}
+          PREPARED_VERSION: ${{ needs.prepare.outputs.version }}
         run: |
-          if ($env:EVENT_NAME -eq "push") {
-            $version = $env:REF_NAME
-          } else {
-            $version = $env:INPUT_VERSION
-          }
-          $version = "$version".Trim()
+          $version = "$env:PREPARED_VERSION".Trim()
           if ($version -notmatch '^v?\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$') {
             Write-Host "::error::バージョンの形式が正しくありません（例: v1.0.0）: $version"
             exit 1
@@ -131,7 +213,7 @@ jobs:
   release:
     needs: build
     runs-on: ubuntu-latest
-    # タグの作成（手動実行）と、Release の作成に contents: write が要る（この job だけ）
+    # タグの作成と、Release の作成に contents: write が要る（この job だけ）
     permissions:
       contents: write
 
@@ -148,8 +230,8 @@ jobs:
           name: installer
           path: Releases
 
-      - name: Check and create tag (manual)
-        if: github.event_name == 'workflow_dispatch'
+      # master への push でも、手動実行でも、ビルドしたのと同じコミットにタグを付ける（Release の作成より前に、ここで作る）
+      - name: Check and create tag
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ needs.build.outputs.version }}
