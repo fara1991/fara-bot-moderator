@@ -1,3 +1,4 @@
+using System;
 using FaraBotModerator.Controllers;
 using Xunit;
 
@@ -41,8 +42,16 @@ public class OldestFirstLimiterTests
         Assert.Equal([9], limiter.Add(5));
     }
 
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public void A_limit_below_one_is_rejected(int limit)
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() => new OldestFirstLimiter<string>(limit));
+    }
+
     [Fact]
-    public void Several_items_over_the_limit_are_returned_oldest_first()
+    public void A_limit_of_one_returns_the_previous_item_each_time()
     {
         var limiter = new OldestFirstLimiter<string>(1);
         limiter.Add("a");
