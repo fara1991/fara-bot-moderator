@@ -108,6 +108,8 @@ public partial class MainWindow : INotifyPropertyChanged
     public MainWindow()
     {
         InitializeComponent();
+        // タイトルに、バージョンを表示する（リリースは「v1.2.0」、手元のビルドは「開発版」）
+        Title = AppInfo.WindowTitle;
         // 画面（作業領域）が、ウィンドウの既定の大きさより小さい PC では、最大化して使う
         if (WindowLayoutPolicy.ShouldMaximize(SystemParameters.WorkArea.Width, SystemParameters.WorkArea.Height, Width, Height))
             WindowState = WindowState.Maximized;

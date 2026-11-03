@@ -1,9 +1,11 @@
 ﻿# FaraBotModerator Build & Package Script
 # -PublishOnly: dotnet publish のみ実行 / -PackageOnly: インストーラー作成のみ実行
 # (CI で publish とパッケージングの間に exe へ署名するために分割できるようにしている)
+# -Version: アプリに埋め込むバージョン（例: v1.2.0 または 1.2.0）。省略すると、既定（0.0.0-dev。画面には「開発版」と表示）になる
 param(
     [switch]$PublishOnly,
-    [switch]$PackageOnly
+    [switch]$PackageOnly,
+    [string]$Version = ""
 )
 
 Write-Host "Starting Build Process..." -ForegroundColor Cyan
@@ -14,7 +16,17 @@ $publishDir = "bin\Release\net10.0-windows10.0.22621.0\publish\win-x64"
 if (-not $PackageOnly) {
     # 1. Clean and Publish
     Write-Host "Step 1: Publishing as a single-file executable..." -ForegroundColor Yellow
-    dotnet publish "$projectName.csproj" -c Release /p:PublishProfile=FolderProfile
+    $publishArgs = @("-c", "Release", "/p:PublishProfile=FolderProfile")
+    if ($Version.Trim() -ne "") {
+        # v1.2.0 の先頭の v を除いて、アプリのバージョン（1.2.0）として埋め込む。形式は X.Y.Z（任意で -prerelease）
+        $appVersion = $Version.Trim().TrimStart("v")
+        if ($appVersion -notmatch '^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$') {
+            Write-Host "Invalid version: $Version (example: v1.2.0)" -ForegroundColor Red
+            exit 1
+        }
+        $publishArgs += "/p:Version=$appVersion"
+    }
+    dotnet publish "$projectName.csproj" @publishArgs
 
     if ($LASTEXITCODE -ne 0) {
         Write-Host "Publish failed!" -ForegroundColor Red
