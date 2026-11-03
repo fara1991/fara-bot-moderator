@@ -639,11 +639,6 @@ public partial class MainWindow : INotifyPropertyChanged
     private const int MaxChatRowsPerTick = 50;
 
     /// <summary>
-    /// チャットウィンドウに残す行の上限（長い配信で、増え続けないため。古い行から消す）。
-    /// </summary>
-    private const int MaxChatRowsKept = 1000;
-
-    /// <summary>
     /// 棒読みちゃんの確認が、続けて失敗した回数（1 秒ごとの確認。5 回続けて失敗したら、終了したものとして切る）。
     /// </summary>
     private readonly ConsecutiveFailureCounter _bouyomiFailures = new(5);
@@ -663,7 +658,8 @@ public partial class MainWindow : INotifyPropertyChanged
         }
 
         chatWindow.TwitchChatDataGrid.Items.Add(chatModelData);
-        while (chatWindow.TwitchChatDataGrid.Items.Count > MaxChatRowsKept) chatWindow.TwitchChatDataGrid.Items.RemoveAt(0);
+        // 古い行から消す。表の並べ替え中は、Items の先頭が「一番古い行」とは限らないので、追加した順に覚えた行を、参照で消す
+        foreach (var oldest in chatWindow.Rows.Add(chatModelData)) chatWindow.TwitchChatDataGrid.Items.Remove(oldest);
         if (beforeScrollBottom) chatWindow.TwitchChatDataGrid.ScrollIntoView(chatModelData);
     }
 
