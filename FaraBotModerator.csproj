@@ -19,6 +19,10 @@
         <AppDesignerFolder>properties</AppDesignerFolder>
         <UseWindowsForms>true</UseWindowsForms>
         <ApplicationIcon>Resources\app.ico</ApplicationIcon>
+        <!-- 手元のビルドの既定のバージョン。リリースでは、Installer/installer.iss の MyAppVersion を -p:Version で渡して上書きする -->
+        <Version>0.0.0-dev</Version>
+        <!-- ビルドのコミットの番号を、アプリ（バージョン情報）に埋め込まない -->
+        <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

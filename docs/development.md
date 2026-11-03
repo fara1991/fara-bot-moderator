@@ -45,6 +45,10 @@ git submodule update --init
    - 手動で作り直したいときは、Actions の「Release (app installer)」を、バージョン（例: `v1.2.0`）を入れて実行します（同じタグがあっても、Release を作り直します）。
 5. Actions の成功と、Release の本文・署名（インストーラーのプロパティの「デジタル署名」）を確認します。本文の確認が済んだら、README の `.NET` の記述など、ほかの資料に影響が無いことも確かめます。
 
+### アプリに表示するバージョン
+
+アプリのウィンドウのタイトルには、バージョン（例: `FaraBotModerator v1.2.0`）が表示されます。リリースのビルドでは、`MyAppVersion` と同じ版を、`release-app.yml` が `build_release.ps1 -Version` へ渡して、アプリに埋め込みます。手元でビルドしたものは、既定の `0.0.0-dev` で、「開発版」と表示されます（既定の版は `FaraBotModerator.csproj` の `Version`）。
+
 ## プロジェクト構成
 
 - `FaraBotModerator`: アプリ本体（WPF）

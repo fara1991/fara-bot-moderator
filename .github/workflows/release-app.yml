@@ -173,9 +173,12 @@ jobs:
           echo "SIGNTOOL=$signtool" >> $env:GITHUB_ENV
         shell: pwsh
 
+      # 版（v1.2.0）を、アプリに埋め込む（画面のタイトルに表示される）。値は環境変数で渡す（上の Set version で形式を検査済み）
       - name: Publish
+        env:
+          APP_VERSION: ${{ steps.version.outputs.VERSION }}
         run: |
-          ./build_release.ps1 -PublishOnly
+          ./build_release.ps1 -PublishOnly -Version $env:APP_VERSION
         shell: pwsh
 
       - name: Sign executable (self-signed)
