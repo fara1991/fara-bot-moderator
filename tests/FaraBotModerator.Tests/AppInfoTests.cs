@@ -39,4 +39,19 @@ public class AppInfoTests
         Assert.DoesNotContain("+", AppInfo.Version);
         Assert.Equal($"{AppInfo.Name} {AppInfo.DisplayVersion}", AppInfo.WindowTitle);
     }
+
+    /// <summary>
+    /// コミットの番号を、アプリに残さない。ビルドのバージョン情報に、「+コミット」が付いていないこと。
+    /// </summary>
+    [Fact]
+    public void The_commit_is_not_embedded_in_the_app()
+    {
+        var informational = typeof(AppInfo).Assembly
+            .GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
+            .Cast<System.Reflection.AssemblyInformationalVersionAttribute>()
+            .Single()
+            .InformationalVersion;
+
+        Assert.DoesNotContain("+", informational);
+    }
 }
